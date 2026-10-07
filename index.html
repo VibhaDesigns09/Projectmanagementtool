@@ -1,0 +1,383 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rare Disease Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: search-first home (one centred field), then a 2×2 research board with gaps + companies running full width beneath. */
+:root{
+  --bg:#f4f6f8; --surface:#ffffff; --ink:#15202b; --muted:#5a6876; --line:#dbe1e7;
+  --accent:#1f5f8b; --accent-soft:#e3eef6;
+  --q1:#1f5f8b; --q2:#7a4e9c; --q3:#2c7a5b; --q4:#b0602a;
+  --warn:#a3402a; --warn-soft:#fbeae5;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f151b; --surface:#161e26; --ink:#e4eaf0; --muted:#94a3b1; --line:#26323d;
+  --accent:#6fb1e0; --accent-soft:#1a2d3c;
+  --q1:#6fb1e0; --q2:#bb93dc; --q3:#6cc39d; --q4:#e59a64;
+  --warn:#ef8f78; --warn-soft:#2e1c18; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f151b; --surface:#161e26; --ink:#e4eaf0; --muted:#94a3b1; --line:#26323d;
+  --accent:#6fb1e0; --accent-soft:#1a2d3c;
+  --q1:#6fb1e0; --q2:#bb93dc; --q3:#6cc39d; --q4:#e59a64;
+  --warn:#ef8f78; --warn-soft:#2e1c18; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);margin:0;padding-inline:16px}
+a{color:var(--accent);text-underline-offset:2px}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+.label{font:500 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- Home ---------- */
+#home{min-height:78vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding-block:48px}
+.brand{font:700 clamp(40px,8vw,68px)/1 var(--display);letter-spacing:-.02em}
+.brand span{color:var(--accent)}
+.tag{color:var(--muted);margin-top:-14px;text-align:center}
+.search{width:100%;max-width:620px;position:relative}
+.search input{width:100%;font:16px var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:15px 120px 15px 48px;box-shadow:0 1px 6px rgba(20,40,60,.08)}
+.search input:hover,.search input:focus{box-shadow:0 2px 12px rgba(20,40,60,.16);outline:none;border-color:var(--accent)}
+.search svg{position:absolute;left:18px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--muted);fill:none}
+.search button{position:absolute;right:6px;top:6px;bottom:6px;border:0;border-radius:999px;background:var(--accent);color:var(--surface);font:600 14px var(--body);padding:0 20px;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:620px}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px;font:14px var(--body);cursor:pointer}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip small{color:var(--muted);margin-left:4px}
+
+/* ---------- Results ---------- */
+#results{max-width:1240px;margin:0 auto;padding-block:16px 56px}
+.topbar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding-block:8px 18px;border-bottom:1px solid var(--line)}
+.topbar .brand{font-size:24px;cursor:pointer;background:none;border:0;color:var(--ink);padding:0}
+.topbar .search{flex:1;min-width:240px;max-width:560px}
+.topbar .search input{padding-block:10px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-block:24px 18px}
+.head h1{font-size:clamp(28px,4.4vw,40px)}
+.head .aka{color:var(--muted);margin-top:6px}
+.codes{display:flex;gap:6px;flex-wrap:wrap}
+.code{font:12px var(--mono);border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:var(--surface);color:var(--muted)}
+.code b{color:var(--ink);font-weight:500}
+.notice{background:var(--warn-soft);color:var(--ink);border-radius:var(--r);padding:12px 16px;margin-bottom:18px;font-size:14px}
+
+.board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:860px){.board{grid-template-columns:minmax(0,1fr)}}
+.quad{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px 22px;min-width:0;display:flex;flex-direction:column;gap:16px;border-top:4px solid var(--qc)}
+.quad[data-q="1"]{--qc:var(--q1)}.quad[data-q="2"]{--qc:var(--q2)}.quad[data-q="3"]{--qc:var(--q3)}.quad[data-q="4"]{--qc:var(--q4)}
+.quad header{display:flex;align-items:baseline;gap:10px}
+.quad header .n{font:500 13px var(--mono);color:var(--qc)}
+.quad h2{font-size:21px}
+.quad h3{font:600 12px/1.3 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--qc);margin:0}
+.sec{display:flex;flex-direction:column;gap:8px}
+.lede{margin:0}
+.facts{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;margin:0;font-size:14px}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0}
+ul.links,ul.plain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+ul.links li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;font-size:14px}
+.kind{font:500 10px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;border-radius:4px;padding:4px 6px;margin-top:2px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.kind.v{background:var(--warn-soft);color:var(--warn)}
+.src{display:block;color:var(--muted);font-size:12.5px}
+
+.journey{display:flex;gap:4px;overflow-x:auto;padding-bottom:4px}
+.step{flex:1 0 96px;background:var(--bg);border-radius:6px;padding:8px 10px;font-size:12.5px;line-height:1.35}
+.step b{display:block;font:500 11px var(--mono);color:var(--qc);margin-bottom:2px}
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.person{border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13.5px;min-width:0}
+.person strong{display:block;font-size:14px}
+.person .stage{font:11px var(--mono);color:var(--qc)}
+
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:520px}
+th{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{font-weight:600}
+tr:last-child td{border-bottom:0}
+
+.inno{display:flex;flex-direction:column;gap:10px}
+.inno li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;border-bottom:1px solid var(--line);padding-bottom:10px;font-size:14px}
+.inno li:last-child{border-bottom:0;padding-bottom:0}
+.inno .who{color:var(--muted);font-size:13px;grid-column:1}
+.inno .desc{grid-column:1/-1;font-size:13.5px}
+.pill{font:500 11px var(--mono);border-radius:999px;padding:3px 9px;white-space:nowrap;align-self:start;border:1px solid currentColor}
+.pill.ok{color:var(--q3)}.pill.p3{color:var(--q1)}.pill.p2{color:var(--q2)}.pill.dx{color:var(--q4)}
+
+.wide{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px}
+.wide>header{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.wide h2{font-size:21px}
+.gaps{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.gap{border-left:3px solid var(--sev);padding:4px 0 4px 12px;font-size:14px;min-width:0}
+.gap strong{display:block;margin-bottom:2px}
+.gap .sev{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--sev)}
+.gap[data-sev="high"]{--sev:var(--warn)}.gap[data-sev="med"]{--sev:var(--q4)}.gap[data-sev="low"]{--sev:var(--muted)}
+.gap .tagline{color:var(--muted);font-size:12.5px;margin-top:4px}
+.co{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.company{border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.company strong{font-size:15px}
+.company .type{font:11px var(--mono);color:var(--muted)}
+.mini{display:flex;flex-wrap:wrap;gap:4px}
+.mini span{font:11px var(--mono);background:var(--bg);border-radius:4px;padding:2px 6px;color:var(--muted)}
+.foot{color:var(--muted);font-size:12.5px;margin-top:22px;max-width:80ch}
+@media (prefers-reduced-motion:no-preference){.quad,.wide{animation:rise .35s ease both}.quad[data-q="2"]{animation-delay:.04s}.quad[data-q="3"]{animation-delay:.08s}.quad[data-q="4"]{animation-delay:.12s}}
+@keyframes rise{from{transform:translateY(6px)}to{transform:none}}
+</style>
+
+<main>
+  <section id="home">
+    <div class="brand">Rare<span>·</span>Desk</div>
+    <p class="tag">Desk research for rare diseases: the disease, the people, access, and what's new.</p>
+    <form class="search" id="homeForm" role="search">
+      <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="homeQ" type="search" placeholder="Type a rare disease, e.g. bronchiectasis" autocomplete="off" aria-label="Disease name">
+      <button type="submit">Search</button>
+    </form>
+    <div class="chips" id="homeChips"></div>
+  </section>
+
+  <section id="results" hidden>
+    <div class="topbar">
+      <button class="brand" id="homeBtn" type="button">Rare<span>·</span>Desk</button>
+      <form class="search" id="topForm" role="search">
+        <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="topQ" type="search" autocomplete="off" aria-label="Disease name">
+        <button type="submit">Search</button>
+      </form>
+    </div>
+    <div id="out"></div>
+  </section>
+</main>
+
+<script>
+/* ===================== DATA =====================
+   Each curated profile lives here. Add a new disease by adding a key.
+   Content curated October 2026 — verify before citing. */
+const DISEASES = {
+  bronchiectasis: {
+    name: "Bronchiectasis",
+    aka: "Non-cystic fibrosis bronchiectasis (NCFB)",
+    aliases: ["bronchiectasis","ncfb","non-cf bronchiectasis","non cystic fibrosis bronchiectasis","non-cystic fibrosis bronchiectasis"],
+    codes: [["ICD-10","J47"],["ICD-11","CA24"],["Orpha","—"]],
+    about: {
+      lede: "A chronic lung disease in which the bronchi become permanently widened. Mucus pools in the damaged airways, bacteria settle in, and neutrophil-driven inflammation damages the airways further. Clinicians describe this as a \"vicious vortex\" of infection, inflammation, impaired mucus clearance and structural damage. Patients live with daily cough, sputum and repeated chest infections (exacerbations).",
+      facts: [
+        ["Diagnosis","High-resolution CT (airway wider than its accompanying artery), plus symptoms"],
+        ["Common causes","Post-infection, idiopathic (often ~30–40%), immune deficiency, ABPA, primary ciliary dyskinesia, NTM, COPD/asthma overlap, rheumatoid arthritis, IBD, alpha-1 antitrypsin deficiency"],
+        ["Key bug","Pseudomonas aeruginosa — linked to more exacerbations, admissions and mortality"],
+        ["Severity tools","Bronchiectasis Severity Index (BSI), FACED / E-FACED"],
+        ["Standard care","Airway clearance physiotherapy, pulmonary rehab, long-term macrolides or inhaled antibiotics for frequent exacerbators, Pseudomonas eradication"],
+        ["Prevalence","Varies widely by country and rises steeply with age; in many markets it sits at the border of rare-disease thresholds"]
+      ],
+      articles: [
+        ["Guide","Bronchiectasis — overview, symptoms, treatment","NHS","https://www.nhs.uk/conditions/bronchiectasis/"],
+        ["Guide","What is bronchiectasis?","NIH · NHLBI","https://www.nhlbi.nih.gov/health/bronchiectasis"],
+        ["Guideline","ERS guidelines for the management of adult bronchiectasis (Polverino et al., 2017)","European Respiratory Journal","https://doi.org/10.1183/13993003.00629-2017"],
+        ["Guideline","BTS guideline for bronchiectasis in adults (Hill et al., 2019)","Thorax","https://doi.org/10.1136/thoraxjnl-2018-212463"],
+        ["Review","Bronchiectasis — Seminar (Flume, Chalmers & Olivier, 2018)","The Lancet","https://doi.org/10.1016/S0140-6736(18)31767-7"],
+        ["Trial","ASPEN phase 3 trial of brensocatib","PubMed search","https://pubmed.ncbi.nlm.nih.gov/?term=ASPEN+brensocatib+bronchiectasis"],
+        ["Hub","Bronchiectasis Toolbox — physio & clinician resource","Bronchiectasis Toolbox","https://bronchiectasis.com.au/"],
+        ["Hub","EMBARC — European bronchiectasis registry & research network","EMBARC","https://www.bronchiectasis.eu/"]
+      ],
+      videos: [
+        ["Bronchiectasis explained for patients","YouTube","https://www.youtube.com/results?search_query=bronchiectasis+explained"],
+        ["Airway clearance: active cycle of breathing technique (ACBT)","YouTube","https://www.youtube.com/results?search_query=active+cycle+of+breathing+technique+bronchiectasis"],
+        ["Oscillating PEP devices (Acapella, Aerobika, Flutter)","YouTube","https://www.youtube.com/results?search_query=oscillating+PEP+device+bronchiectasis"],
+        ["Living with bronchiectasis — patient stories","Asthma + Lung UK","https://www.asthmaandlung.org.uk/conditions/bronchiectasis"]
+      ]
+    },
+    journey: [
+      ["Symptoms","Chronic wet cough, sputum, fatigue, repeated \"chest infections\""],
+      ["Primary care","Often treated as asthma, COPD or recurrent bronchitis; antibiotics course by course"],
+      ["Referral + CT","HRCT confirms dilated airways; diagnostic delay of years is common"],
+      ["Cause work-up","Bloods, immunoglobulins, ABPA, sputum culture, NTM, PCD tests"],
+      ["Long-term care","Airway clearance, rehab, sputum monitoring, preventive therapy"],
+      ["Exacerbations","14-day antibiotics; hospital IV for severe flares"]
+    ],
+    stakeholders: [
+      ["Patient & caregiver","Daily airway clearance, symptom diaries, sputum samples","All stages"],
+      ["GP / primary care","First contact; decides when to suspect and refer for CT","Symptoms → referral"],
+      ["Respiratory physician","Confirms diagnosis, runs cause work-up, prescribes long-term therapy","Diagnosis → care"],
+      ["Thoracic radiologist","Reads HRCT; extent and pattern of disease","Diagnosis"],
+      ["Respiratory physiotherapist","Teaches airway clearance; leads pulmonary rehab","Long-term care"],
+      ["Specialist nurse","Self-management plans, home IV antibiotics, education","Long-term care"],
+      ["Microbiology lab","Sputum culture; Pseudomonas and NTM detection","Diagnosis → flares"],
+      ["Immunology / ENT / rheumatology / ID","Treat underlying causes and NTM disease","Cause work-up"],
+      ["Pharmacist","Inhaled antibiotics, nebulisers, macrolide safety checks","Long-term care"],
+      ["Payers & HTA bodies","Decide coverage of drugs, devices and rehab","Access"],
+      ["Pharma & device makers","Develop therapies, airway clearance devices, diagnostics","Innovation"],
+      ["Patient organisations & registries","Education, advocacy, real-world evidence","All stages"]
+    ],
+    influence: [
+      ["Regulators (FDA, EMA, MHRA)","Label and indication wording","Every eligible patient","Brensocatib (Brinsupri) became the first FDA-approved bronchiectasis drug in Aug 2025; label sets the eligible population"],
+      ["HTA bodies (NICE, G-BA, CADTH/CDA, HAS)","Cost-effectiveness and added-benefit verdicts","Publicly insured patients","Decide whether new drugs are funded nationally and for which subgroups"],
+      ["Commercial & public payers (CMS, PBMs)","Prior authorisation, step therapy, exacerbation-history criteria","US patients","Often require CT proof and a documented exacerbation count before approving new therapy"],
+      ["Respiratory specialists","Diagnosis, coding (J47.x) and documentation","Patients who reach a specialist","Without a CT-confirmed, correctly coded diagnosis, patients rarely qualify for therapy or devices"],
+      ["Primary care","Referral timing","Undiagnosed patients","Late referral is the main reason patients never enter the treatment pathway"],
+      ["DME coverage policy (e.g. Medicare)","Criteria for high-frequency chest wall oscillation vests","Patients needing devices","Requires CT-confirmed diagnosis plus documented sputum or exacerbation history"],
+      ["Guideline committees (ERS, BTS, ATS)","Recommendations that payers cite","All treated patients","Payers lean on guideline position; inhaled antibiotics remain off-label in the US"],
+      ["Patient organisations","Advocacy, payer testimony, awareness","Patients and families","Shape HTA submissions and push for specialist centres"]
+    ],
+    reimbursement: [
+      "No inhaled antibiotic is FDA-approved for non-CF bronchiectasis, so US use is off-label and coverage is inconsistent.",
+      "Long-term macrolides are cheap but off-label; they need resistance and NTM screening first.",
+      "Pulmonary rehabilitation is recommended but under-funded and has limited places for non-COPD patients.",
+      "Specialist bronchiectasis services are concentrated in larger centres, so where you live affects access."
+    ],
+    innovations: [
+      ["Brensocatib (Brinsupri)","Insmed","Oral DPP1 inhibitor that dampens neutrophil serine proteases. Reduced exacerbations in the ASPEN phase 3 trial.","Approved (US, 2025)","ok"],
+      ["BI 1291583","Boehringer Ingelheim","Cathepsin C (DPP1) inhibitor; positive phase 2 (Airleaf), now in phase 3.","Phase 3","p3"],
+      ["HSK31858","Haisco Pharmaceutical","DPP1 inhibitor in development in China.","Phase 2/3","p2"],
+      ["Inhaled colistimethate (PROMIS programme)","Zambon","Nebulised antibiotic for patients chronically infected with Pseudomonas.","Phase 3","p3"],
+      ["Benralizumab (MAHALE)","AstraZeneca","Anti-IL-5R biologic tested in eosinophilic bronchiectasis, a treatable trait.","Phase 3","p3"],
+      ["Neutrophil elastase point-of-care tests","ProAxsis","Sputum test to flag airway inflammation and early exacerbations.","Diagnostic","dx"],
+      ["Quantitative CT & AI airway analysis","Academic groups, imaging start-ups","Automated airway–artery measurement for earlier, consistent diagnosis.","Research","dx"],
+      ["Disease registries","EMBARC, US Bronchiectasis & NTM Research Registry, Australian ACBR","Real-world data for endotyping and trial recruitment.","Ongoing","dx"]
+    ],
+    gaps: [
+      ["Diagnostic delay","Patients are often labelled asthma or COPD for years before a CT is ordered.","high","Primary care · radiology"],
+      ["Incomplete cause work-up","Many patients never get full testing, so treatable causes (immune deficiency, ABPA, NTM) are missed.","high","Specialists"],
+      ["Few approved therapies","Until 2025 nothing was licensed; most care still relies on off-label drugs.","high","Pharma · regulators"],
+      ["Payer friction for new drugs","Prior authorisation, exacerbation-count thresholds and cost limit uptake of new therapy.","high","Payers · HTA"],
+      ["Physiotherapy & rehab access","Too few specialist physios and rehab slots; adherence to daily airway clearance is low.","med","Health systems"],
+      ["Heterogeneity / endotyping","Neutrophilic vs eosinophilic disease, Pseudomonas status: one-size-fits-all treatment fails many.","med","Researchers · pharma"],
+      ["Paediatric and LMIC data","Children and low/middle-income countries are under-represented in trials and registries.","med","Research networks"],
+      ["Patient education & self-management","Patients often don't recognise early flares or know how to do airway clearance well.","med","Nurses · patient orgs"],
+      ["Inequitable specialist access","Expert centres are concentrated in cities; rural patients travel far or go without.","low","Health systems"]
+    ],
+    companies: [
+      ["Insmed","Biopharma","First approved therapy (brensocatib); disease awareness and diagnosis programmes",["Few approved therapies","Diagnostic delay"]],
+      ["Boehringer Ingelheim","Biopharma","Cathepsin C inhibitor for neutrophilic inflammation",["Few approved therapies"]],
+      ["AstraZeneca","Biopharma","Biologic for eosinophilic bronchiectasis",["Endotyping"]],
+      ["Zambon","Biopharma","Inhaled antibiotics for chronic Pseudomonas",["Few approved therapies"]],
+      ["Haisco Pharmaceutical","Biopharma","DPP1 inhibitor, China-first development",["Few approved therapies","LMIC data"]],
+      ["ProAxsis","Diagnostics","Point-of-care neutrophil elastase tests",["Endotyping","Self-management"]],
+      ["Baxter (Hillrom) · Electromed","Medical devices","Airway clearance vests (HFCWO) and patient support",["Physio access","Self-management"]],
+      ["EMBARC · COPD Foundation registry","Research networks","Registries, consensus definitions, trial networks",["Endotyping","LMIC data","Cause work-up"]]
+    ]
+  }
+};
+
+/* ===================== SEARCH ===================== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const norm = s => s.toLowerCase().replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+
+function lev(a,b){ // edit distance, so typos like "brochiactasis" still match
+  const d = Array.from({length:a.length+1},(_,i)=>[i]);
+  for(let j=1;j<=b.length;j++) d[0][j]=j;
+  for(let i=1;i<=a.length;i++) for(let j=1;j<=b.length;j++)
+    d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return d[a.length][b.length];
+}
+function find(q){
+  const n = norm(q); let best=null, bestD=Infinity;
+  for(const [key,d] of Object.entries(DISEASES)){
+    for(const a of d.aliases.map(norm)){
+      if(a===n || a.includes(n) && n.length>3) return {key,exact:true};
+      const dist = lev(n,a); if(dist<bestD){bestD=dist;best=key;}
+    }
+  }
+  return bestD <= Math.max(2, Math.floor(n.length*0.25)) ? {key:best,exact:false} : null;
+}
+
+const SUGGEST = ["Bronchiectasis","Primary ciliary dyskinesia","Idiopathic pulmonary fibrosis","Spinal muscular atrophy"];
+$("#homeChips").innerHTML = SUGGEST.map(s=>`<button class="chip" type="button" data-q="${esc(s)}">${esc(s)}${DISEASES[norm(s)]?'<small>curated</small>':''}</button>`).join("");
+$("#homeChips").addEventListener("click",e=>{const b=e.target.closest(".chip"); if(b) go(b.dataset.q);});
+$("#homeForm").addEventListener("submit",e=>{e.preventDefault(); go($("#homeQ").value);});
+$("#topForm").addEventListener("submit",e=>{e.preventDefault(); go($("#topQ").value);});
+$("#homeBtn").addEventListener("click",()=>{ $("#results").hidden=true; $("#home").hidden=false; $("#homeQ").value=""; $("#homeQ").focus(); try{history.replaceState(null,"",location.pathname)}catch(_){} });
+
+function go(q){
+  q = (q||"").trim(); if(!q) return;
+  $("#home").hidden=true; $("#results").hidden=false; $("#topQ").value=q;
+  const hit = find(q);
+  $("#out").innerHTML = hit ? renderCurated(DISEASES[hit.key], hit.exact?null:q) : renderGeneric(q);
+  try{ history.replaceState(null,"","#"+(hit?hit.key:"")) }catch(_){}
+  window.scrollTo(0,0);
+}
+
+/* ===================== RENDER ===================== */
+const ext = (href,txt) => `<a href="${esc(href)}" target="_blank" rel="noopener">${esc(txt)}</a>`;
+
+function renderCurated(d, typed){
+  return `
+  ${typed?`<div class="notice">Showing results for <b>${esc(d.name)}</b> (you typed “${esc(typed)}”).</div>`:""}
+  <div class="head">
+    <div><div class="label">Disease profile</div><h1>${esc(d.name)}</h1><div class="aka">${esc(d.aka)}</div></div>
+    <div class="codes">${d.codes.map(([k,v])=>`<span class="code">${esc(k)} <b>${esc(v)}</b></span>`).join("")}</div>
+  </div>
+
+  <div class="board">
+    <article class="quad" data-q="1">
+      <header><span class="n">01</span><h2>About the disease</h2></header>
+      <p class="lede">${esc(d.about.lede)}</p>
+      <dl class="facts">${d.about.facts.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+      <div class="sec"><h3>Top articles</h3>
+        <ul class="links">${d.about.articles.map(([k,t,s,u])=>`<li><span class="kind">${esc(k)}</span><span>${ext(u,t)}<span class="src">${esc(s)}</span></span></li>`).join("")}</ul></div>
+      <div class="sec"><h3>Watch</h3>
+        <ul class="links">${d.about.videos.map(([t,s,u])=>`<li><span class="kind v">Video</span><span>${ext(u,t)}<span class="src">${esc(s)}</span></span></li>`).join("")}</ul></div>
+    </article>
+
+    <article class="quad" data-q="2">
+      <header><span class="n">02</span><h2>Stakeholders involved</h2></header>
+      <div class="sec"><h3>Patient journey</h3>
+        <div class="journey">${d.journey.map(([s,t],i)=>`<div class="step"><b>${i+1} · ${esc(s)}</b>${esc(t)}</div>`).join("")}</div></div>
+      <div class="sec"><h3>Who is involved</h3>
+        <div class="people">${d.stakeholders.map(([n,r,s])=>`<div class="person"><strong>${esc(n)}</strong>${esc(r)}<div class="stage">${esc(s)}</div></div>`).join("")}</div></div>
+    </article>
+
+    <article class="quad" data-q="3">
+      <header><span class="n">03</span><h2>Access &amp; reimbursement</h2></header>
+      <div class="sec"><h3>Who influences access</h3>
+        <div class="tbl"><table>
+          <thead><tr><th>Who</th><th>How</th><th>Affects</th><th>Why it matters</th></tr></thead>
+          <tbody>${d.influence.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody>
+        </table></div></div>
+      <div class="sec"><h3>Reimbursement realities</h3>
+        <ul class="plain">${d.reimbursement.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+    </article>
+
+    <article class="quad" data-q="4">
+      <header><span class="n">04</span><h2>Innovations</h2></header>
+      <ul class="plain inno">${d.innovations.map(([n,w,ds,st,c])=>`<li><strong>${esc(n)}</strong><span class="pill ${c}">${esc(st)}</span><span class="who">${esc(w)}</span><span class="desc">${esc(ds)}</span></li>`).join("")}</ul>
+    </article>
+  </div>
+
+  <section class="wide">
+    <header><h2>Gaps people talk about</h2><span class="label">${d.gaps.length} recurring themes</span></header>
+    <div class="gaps">${d.gaps.map(([t,ds,s,who])=>`<div class="gap" data-sev="${s}"><span class="sev">${{high:"Major gap",med:"Notable gap",low:"Emerging"}[s]}</span><strong>${esc(t)}</strong>${esc(ds)}<div class="tagline">Owners: ${esc(who)}</div></div>`).join("")}</div>
+  </section>
+
+  <section class="wide">
+    <header><h2>Who is working on these gaps</h2><span class="label">Companies &amp; networks</span></header>
+    <div class="co">${d.companies.map(([n,t,w,g])=>`<div class="company"><strong>${esc(n)}</strong><span class="type">${esc(t)}</span><span>${esc(w)}</span><div class="mini">${g.map(x=>`<span>${esc(x)}</span>`).join("")}</div></div>`).join("")}</div>
+  </section>
+
+  <p class="foot">Curated desk-research summary, last reviewed October 2026. Pipeline and approval status changes quickly; confirm with the source before citing. Not medical advice.</p>`;
+}
+
+function renderGeneric(q){
+  const e = encodeURIComponent(q);
+  const L = (t,s,u)=>`<li><span class="kind">${esc(s)}</span><span>${ext(u,t)}</span></li>`;
+  return `
+  <div class="notice">No curated profile for “${esc(q)}” yet. These research shortcuts open live searches for each quadrant.</div>
+  <div class="head"><div><div class="label">Quick research</div><h1>${esc(q)}</h1></div></div>
+  <div class="board">
+    <article class="quad" data-q="1"><header><span class="n">01</span><h2>About the disease</h2></header>
+      <ul class="links">${L("Orphanet disease summary","Rare","https://www.orpha.net/en/disease/search?search="+e)}${L("NIH GARD overview","Guide","https://rarediseases.info.nih.gov/search?term="+e)}${L("NORD rare disease report","Guide","https://rarediseases.org/?s="+e)}${L("PubMed reviews","Review","https://pubmed.ncbi.nlm.nih.gov/?term="+e+"&filter=pubt.review")}${L("Explainer videos","Video","https://www.youtube.com/results?search_query="+e+"+explained")}</ul></article>
+    <article class="quad" data-q="2"><header><span class="n">02</span><h2>Stakeholders involved</h2></header>
+      <ul class="links">${L("Patient journey studies","Paper","https://pubmed.ncbi.nlm.nih.gov/?term="+e+"+patient+journey")}${L("Patient organisations","Advocacy","https://www.google.com/search?q="+e+"+patient+organization")}${L("Care pathway / guidelines","Guideline","https://pubmed.ncbi.nlm.nih.gov/?term="+e+"&filter=pubt.guideline")}</ul></article>
+    <article class="quad" data-q="3"><header><span class="n">03</span><h2>Access &amp; reimbursement</h2></header>
+      <ul class="links">${L("NICE guidance","HTA","https://www.nice.org.uk/search?q="+e)}${L("Burden of illness & cost studies","Paper","https://pubmed.ncbi.nlm.nih.gov/?term="+e+"+cost+OR+burden+OR+reimbursement")}${L("FDA orphan designations","Regulator","https://www.accessdata.fda.gov/scripts/opdlisting/oopd/")}</ul></article>
+    <article class="quad" data-q="4"><header><span class="n">04</span><h2>Innovations</h2></header>
+      <ul class="links">${L("Recruiting clinical trials","Trials","https://clinicaltrials.gov/search?cond="+e+"&aggFilters=status:rec")}${L("Latest research (last 2 years)","Paper","https://pubmed.ncbi.nlm.nih.gov/?term="+e+"&filter=datesearch.y_2")}</ul></article>
+  </div>
+  <section class="wide"><header><h2>Gaps people talk about</h2></header>
+    <ul class="links">${L("Unmet need literature","Paper","https://pubmed.ncbi.nlm.nih.gov/?term="+e+"+unmet+need")}${L("Companies with active trials","Trials","https://clinicaltrials.gov/search?cond="+e+"&aggFilters=funderType:industry")}</ul></section>`;
+}
+
+/* deep link: #bronchiectasis */
+if(location.hash.length>1){ go(decodeURIComponent(location.hash.slice(1))); }
+</script>
