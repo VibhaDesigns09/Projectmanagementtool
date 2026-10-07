@@ -435,14 +435,15 @@
   async function saveFile(name, data, mime) {
     const dl = await downloadsCap();
     if (dl) {
-      try { await dl.save({ filename: name, data }); toast("Saved " + name); return; }
+      try { await dl.save({ filename: name, data }); toast("Saved " + name); }
       catch (e) {
         const code = e && e.code;
         if (code === "declined") return;
-        if (code === "rate_limited") { toast("A save prompt is already open"); return; }
-        if (!["unavailable", "not_granted", "capability_disabled", "capability_removed", "extension_not_enabled"].includes(code)) { toast("Couldn't save the file"); return; }
+        toast(code === "rate_limited" ? "A save prompt is already open" : "Downloads aren't available here. Use Copy instead.");
       }
+      return;
     }
+    if (window.claude) { toast("Downloads aren't available here. Use Copy instead."); return; }
     try {
       const a = document.createElement("a");
       a.href = URL.createObjectURL(data instanceof Blob ? data : new Blob([data], { type: mime }));
@@ -450,15 +451,27 @@
       setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
     } catch (_) { toast("Downloads are blocked here. Use Copy instead."); }
   }
+  function copyBox(t) {
+    let box = document.querySelector("#copyBox");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "copyBox"; box.className = "copybox"; box.hidden = true;
+      box.innerHTML = `<div class="copybox-panel" role="dialog" aria-modal="true" aria-labelledby="copyBoxTitle">
+        <div class="copybox-head"><b id="copyBoxTitle">Copy the screener</b><button type="button" class="iconbtn" data-copyclose aria-label="Close">${ic("close")}</button></div>
+        <p>The text is selected. Press Ctrl+C (⌘C on a Mac) to copy it.</p>
+        <textarea id="copyBoxText" readonly aria-label="Screener text"></textarea></div>`;
+      document.body.append(box);
+      const close = () => { box.hidden = true; };
+      box.addEventListener("click", e => { if (e.target === box || e.target.closest("[data-copyclose]")) close(); });
+      box.addEventListener("keydown", e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } });
+      box.addEventListener("copy", () => setTimeout(() => { close(); toast("Screener copied"); }, 0));
+    }
+    const ta = box.querySelector("textarea");
+    ta.value = t; box.hidden = false; ta.focus(); ta.select();
+  }
   async function copyText(t) {
-    try { await navigator.clipboard.writeText(t); toast("Screener copied"); return; } catch (_) { /* fall back */ }
-    const ta = document.createElement("textarea");
-    ta.value = t; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
-    document.body.append(ta); ta.select();
-    let ok = false;
-    try { ok = document.execCommand("copy"); } catch (_) { ok = false; }
-    ta.remove();
-    toast(ok ? "Screener copied" : "Copy is blocked here. Use Word or CSV instead.");
+    try { await navigator.clipboard.writeText(t); toast("Screener copied"); }
+    catch (_) { copyBox(t); }
   }
   const fileBase = S => ("screener-" + RD.current.key + "-" + S.target.name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 
