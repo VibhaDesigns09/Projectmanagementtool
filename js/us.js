@@ -433,7 +433,7 @@ window.US = (function () {
       kidney ? US_FACTS.esrd : null,
       age === "peds" ? US_FACTS.medicaidKids : null,
       P.name === "Sickle cell disease" ? US_FACTS.cgt : null,
-      P.name === "Amyotrophic lateral sclerosis" ? "ALS: no 5-month SSDI waiting period (since 2020) and Medicare starts with SSDI, without the usual 24-month wait (since 2001)." : null,
+      P.name === "Amyotrophic lateral sclerosis" ? "ALS: no 5-month SSDI waiting period (law of December 2020), and Medicare starts with SSDI instead of after the usual 24-month wait (law passed in 2000)." : null,
       nb.level !== "none" ? US_FACTS.nbs : null,
     ].filter(Boolean) };
   }
