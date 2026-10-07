@@ -251,6 +251,15 @@ ul.plain{list-style:none;margin:0;padding:0}
 </main>
 
 <script src="data/diseases.js"></script>
+<script src="data/journeys/immuno.js"></script>
+<script src="data/journeys/inflam.js"></script>
+<script src="data/journeys/metabolic-lysosomal.js"></script>
+<script src="data/journeys/metabolic-other.js"></script>
+<script src="data/journeys/neuro.js"></script>
+<script src="data/journeys/blood.js"></script>
+<script src="data/journeys/organ.js"></script>
+<script src="data/journeys/endo-skin.js"></script>
+<script src="data/journeys/liver-eye-syndrome.js"></script>
 <script>
 /* ===================== ICONS (inline, 24×24 stroke) ===================== */
 const ICONS = {
@@ -301,6 +310,8 @@ const ICONS = {
   bone:'<path d="M17 10c.7-.7 1.6-.7 2.5-.7a2.5 2.5 0 1 0-2.4-3.4A2.5 2.5 0 1 0 13.6 5c0 .9 0 1.8-.7 2.5L7.5 13c-.7.7-1.6.7-2.5.7a2.5 2.5 0 1 0 2.4 3.4 2.5 2.5 0 1 0 3.5 2.4c0-.9 0-1.8.7-2.5Z"/>',
   kidney:'<path d="M15 3c-4.5 0-9 3.5-9 9s4.5 9 9 9c2.5 0 3.5-1.7 2.6-3.6-.8-1.6-2.6-2.6-2.6-5.4s1.8-3.8 2.6-5.4C18.5 4.7 17.5 3 15 3Z"/>',
   flame:'<path d="M12 22c4 0 7-3 7-7 0-5-5-7-5-13-3 2-5 5-5 8-1-1-2-2-2-4-2 2-2 5-2 9 0 4 3 7 7 7Z"/>',
+  siren:'<path d="M7 18v-6a5 5 0 0 1 10 0v6M5 21h14v-3H5ZM12 2v2M4.2 5.2l1.4 1.4M19.8 5.2l-1.4 1.4"/>',
+  surgery:'<path d="m3 21 8-8"/><path d="M11 13 20 4l1 1-9 9Z"/>',
   liver:'<path d="M3 8c0-3 3-4 8-4s10 1 10 5-5 11-9 11C7 20 3 13 3 8Z"/><path d="M12 4v9"/>'
 };
 const ic = (n,cls="") => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||ICONS.target}</svg>`;
@@ -428,7 +439,8 @@ const CATS = {
   heart:{l:"Heart & vascular",i:"heart",j:"chronic"},
   liver:{l:"Liver & gut",i:"liver",j:"chronic"},
   eye:{l:"Eye",i:"eye",j:"genetic"},
-  syndrome:{l:"Developmental syndromes",i:"dna",j:"genetic"}
+  syndrome:{l:"Developmental syndromes",i:"dna",j:"genetic"},
+  onc:{l:"Rare tumours",i:"target",j:"chronic"}
 };
 
 const JOURNEYS = {
@@ -602,14 +614,25 @@ const PH = {A:3,F:2.6,"3":2,"2":1,"1":0};
 const PHL = {A:"Approved",F:"Filed",["3"]:"Phase 3",["2"]:"Phase 2",["1"]:"Early"};
 const NONCO = /centres|^various$|^generic$|consortia|academic/i;
 
+const SEV={h:"high",m:"med",l:"low"};
+function parseJourney(J){
+  if(!J) return null;
+  const stages=J.s.map(x=>{const [n,i,t,d,f,w,q,p]=x.split("|"); return {n,i,t,d:d.split(";"),f:+f,w,q,p};});
+  const own=J.k.map(x=>x.split("|"));
+  const stakeholders=own.some(r=>r[0]==="patient")?own:[["patient","Patient & family","user","L".repeat(stages.length),"Lives every stage"],...own];
+  const gaps=J.gp.map(x=>{const [i,t,d,s,o]=x.split("|"); return [i,t,d,SEV[s]||"med",(o||"").split(";").filter(Boolean)];});
+  return {stages,stakeholders,gaps};
+}
+
 function fromDirectory(e){
   const cat=CATS[e.c]||{l:"Rare disease",i:"target",j:"chronic"};
+  const JS=parseJourney((window.JOURNEY_DATA||{})[e.n]);
   const arch=e.j||cat.j, J=JOURNEYS[arch];
   const lead=e.sp?.[0]||"Specialist", others=(e.sp||[]).slice(1).join(" · ");
   const rx=e.rx||[], approved=rx.filter(r=>r[2]==="A");
   const enc=encodeURIComponent(e.n);
   const gk=[...(approved.length?["cost"]:["notx"]), ...ARCH_GAPS[arch], ...(e.gx||[])];
-  const gaps=[...new Set(gk)].map(k=>GAPS[k]).sort((a,b)=>({high:0,med:1,low:2}[a[3]]-{high:0,med:1,low:2}[b[3]]));
+  const gaps=(JS?JS.gaps:[...new Set(gk)].map(k=>GAPS[k])).sort((a,b)=>({high:0,med:1,low:2}[a[3]]-{high:0,med:1,low:2}[b[3]]));
 
   // one card per company, listing its therapies
   const cos=new Map();
@@ -618,10 +641,10 @@ function fromDirectory(e){
     const m=cos.get(c)||{drugs:[],a:false}; m.drugs.push(drug.replace(/ \(.*\)$/,"")); m.a=m.a||st==="A"; cos.set(c,m);
   }
   const companies=[...cos].map(([c,m])=>["building",c,m.a?"Marketed therapy":"Pipeline",m.a?"Has an approved therapy":"Developing a therapy",m.drugs.slice(0,3)]);
-  for(const o of (e.o||[])) companies.push(["users",o,"Patient organisation","Support, advocacy, research funding",["Awareness","Caregiver burden"]]);
+  for(const o of (e.o||[])) companies.push(["users",o,"Organisation","Awareness, education, advocacy",["Awareness"]]);
 
   return {
-    name:e.n, cat:e.c, profile:"directory", journeyLabel:J.label,
+    name:e.n, cat:e.c, profile:"directory", journeyLabel:J.label, specific:!!JS,
     aka:(e.a||[]).join(" · "),
     codes:[...(e.icd?[["ICD-10",e.icd]]:[]),["Type",cat.l]],
     quick:[[cat.i,"What",e.w],["dna","Cause",e.g],["users","How many",e.p],["scan","Diagnose",e.dx],["pill","Treat",e.tx],["steth","Specialists",(e.sp||[]).join(" · ")]],
@@ -637,8 +660,8 @@ function fromDirectory(e){
       ["Patient & family stories","YouTube","https://www.youtube.com/results?search_query="+enc+"+patient+story"],
       ["Treatment & research updates","YouTube","https://www.youtube.com/results?search_query="+enc+"+treatment+update"],
       ["Conference talks","YouTube","https://www.youtube.com/results?search_query="+enc+"+grand+rounds"]],
-    stages:J.stages,
-    stakeholders:J.who(lead,others),
+    stages:JS?JS.stages:J.stages,
+    stakeholders:JS?JS.stakeholders:J.who(lead,others),
     influence:[
       ["landmark","Regulators","Approval & label","All eligible patients",approved.length?`${approved.length} approved option${approved.length>1?"s":""} listed`:"No approved therapy yet"],
       ["scale","HTA bodies","Value assessment","Publicly insured","Decide national funding"],
@@ -647,7 +670,7 @@ function fromDirectory(e){
       ...(arch!=="chronic"?[["dna","Genetic testing policy","Test funding","Families","Diagnosis unlocks therapy & trials"]]:[]),
       ...((e.gx||[]).includes("nbs")?[["target","Newborn screening","Who is screened","Newborns","Early treatment changes outcomes"]]:[]),
       ["users",(e.o||["Patient organisations"])[0],"Advocacy & registries","Families","Shape HTA input and research"]],
-    reality:gaps.slice(0,4).map(g=>g[1]+": "+g[2].charAt(0).toLowerCase()+g[2].slice(1)),
+    reality:gaps.filter(g=>g[3]!=="low").slice(0,4).map(g=>g[1]+": "+g[2].charAt(0).toLowerCase()+g[2].slice(1)),
     pipeline:rx.slice(0,8).map(([n,c,st,note])=>[n,c.split(" · ")[0],PH[st]??0,(PHL[st]||"")+(note?" · "+note:"")]),
     beyond:[
       ["flask","Recruiting trials","ClinicalTrials.gov","Find active studies","https://clinicaltrials.gov/search?cond="+enc+"&aggFilters=status:rec"],
@@ -701,7 +724,7 @@ function journeyMap(d){
 
 function renderProfile(d, typed, also=[]){
   const jumps=[["q1","01","About"],["q2","02","Journey"],["q3","03","Access"],["q4","04","Innovations"],["gaps","!","Gaps"],["cos","→","Companies"]];
-  const dirNote = d.profile==="directory"
+  const dirNote = d.profile==="directory" && !d.specific
     ? `<div class="srcnote">${ic("route")}<span>Journey and stakeholder map show the typical path for <b>${esc(d.journeyLabel)}</b>. Disease facts and therapies are specific to ${esc(d.name)}.</span></div>` : "";
   return `
   ${typed?`<div class="notice">${ic("search")}Showing <b>${esc(d.name)}</b> for “${esc(typed)}”</div>`:""}
@@ -771,7 +794,7 @@ function showDirectory(){
   $("#out").innerHTML=`
   <div class="head"><div><div class="label">Directory</div><h1>${INDEX.length} rare diseases</h1><div class="aka">Search by name, abbreviation or gene-related name. Pick a category to scan.</div></div></div>
   <div class="dirgrid">${Object.entries(CATS).filter(([k])=>by[k]).map(([k,c])=>`
-    <section class="dircat" style="--qc:var(--q${{immuno:1,inflam:4,metabolic:2,nmd:3,neuro:2,blood:4,lung:1,kidney:3,endo:1,skin:4,heart:4,liver:3,eye:1,syndrome:2}[k]})">
+    <section class="dircat" style="--qc:var(--q${{immuno:1,inflam:4,metabolic:2,nmd:3,neuro:2,blood:4,lung:1,kidney:3,endo:1,skin:4,heart:4,liver:3,eye:1,syndrome:2,onc:4}[k]})">
       <header><span class="ico">${ic(c.i)}</span><h2>${esc(c.l)}</h2><span class="label">${by[k].length}</span></header>
       <ul>${by[k].sort((a,b)=>a.name.localeCompare(b.name)).map(it=>`<li><button type="button" data-open="${it.kind}:${it.key}">${esc(it.name)}</button></li>`).join("")}</ul>
     </section>`).join("")}</div>`;

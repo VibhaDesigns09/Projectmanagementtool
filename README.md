@@ -12,7 +12,7 @@ Below the quadrants are the **gaps** commonly discussed for the disease and the 
 ## Disease coverage
 
 - **In-depth profile:** bronchiectasis, with a disease-specific journey, stakeholder map, influencers and gaps.
-- **Directory profiles:** 170 rare diseases in `data/diseases.js`, grouped into 14 categories: immune deficiency, autoinflammatory & rheumatic, inherited metabolic, neuromuscular, neurological & epilepsy, blood & bleeding, lung, kidney, endocrine/bone/growth, skin & connective tissue, heart, liver & gut, eye and developmental syndromes. Each has quick facts, ICD-10 code, specialists, approved therapies and pipeline with companies, and patient organisations. The journey map and stakeholder map use a typical template for the disease type (early-onset genetic, immune deficiency or chronic).
+- **Directory profiles:** 172 diseases in `data/diseases.js`, grouped into 14 categories: immune deficiency, autoinflammatory & rheumatic, rare tumours (desmoid tumor), inherited metabolic, neuromuscular, neurological & epilepsy, blood & bleeding, lung, kidney, endocrine/bone/growth, skin & connective tissue, heart, liver & gut, eye and developmental syndromes. Each has quick facts, ICD-10 code, specialists, approved therapies and pipeline with companies, and patient organisations. Every disease also has its own journey map (stages, what happens, how the patient feels, pain points), stakeholder map and gap list in `data/journeys/`.
 - **Anything else:** live research links for each quadrant (PubMed, Orphanet, GARD, NORD, ClinicalTrials.gov, NICE).
 
 Search matches names, abbreviations and alternate names, suggests as you type, and tolerates typos ("brochiactasis"). The home page only shows a few examples; **Browse all diseases** lists everything by category.
@@ -25,5 +25,5 @@ Open `index.html` in a browser. There is no build step. Deep link to a profile w
 
 ## Add a disease
 
-- **Directory profile:** add an object to `data/diseases.js`. The field key is documented at the top of that file.
+- **Directory profile:** add an object to `data/diseases.js` (field key at the top of that file), then add its journey, stakeholders and gaps to a file in `data/journeys/` (format at the top of `immuno.js`). Without a journey entry the page falls back to a template for the disease type.
 - **In-depth profile:** add an entry to the `DISEASES` object in `index.html`, following the bronchiectasis entry. In-depth profiles take priority over directory entries with the same name.

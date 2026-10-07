@@ -520,6 +520,9 @@ window.DIRECTORY = [
 {n:"Thyroid eye disease",a:["TED","Graves' orbitopathy","Graves ophthalmopathy"],c:"eye",icd:"H06.2",g:"Autoimmune (with Graves)",p:"~16 women and 3 men per 100,000/yr",
  w:"Bulging, red, painful eyes; double vision, sight risk",dx:"Clinical activity score, imaging",tx:"Steroids, teprotumumab, surgery",
  sp:["Oculoplastic surgeon","Endocrinologist"],rx:[["Teprotumumab (Tepezza)","Amgen","A","IGF-1R"],["Veligrotug","Viridian","F","IGF-1R, BLA accepted 2026"]],o:["Thyroid Eye Disease Awareness","TEDct"],j:"chronic"},
+{n:"Demodex blepharitis",a:["demodex","eyelid mites","demodicosis","Demodex"],c:"eye",icd:"H01.00",g:"Overgrowth of Demodex mites on eyelashes",p:"Common, not rare: ~58% of eye-clinic patients in one large chart review; widely under-diagnosed",
+ w:"Mite overgrowth at the lash base causes itchy, red, crusted eyelids and lash loss",dx:"Collarettes (cylindrical dandruff) at the lash base on slit-lamp exam",tx:"Lotilaner eye drops for 6 weeks; lid hygiene; tea-tree products off-label",
+ sp:["Optometrist","Ophthalmologist"],rx:[["Lotilaner 0.25% (Xdemvy)","Tarsus Pharmaceuticals","A","US 2023; EU and China filings"],["TP-04 (ocular rosacea)","Tarsus Pharmaceuticals","2","Data 2027"]],o:["American Academy of Ophthalmology","American Optometric Association"],j:"chronic"},
 
 /* ---------- Developmental genetic syndromes ---------- */
 {n:"Williams syndrome",a:["Williams-Beuren syndrome","7q11.23 deletion"],c:"syndrome",icd:"Q93.82",g:"7q11.23 microdeletion",p:"~1 in 7,500–10,000",
@@ -543,4 +546,8 @@ window.DIRECTORY = [
 {n:"CHARGE syndrome",a:["CHARGE","CHD7"],c:"syndrome",icd:"Q87.89",g:"CHD7",p:"~1 in 10,000",
  w:"Eye coloboma, heart defects, choanal atresia, growth and ear differences",dx:"Clinical criteria, CHD7 testing",tx:"Multidisciplinary surgery and support",
  sp:["Geneticist","ENT","Cardiologist"],rx:[],o:["CHARGE Syndrome Foundation"]}
+/* ---------- Rare tumours ---------- */
+,{n:"Desmoid tumor",a:["desmoid","desmoid tumour","aggressive fibromatosis","desmoid-type fibromatosis","DTF"],c:"onc",icd:"D48.1",g:"CTNNB1 (sporadic) or APC (with FAP)",p:"~2–4 per million per year; mostly ages 15–60, more women",
+ w:"Locally aggressive soft-tissue tumour; doesn't spread but invades and causes pain",dx:"MRI, core biopsy with beta-catenin / CTNNB1 testing",tx:"Active surveillance first; gamma-secretase inhibitor, sorafenib or chemo if progressing; surgery rarely first",
+ sp:["Sarcoma specialist","Medical oncologist","Radiologist","Pain specialist"],rx:[["Nirogacestat (Ogsiveo)","Merck KGaA (SpringWorks)","A","US 2023, EU 2025"],["Varegacestat (AL102)","Immunome","F","FDA decision Apr 2027"],["Sorafenib","Bayer","A","Off-label, guideline-backed"]],o:["Desmoid Tumor Research Foundation","Sarcoma Patients EuroNet"]}
 ];
