@@ -88,7 +88,7 @@ h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
 /* 01 About */
 .about{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:22px}
 @media (max-width:900px){.about{grid-template-columns:minmax(0,1fr)}}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.tiles{display:grid;align-content:start;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
 .tile{display:flex;gap:10px;align-items:flex-start;background:var(--sunk);border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.4}
 .tile strong{display:block;font-size:12px;font-family:var(--mono);font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 .linklist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
@@ -191,6 +191,33 @@ ul.plain{list-style:none;margin:0;padding:0}
 .company .type{font:11px var(--mono);color:var(--muted)}
 .company p{margin:4px 0 0}
 .foot{color:var(--muted);font-size:12px;margin-top:20px;display:flex;gap:6px;align-items:center}
+/* search suggestions, directory, notes */
+.suggest{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px rgba(20,40,60,.14);list-style:none;margin:0;padding:6px;z-index:20;max-height:360px;overflow:auto;text-align:left}
+.suggest button{display:flex;width:100%;justify-content:space-between;align-items:center;gap:12px;padding:9px 12px;border:0;background:none;color:var(--ink);font:14.5px var(--body);border-radius:8px;text-align:left;cursor:pointer}
+.suggest button:hover,.suggest button[aria-selected="true"]{background:var(--sunk)}
+.suggest .cat{display:inline-flex;align-items:center;gap:5px;font:11px var(--mono);color:var(--muted);white-space:nowrap}
+.suggest .cat .i{width:13px;height:13px}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);font:500 14px var(--body);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.also{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-4px 0 14px}
+.also .label{margin-right:4px}
+.also .chip{font-size:13px;padding:4px 12px}
+.srcnote{display:flex;gap:8px;align-items:flex-start;background:var(--sunk);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--muted)}
+.srcnote .i{color:var(--q2);margin-top:1px}
+.srcnote b{color:var(--ink);font-weight:500}
+.empty{display:flex;gap:8px;align-items:center;color:var(--muted);margin:0;font-size:13.5px}
+.beyond a{background:var(--sunk);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;line-height:1.35;color:var(--ink)}
+.beyond a:hover{text-decoration:none;outline:1px solid var(--qc)}
+.beyond a .i{color:var(--qc)}.beyond a small{color:var(--muted)}.beyond a strong{font-size:13px}
+.mk.lg{display:inline-block;width:10px;height:10px;cursor:default}
+.dirgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;align-items:start}
+.dircat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;border-top:3px solid var(--qc);min-width:0}
+.dircat header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.dircat h2{font-size:17px}
+.dircat header .label{margin-left:auto}
+.dircat ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.dircat button{background:none;border:0;padding:5px 0;color:var(--ink);font:14px var(--body);cursor:pointer;text-align:left;width:100%;border-bottom:1px solid var(--line)}
+.dircat li:last-child button{border-bottom:0}
+.dircat button:hover{color:var(--accent)}
 @media (prefers-reduced-motion:no-preference){.quad,.wide{animation:rise .35s ease both}}
 @keyframes rise{from{transform:translateY(6px)}to{transform:none}}
 </style>
@@ -201,10 +228,12 @@ ul.plain{list-style:none;margin:0;padding:0}
     <div class="tag" id="homeTag"></div>
     <form class="search" id="homeForm" role="search">
       <span data-i="search"></span>
-      <input id="homeQ" type="search" placeholder="Search a rare disease, e.g. bronchiectasis" autocomplete="off" aria-label="Disease name">
+      <input id="homeQ" type="search" placeholder="Search a rare disease, e.g. bronchiectasis" autocomplete="off" aria-label="Disease name" role="combobox" aria-controls="homeSug" aria-expanded="false">
       <button type="submit">Search</button>
+      <ul class="suggest" id="homeSug" role="listbox" hidden></ul>
     </form>
     <div class="chips" id="homeChips"></div>
+    <button type="button" class="linkbtn" id="browseLink">Browse all diseases</button>
   </section>
 
   <section id="results" hidden>
@@ -212,14 +241,16 @@ ul.plain{list-style:none;margin:0;padding:0}
       <button class="brand" id="homeBtn" type="button">Rare<span>·</span>Desk</button>
       <form class="search" id="topForm" role="search">
         <span data-i="search"></span>
-        <input id="topQ" type="search" autocomplete="off" aria-label="Disease name">
+        <input id="topQ" type="search" autocomplete="off" aria-label="Disease name" role="combobox" aria-controls="topSug" aria-expanded="false">
         <button type="submit">Search</button>
+        <ul class="suggest" id="topSug" role="listbox" hidden></ul>
       </form>
     </div>
     <div id="out"></div>
   </section>
 </main>
 
+<script src="data/diseases.js"></script>
 <script>
 /* ===================== ICONS (inline, 24×24 stroke) ===================== */
 const ICONS = {
@@ -262,7 +293,15 @@ const ICONS = {
   device:'<rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 6h4M9 11h6M9 15h6"/>',
   happy:'<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>',
   neutral:'<circle cx="12" cy="12" r="10"/><path d="M8 15h8M9 9h.01M15 9h.01"/>',
-  sad:'<circle cx="12" cy="12" r="10"/><path d="M16 16.5s-1.5-2-4-2-4 2-4 2M9 9h.01M15 9h.01"/>'
+  sad:'<circle cx="12" cy="12" r="10"/><path d="M16 16.5s-1.5-2-4-2-4 2-4 2M9 9h.01M15 9h.01"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>',
+  eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+  drop:'<path d="M12 2.7 6.3 9a8 8 0 1 0 11.4 0Z"/>',
+  zap:'<path d="M13 2 3 14h9l-1 8 10-12h-9Z"/>',
+  bone:'<path d="M17 10c.7-.7 1.6-.7 2.5-.7a2.5 2.5 0 1 0-2.4-3.4A2.5 2.5 0 1 0 13.6 5c0 .9 0 1.8-.7 2.5L7.5 13c-.7.7-1.6.7-2.5.7a2.5 2.5 0 1 0 2.4 3.4 2.5 2.5 0 1 0 3.5 2.4c0-.9 0-1.8.7-2.5Z"/>',
+  kidney:'<path d="M15 3c-4.5 0-9 3.5-9 9s4.5 9 9 9c2.5 0 3.5-1.7 2.6-3.6-.8-1.6-2.6-2.6-2.6-5.4s1.8-3.8 2.6-5.4C18.5 4.7 17.5 3 15 3Z"/>',
+  flame:'<path d="M12 22c4 0 7-3 7-7 0-5-5-7-5-13-3 2-5 5-5 8-1-1-2-2-2-4-2 2-2 5-2 9 0 4 3 7 7 7Z"/>',
+  liver:'<path d="M3 8c0-3 3-4 8-4s10 1 10 5-5 11-9 11C7 20 3 13 3 8Z"/><path d="M12 4v9"/>'
 };
 const ic = (n,cls="") => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||ICONS.target}</svg>`;
 document.querySelectorAll("[data-i]").forEach(el=>el.outerHTML=ic(el.dataset.i));
@@ -271,7 +310,7 @@ document.querySelectorAll("[data-i]").forEach(el=>el.outerHTML=ic(el.dataset.i))
    One entry per curated disease. Content reviewed October 2026; verify before citing. */
 const DISEASES = {
   bronchiectasis: {
-    name: "Bronchiectasis",
+    name: "Bronchiectasis", cat: "lung", profile: "curated",
     aka: "Non-cystic fibrosis bronchiectasis (NCFB)",
     aliases: ["bronchiectasis","ncfb","non-cf bronchiectasis","non cystic fibrosis bronchiectasis"],
     codes: [["ICD-10","J47"],["ICD-11","CA24"]],
@@ -374,45 +413,249 @@ const DISEASES = {
   }
 };
 
-/* ===================== SEARCH ===================== */
+/* ===================== CATEGORIES & JOURNEY TEMPLATES ===================== */
+const CATS = {
+  immuno:{l:"Immune deficiency",i:"shield",j:"immune"},
+  inflam:{l:"Autoinflammatory & rheumatic",i:"flame",j:"chronic"},
+  metabolic:{l:"Inherited metabolic",i:"flask",j:"genetic"},
+  nmd:{l:"Neuromuscular",i:"activity",j:"genetic"},
+  neuro:{l:"Neurological & epilepsy",i:"zap",j:"genetic"},
+  blood:{l:"Blood & bleeding",i:"drop",j:"chronic"},
+  lung:{l:"Lung",i:"wind",j:"chronic"},
+  kidney:{l:"Kidney",i:"kidney",j:"chronic"},
+  endo:{l:"Endocrine, bone & growth",i:"bone",j:"genetic"},
+  skin:{l:"Skin & connective tissue",i:"layers",j:"genetic"},
+  heart:{l:"Heart & vascular",i:"heart",j:"chronic"},
+  liver:{l:"Liver & gut",i:"liver",j:"chronic"},
+  eye:{l:"Eye",i:"eye",j:"genetic"},
+  syndrome:{l:"Developmental syndromes",i:"dna",j:"genetic"}
+};
+
+const JOURNEYS = {
+  genetic:{label:"early-onset genetic conditions", stages:[
+    {n:"Early signs",i:"activity",t:"Birth–childhood",d:["First symptoms appear","Often subtle or non-specific"],f:2,w:"Worried",q:"“Something isn't right.”",p:"Signs missed or normalised"},
+    {n:"Paediatrician / GP",i:"steth",t:"Months–years",d:["Many visits","Referrals between specialties"],f:1,w:"Frustrated",q:"“Nobody has answers.”",p:"Diagnostic odyssey"},
+    {n:"Genetic diagnosis",i:"dna",t:"Weeks–months",d:["Genetic / biochemical tests","Genetic counselling"],f:3,w:"Relieved",q:"“At last, a name.”",p:"Test access & turnaround"},
+    {n:"Expert centre",i:"hospital",t:"Ongoing",d:["Multidisciplinary team","Care plan agreed"],f:4,w:"Hopeful",q:"“People who know this disease.”",p:"Travel to distant centres"},
+    {n:"Treatment",i:"pill",t:"Lifelong",d:["Therapy if available","Symptom management"],f:3,w:"Adjusting",q:"“Treatment is part of life.”",p:"Cost & payer approval"},
+    {n:"Adult care",i:"route",t:"Teens → adult",d:["Move to adult services","Self-management"],f:2,w:"Uncertain",q:"“Who looks after me now?”",p:"Few adult specialists"}],
+   who:(lead,others)=>[
+    ["patient","Patient & family","user","LLLLLL","Lives every stage; often coordinates care"],
+    ["care","Paediatrician / GP","steth","LLS.SS","First contact; spots red flags and refers"],
+    ["care",lead,"hospital","..LLLL","Leads diagnosis and long-term care"],
+    ...(others?[["care",others,"users","...LSL","Manage organ-specific complications"]]:[]),
+    ["dx","Genetics & counselling","dna","..LS.S","Confirms diagnosis; family testing"],
+    ["dx","Labs & screening","flask",".SL...","Biochemical, genetic and newborn screening"],
+    ["care","Nurses & therapists","heart","...SLL","Daily care, therapy, school support"],
+    ["sys","Payers & HTA","coins","..S.LS","Fund testing, therapy and home care"],
+    ["sys","Pharma & biotech","building","..S.LS","Therapies, trials, patient support"],
+    ["sys","Patient organisations","users","SSSSSL","Information, peer support, advocacy"]]},
+  immune:{label:"inborn errors of immunity", stages:[
+    {n:"Repeated infections",i:"bug",t:"Months–years",d:["Ear, chest, sinus infections","Slow to clear"],f:2,w:"Worried",q:"“Why always sick?”",p:"Infections treated one by one"},
+    {n:"GP / paediatrician",i:"steth",t:"Often years",d:["Repeated antibiotics","Few immune tests"],f:1,w:"Frustrated",q:"“Another course of antibiotics.”",p:"Warning signs missed"},
+    {n:"Immunology referral",i:"hospital",t:"Weeks–months",d:["Specialist assessment","Family history"],f:3,w:"Hopeful",q:"“Someone is listening.”",p:"Few immunologists, long waits"},
+    {n:"Tests & diagnosis",i:"flask",t:"Weeks",d:["Immunoglobulins, lymphocytes","Genetic testing"],f:3,w:"Relieved",q:"“There's a reason.”",p:"Genetic tests not always funded"},
+    {n:"Treatment start",i:"pill",t:"Weeks",d:["Ig replacement or prophylaxis","Transplant / gene therapy if severe"],f:4,w:"Protected",q:"“Fewer infections now.”",p:"Payer approval & supply"},
+    {n:"Lifelong care",i:"activity",t:"Lifelong",d:["Regular infusions","Monitor complications"],f:3,w:"Adjusting",q:"“Infusions are routine.”",p:"Infusion burden & cost"}],
+   who:(lead,others)=>[
+    ["patient","Patient & family","user","LLLLLL","Lives every stage; tracks infections"],
+    ["care","GP / paediatrician","steth","LLS.SS","Treats infections; decides when to refer"],
+    ["care",lead,"shield","..LLLL","Diagnoses and leads lifelong care"],
+    ...(others?[["care",others,"users","...SSL","Treat organ complications"]]:[]),
+    ["dx","Immunology lab & genetics","flask",".SSL.S","Ig levels, flow cytometry, genetic tests"],
+    ["care","Infusion nurse / home care","heart","....LL","Ig infusions, training, monitoring"],
+    ["care","Transplant / gene therapy centre","hospital","...SL.","Curative options for severe forms"],
+    ["sys","Payers & HTA","coins","...SLS","Approve Ig, transplant, gene therapy"],
+    ["sys","Pharma & plasma companies","building","....LL","Ig supply and new therapies"],
+    ["sys","Patient organisations","users","S.SSSL","Awareness of warning signs, support"]]},
+  chronic:{label:"rare chronic conditions", stages:[
+    {n:"Symptoms",i:"activity",t:"Months–years",d:["Symptoms appear","Vague or on-and-off"],f:2,w:"Worried",q:"“Something's wrong.”",p:"Symptoms dismissed"},
+    {n:"Primary care",i:"steth",t:"Often years",d:["Common causes ruled out","Treated as something else"],f:1,w:"Frustrated",q:"“Nobody connects the dots.”",p:"Misdiagnosis, late referral"},
+    {n:"Specialist referral",i:"hospital",t:"Weeks–months",d:["Specialist review","Rare disease suspected"],f:3,w:"Hopeful",q:"“Finally, an expert.”",p:"Waits and travel"},
+    {n:"Diagnosis",i:"scan",t:"Weeks",d:["Confirmatory tests","Disease named"],f:3,w:"Relieved",q:"“It has a name.”",p:"Tests not available locally"},
+    {n:"Treatment",i:"pill",t:"Months",d:["Therapy started","Payer approval"],f:3,w:"Cautious",q:"“Will this work for me?”",p:"Cost & prior authorisation"},
+    {n:"Long-term care",i:"heart",t:"Lifelong",d:["Monitoring, flares","Living with the disease"],f:3,w:"Adjusting",q:"“Learning to live with it.”",p:"Fragmented care"}],
+   who:(lead,others)=>[
+    ["patient","Patient & family","user","LLLLLL","Lives every stage; self-manages"],
+    ["care","GP / primary care","steth","SLS.SS","First contact; decides when to refer"],
+    ["care",lead,"hospital",".SLLLL","Confirms diagnosis, leads treatment"],
+    ...(others?[["care",others,"users","...SSL","Manage organ-specific complications"]]:[]),
+    ["dx","Labs & imaging","scan",".SSL.S","Confirmatory tests and monitoring"],
+    ["care","Nurses & allied health","heart","....LL","Education, rehab, self-management"],
+    ["care","Pharmacist","pill","....LS","Dispensing, safety, adherence"],
+    ["sys","Payers & HTA","coins","....LS","Approve and fund therapy"],
+    ["sys","Pharma & biotech","building","S...LS","Therapies, trials, awareness"],
+    ["sys","Patient organisations","users","S.S.SL","Information, peer support, advocacy"]]}
+};
+
+const GAPS = {
+  delay:["clock","Diagnostic delay","Years and several doctors before the right diagnosis","high",["Primary care","Specialists"]],
+  notx:["pill","No approved therapy","Care is supportive or off-label","high",["Pharma","Regulators"]],
+  cost:["coins","Cost & reimbursement","High-cost therapies face payer hurdles","high",["Payers","HTA"]],
+  awareness:["bulb","Low awareness","Warning signs missed in primary care","high",["Primary care","Patient orgs"]],
+  nbs:["target","Newborn screening gaps","Not screened everywhere, so diagnosis comes late","high",["Public health","Policy"]],
+  gene:["dna","Genetic testing access","Testing not universally funded","med",["Payers","Labs"]],
+  experts:["hospital","Few specialist centres","Expertise concentrated in a few hospitals","med",["Health systems"]],
+  transition:["route","Child → adult care","Few adult specialists for childhood-onset disease","med",["Health systems"]],
+  carer:["users","Caregiver burden","Families carry heavy daily care","med",["Social care","Patient orgs"]],
+  lifelong:["activity","Lifelong treatment burden","Ongoing infusions and monitoring","med",["Care team","Pharma"]],
+  data:["db","Limited natural-history data","Small populations make trials hard","med",["Researchers","Registries"]],
+  equity:["globe","Global access gap","Therapies rarely reach low/middle-income countries","low",["Pharma","Global health"]]
+};
+const ARCH_GAPS = {genetic:["delay","gene","transition","carer"], immune:["delay","awareness","experts","lifelong"], chronic:["delay","experts","data","equity"]};
+
+/* ===================== SEARCH INDEX ===================== */
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const norm = s => s.toLowerCase().replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+const slug = s => norm(s).replace(/ /g,"-");
 function lev(a,b){ // edit distance, so typos like "brochiactasis" still match
+  if(Math.abs(a.length-b.length)>4) return 99;
   const d = Array.from({length:a.length+1},(_,i)=>[i]);
   for(let j=1;j<=b.length;j++) d[0][j]=j;
   for(let i=1;i<=a.length;i++) for(let j=1;j<=b.length;j++)
     d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
   return d[a.length][b.length];
 }
-function find(q){
-  const n = norm(q); let best=null, bestD=Infinity;
-  for(const [key,d] of Object.entries(DISEASES)) for(const a of d.aliases.map(norm)){
-    if(a===n || (n.length>3 && a.includes(n))) return {key,exact:true};
-    const dist = lev(n,a); if(dist<bestD){bestD=dist;best=key;}
+const DIR = window.DIRECTORY || [];
+const INDEX = [
+  ...Object.entries(DISEASES).map(([k,d])=>({kind:"cur",key:k,name:d.name,cat:d.cat,terms:[d.name,...d.aliases].map(norm)})),
+  ...DIR.map((e,i)=>({kind:"dir",key:i,name:e.n,cat:e.c,terms:[e.n,...(e.a||[])].map(norm)}))
+];
+function score(item,n){
+  let best=0;
+  for(const t of item.terms){
+    if(t===n) return 100;
+    const words=t.split(" ");
+    if(t.startsWith(n) && n.length>=2) best=Math.max(best, n.length>=4?85:75);
+    else if(words.some(w=>w.startsWith(n)) && n.length>=3) best=Math.max(best,70);
+    else if(n.length>=5 && t.includes(n)) best=Math.max(best,62);
+    else if(t.length>=4 && (" "+n+" ").includes(" "+t+" ")) best=Math.max(best,72);
+    if(best<60 && t.length>4 && n.length>4){ const d=lev(n,t); if(d<=Math.max(2,Math.floor(t.length*.25))) best=Math.max(best,50-d); }
   }
-  return bestD <= Math.max(2, Math.floor(n.length*0.25)) ? {key:best,exact:false} : null;
+  return best;
+}
+function rank(q){
+  const n=norm(q); if(!n) return [];
+  return INDEX.map(it=>({it,s:score(it,n)})).filter(x=>x.s>=40).sort((a,b)=>b.s-a.s||a.it.name.localeCompare(b.it.name));
 }
 
+/* ===================== SEARCH UI ===================== */
 $("#homeTag").innerHTML = [["file","Disease"],["route","Journey"],["coins","Access"],["bulb","Innovation"]].map(([i,t])=>`<span>${ic(i)}${t}</span>`).join("");
-const SUGGEST = ["Bronchiectasis","Primary ciliary dyskinesia","Idiopathic pulmonary fibrosis","Spinal muscular atrophy"];
-$("#homeChips").innerHTML = SUGGEST.map(s=>`<button class="chip" type="button" data-q="${esc(s)}">${esc(s)}${DISEASES[norm(s)]?'<small>curated</small>':''}</button>`).join("");
+const SUGGEST = ["Bronchiectasis","Hereditary angioedema","Spinal muscular atrophy","Fabry disease","Sickle cell disease"];
+$("#homeChips").innerHTML = SUGGEST.map(s=>`<button class="chip" type="button" data-q="${esc(s)}">${esc(s)}</button>`).join("");
 $("#homeChips").addEventListener("click",e=>{const b=e.target.closest(".chip"); if(b) go(b.dataset.q);});
-$("#homeForm").addEventListener("submit",e=>{e.preventDefault(); go($("#homeQ").value);});
-$("#topForm").addEventListener("submit",e=>{e.preventDefault(); go($("#topQ").value);});
-$("#homeBtn").addEventListener("click",()=>{ $("#results").hidden=true; $("#home").hidden=false; $("#homeQ").value=""; $("#homeQ").focus(); try{history.replaceState(null,"",location.pathname)}catch(_){} });
-$("#out").addEventListener("click",e=>{ // in-page jump links without touching the URL hash
-  const a=e.target.closest("a[data-jump]"); if(!a) return; e.preventDefault();
-  document.getElementById(a.dataset.jump)?.scrollIntoView({behavior:"smooth"});
+$("#browseLink").textContent = `Browse all ${INDEX.length} diseases`;
+$("#browseLink").addEventListener("click",()=>showDirectory());
+$("#homeBtn").addEventListener("click",()=>{ $("#results").hidden=true; $("#home").hidden=false; $("#homeQ").value=""; $("#homeQ").focus(); setHash(""); });
+
+function wireSearch(form,input,list){
+  let sel=-1, items=[];
+  const close=()=>{list.hidden=true; list.innerHTML=""; items=[]; sel=-1; input.setAttribute("aria-expanded","false");};
+  const paint=()=>list.querySelectorAll("button").forEach((b,i)=>b.setAttribute("aria-selected",i===sel));
+  input.addEventListener("input",()=>{
+    items=rank(input.value).slice(0,8);
+    if(!items.length){ close(); return; }
+    list.innerHTML=items.map(({it})=>`<li><button type="button" tabindex="-1" data-k="${it.kind}:${it.key}">${esc(it.name)}<span class="cat">${ic(CATS[it.cat]?.i||"target")}${esc(CATS[it.cat]?.l||"")}</span></button></li>`).join("");
+    list.hidden=false; sel=-1; input.setAttribute("aria-expanded","true");
+  });
+  input.addEventListener("keydown",e=>{
+    if(list.hidden) return;
+    if(e.key==="ArrowDown"){e.preventDefault(); sel=Math.min(sel+1,items.length-1); paint();}
+    else if(e.key==="ArrowUp"){e.preventDefault(); sel=Math.max(sel-1,-1); paint();}
+    else if(e.key==="Escape"){close();}
+  });
+  list.addEventListener("mousedown",e=>e.preventDefault()); // keep focus so click registers
+  list.addEventListener("click",e=>{const b=e.target.closest("button[data-k]"); if(b){close(); openItem(b.dataset.k);}});
+  input.addEventListener("blur",()=>setTimeout(close,100));
+  form.addEventListener("submit",e=>{e.preventDefault(); if(sel>=0&&items[sel]){const it=items[sel].it; close(); openItem(it.kind+":"+it.key);} else {close(); go(input.value);} });
+}
+wireSearch($("#homeForm"),$("#homeQ"),$("#homeSug"));
+wireSearch($("#topForm"),$("#topQ"),$("#topSug"));
+
+$("#out").addEventListener("click",e=>{
+  const a=e.target.closest("a[data-jump]"); if(a){ e.preventDefault(); document.getElementById(a.dataset.jump)?.scrollIntoView({behavior:"smooth"}); return; }
+  const b=e.target.closest("[data-open]"); if(b){ e.preventDefault(); openItem(b.dataset.open); }
 });
+
+function setHash(h){ try{ history.replaceState(null,"",h?"#"+h:location.pathname+location.search) }catch(_){} }
+function showResults(){ $("#home").hidden=true; $("#results").hidden=false; window.scrollTo(0,0); }
 
 function go(q){
   q=(q||"").trim(); if(!q) return;
-  $("#home").hidden=true; $("#results").hidden=false; $("#topQ").value=q;
-  const hit=find(q);
-  $("#out").innerHTML = hit ? renderCurated(DISEASES[hit.key], hit.exact?null:q) : renderGeneric(q);
-  try{ history.replaceState(null,"","#"+(hit?hit.key:"")) }catch(_){}
-  window.scrollTo(0,0);
+  const r=rank(q);
+  if(!r.length){ showResults(); $("#topQ").value=q; $("#out").innerHTML=renderGeneric(q); setHash(""); return; }
+  const top=r[0].it, also=r.slice(1).filter(x=>x.s>=60).slice(0,6).map(x=>x.it);
+  openItem(top.kind+":"+top.key, top.terms.includes(norm(q))?null:q, also);
+}
+function openItem(k, typed=null, also=[]){
+  const [kind,key]=k.split(":");
+  const d = kind==="cur" ? DISEASES[key] : fromDirectory(DIR[+key]);
+  if(!d) return;
+  showResults(); $("#topQ").value=d.name;
+  $("#out").innerHTML = renderProfile(d, typed, also);
+  setHash(slug(d.name));
+}
+
+/* ===================== DIRECTORY → PROFILE ===================== */
+const PH = {A:3,F:2.6,"3":2,"2":1,"1":0};
+const PHL = {A:"Approved",F:"Filed",["3"]:"Phase 3",["2"]:"Phase 2",["1"]:"Early"};
+const NONCO = /centres|^various$|^generic$|consortia|academic/i;
+
+function fromDirectory(e){
+  const cat=CATS[e.c]||{l:"Rare disease",i:"target",j:"chronic"};
+  const arch=e.j||cat.j, J=JOURNEYS[arch];
+  const lead=e.sp?.[0]||"Specialist", others=(e.sp||[]).slice(1).join(" · ");
+  const rx=e.rx||[], approved=rx.filter(r=>r[2]==="A");
+  const enc=encodeURIComponent(e.n);
+  const gk=[...(approved.length?["cost"]:["notx"]), ...ARCH_GAPS[arch], ...(e.gx||[])];
+  const gaps=[...new Set(gk)].map(k=>GAPS[k]).sort((a,b)=>({high:0,med:1,low:2}[a[3]]-{high:0,med:1,low:2}[b[3]]));
+
+  // one card per company, listing its therapies
+  const cos=new Map();
+  for(const [drug,cs,st] of rx) for(let c of cs.split(" · ")){
+    c=c.replace(/ and biosimilars$| and others$/,"").trim(); if(NONCO.test(c)) continue;
+    const m=cos.get(c)||{drugs:[],a:false}; m.drugs.push(drug.replace(/ \(.*\)$/,"")); m.a=m.a||st==="A"; cos.set(c,m);
+  }
+  const companies=[...cos].map(([c,m])=>["building",c,m.a?"Marketed therapy":"Pipeline",m.a?"Has an approved therapy":"Developing a therapy",m.drugs.slice(0,3)]);
+  for(const o of (e.o||[])) companies.push(["users",o,"Patient organisation","Support, advocacy, research funding",["Awareness","Caregiver burden"]]);
+
+  return {
+    name:e.n, cat:e.c, profile:"directory", journeyLabel:J.label,
+    aka:(e.a||[]).join(" · "),
+    codes:[...(e.icd?[["ICD-10",e.icd]]:[]),["Type",cat.l]],
+    quick:[[cat.i,"What",e.w],["dna","Cause",e.g],["users","How many",e.p],["scan","Diagnose",e.dx],["pill","Treat",e.tx],["steth","Specialists",(e.sp||[]).join(" · ")]],
+    read:[
+      ["book","Disease summary","Orphanet","https://www.orpha.net/en/disease/search?search="+enc],
+      ["book","Patient overview","NIH GARD","https://rarediseases.info.nih.gov/search?term="+enc],
+      ["users","Rare disease report","NORD","https://rarediseases.org/?s="+enc],
+      ...(arch!=="chronic"?[["dna","Clinical genetics review","GeneReviews","https://www.ncbi.nlm.nih.gov/books/NBK1116/?term="+enc]]:[]),
+      ["file","Latest reviews","PubMed","https://pubmed.ncbi.nlm.nih.gov/?term="+enc+"&filter=pubt.review&sort=date"],
+      ["file","Guidelines","PubMed","https://pubmed.ncbi.nlm.nih.gov/?term="+enc+"&filter=pubt.guideline"]],
+    watch:[
+      [e.n+" explained","YouTube","https://www.youtube.com/results?search_query="+enc+"+explained"],
+      ["Patient & family stories","YouTube","https://www.youtube.com/results?search_query="+enc+"+patient+story"],
+      ["Treatment & research updates","YouTube","https://www.youtube.com/results?search_query="+enc+"+treatment+update"],
+      ["Conference talks","YouTube","https://www.youtube.com/results?search_query="+enc+"+grand+rounds"]],
+    stages:J.stages,
+    stakeholders:J.who(lead,others),
+    influence:[
+      ["landmark","Regulators","Approval & label","All eligible patients",approved.length?`${approved.length} approved option${approved.length>1?"s":""} listed`:"No approved therapy yet"],
+      ["scale","HTA bodies","Value assessment","Publicly insured","Decide national funding"],
+      ["coins","Payers","Coverage & prior auth","Insured patients",approved.length?"High-cost therapy needs justification":"Cover tests and supportive care"],
+      ["hospital",lead+"s","Diagnosis & referral","Referred patients","Expertise in few centres"],
+      ...(arch!=="chronic"?[["dna","Genetic testing policy","Test funding","Families","Diagnosis unlocks therapy & trials"]]:[]),
+      ...((e.gx||[]).includes("nbs")?[["target","Newborn screening","Who is screened","Newborns","Early treatment changes outcomes"]]:[]),
+      ["users",(e.o||["Patient organisations"])[0],"Advocacy & registries","Families","Shape HTA input and research"]],
+    reality:gaps.slice(0,4).map(g=>g[1]+": "+g[2].charAt(0).toLowerCase()+g[2].slice(1)),
+    pipeline:rx.slice(0,8).map(([n,c,st,note])=>[n,c.split(" · ")[0],PH[st]??0,(PHL[st]||"")+(note?" · "+note:"")]),
+    beyond:[
+      ["flask","Recruiting trials","ClinicalTrials.gov","Find active studies","https://clinicaltrials.gov/search?cond="+enc+"&aggFilters=status:rec"],
+      ["db","Registries","Search","Real-world data, natural history","https://www.google.com/search?q="+enc+"+patient+registry"],
+      ["bulb","Research news","PubMed · last 2 yrs","Newest publications","https://pubmed.ncbi.nlm.nih.gov/?term="+enc+"&filter=datesearch.y_2"]],
+    gaps,
+    companies
+  };
 }
 
 /* ===================== RENDER ===================== */
@@ -426,8 +669,9 @@ function journeyMap(d){
   const pts=S.map((s,i)=>`${pct(i)},${y(s.f)}`).join(" ");
   const groups={patient:"Patient",care:"Care team",dx:"Diagnostics & specialists",sys:"System & industry"};
   let rows="", last=null;
-  for(const [g,name,icon,map,role] of d.stakeholders){
-    if(g!==last){ rows+=`<div class="grp g-${g}">${groups[g]}${last===null?`<span class="legend"><span><i class="mk L g-${g}" style="display:inline-block;width:10px;height:10px;cursor:default"></i>Leads</span><span><i class="mk S g-${g}" style="display:inline-block;width:10px;height:10px;cursor:default"></i>Supports</span></span>`:""}</div>`; last=g; }
+  const order={patient:0,care:1,dx:2,sys:3};
+  for(const [g,name,icon,map,role] of [...d.stakeholders].sort((a,b)=>order[a[0]]-order[b[0]])){
+    if(g!==last){ rows+=`<div class="grp g-${g}">${groups[g]}${last===null?`<span class="legend"><span><i class="mk L g-${g} lg"></i>Leads</span><span><i class="mk S g-${g} lg"></i>Supports</span></span>`:""}</div>`; last=g; }
     const on=[...map].map(c=>c!=="."); const first=on.indexOf(true), lastOn=on.lastIndexOf(true);
     rows+=`<div class="rl who g-${g}" title="${esc(role)}">${ic(icon)}${esc(name)}</div>`;
     rows+=[...map].map((c,i)=>{
@@ -455,14 +699,17 @@ function journeyMap(d){
   </div></div>`;
 }
 
-function renderCurated(d, typed){
+function renderProfile(d, typed, also=[]){
   const jumps=[["q1","01","About"],["q2","02","Journey"],["q3","03","Access"],["q4","04","Innovations"],["gaps","!","Gaps"],["cos","→","Companies"]];
+  const dirNote = d.profile==="directory"
+    ? `<div class="srcnote">${ic("route")}<span>Journey and stakeholder map show the typical path for <b>${esc(d.journeyLabel)}</b>. Disease facts and therapies are specific to ${esc(d.name)}.</span></div>` : "";
   return `
   ${typed?`<div class="notice">${ic("search")}Showing <b>${esc(d.name)}</b> for “${esc(typed)}”</div>`:""}
   <div class="head">
-    <div><div class="label">Disease profile</div><h1>${esc(d.name)}</h1><div class="aka">${esc(d.aka)}</div></div>
+    <div><div class="label">${d.profile==="directory"?"Directory profile":"In-depth profile"}</div><h1>${esc(d.name)}</h1>${d.aka?`<div class="aka">${esc(d.aka)}</div>`:""}</div>
     <div class="codes">${d.codes.map(([k,v])=>`<span class="code">${esc(k)} <b>${esc(v)}</b></span>`).join("")}</div>
   </div>
+  ${also.length?`<div class="also"><span class="label">Also matching</span>${also.map(it=>`<button class="chip" type="button" data-open="${it.kind}:${it.key}">${esc(it.name)}</button>`).join("")}</div>`:""}
   <nav class="jump">${jumps.map(([id,n,t],i)=>`<a href="#" data-jump="${id}" data-q="${Math.min(i+1,4)}"><b>${n}</b>${t}</a>`).join("")}</nav>
 
   <div class="board">
@@ -481,6 +728,7 @@ function renderCurated(d, typed){
 
     <article class="quad full" data-q="2" id="q2">
       ${qhead("02","Patient journey &amp; stakeholders",`<span class="label">Who is involved, when, and how it feels</span>`)}
+      ${dirNote}
       ${journeyMap(d)}
     </article>
 
@@ -494,13 +742,13 @@ function renderCurated(d, typed){
 
     <article class="quad" data-q="4" id="q4">
       ${qhead("04","Innovations")}
-      <div class="sec"><h3>${ic("pill")}Drug pipeline</h3>
-        <div class="pipe">
+      <div class="sec"><h3>${ic("pill")}Therapies &amp; pipeline</h3>
+        ${d.pipeline.length?`<div class="pipe">
           <div></div>${["Research","Ph 2","Ph 3","Approved"].map(p=>`<div class="ph">${p}</div>`).join("")}
-          ${d.pipeline.map(([n,c,ph,note])=>{const end=(ph+.5)/4*100;return `<div class="nm"><strong>${esc(n)}</strong><small>${esc(c)} · ${esc(note)}</small></div><div class="bar" title="${esc(n)}: ${["Research","Phase 2","Phase 3","Approved"][ph]}"><span class="fill" style="width:${end-4}%"></span><span class="end ${ph===3?"ok":""}" style="left:${end}%"></span></div>`}).join("")}
-        </div></div>
+          ${d.pipeline.map(([n,c,ph,note])=>{const end=(ph+.5)/4*100;return `<div class="nm"><strong>${esc(n)}</strong><small>${esc(c)} · ${esc(note)}</small></div><div class="bar"><span class="fill" style="width:${end-4}%"></span><span class="end ${ph===3?"ok":""}" style="left:${end}%"></span></div>`}).join("")}
+        </div>`:`<p class="empty">${ic("alert")}No approved therapy or late-stage candidate listed yet. Check recruiting trials below.</p>`}</div>
       <div class="sec"><h3>${ic("bulb")}Beyond drugs</h3>
-        <div class="beyond">${d.beyond.map(([i,t,w,v])=>`<div>${ic(i)}<strong>${esc(t)}</strong><span>${esc(v)}</span><small>${esc(w)}</small></div>`).join("")}</div></div>
+        <div class="beyond">${d.beyond.map(([i,t,w,v,u])=>u?`<a ${ext(u)}>${ic(i)}<strong>${esc(t)}</strong><span>${esc(v)}</span><small>${esc(w)}</small></a>`:`<div>${ic(i)}<strong>${esc(t)}</strong><span>${esc(v)}</span><small>${esc(w)}</small></div>`).join("")}</div></div>
     </article>
   </div>
 
@@ -510,18 +758,31 @@ function renderCurated(d, typed){
   </section>
 
   <section class="wide" id="cos">
-    <header><h2>Who is working on these gaps</h2><span class="label">Companies &amp; networks</span></header>
-    <div class="co">${d.companies.map(([i,n,t,w,g])=>`<div class="company"><span class="ico">${ic(i)}</span><div><strong>${esc(n)}</strong><span class="type">${esc(t)}</span><p>${esc(w)}</p><div class="mini">${g.map(x=>`<span>${esc(x)}</span>`).join("")}</div></div></div>`).join("")}</div>
+    <header><h2>Who is working on these gaps</h2><span class="label">Companies &amp; organisations</span></header>
+    ${d.companies.length?`<div class="co">${d.companies.map(([i,n,t,w,g])=>`<div class="company"><span class="ico">${ic(i)}</span><div><strong>${esc(n)}</strong><span class="type">${esc(t)}</span><p>${esc(w)}</p><div class="mini">${g.map(x=>`<span>${esc(x)}</span>`).join("")}</div></div></div>`).join("")}</div>`:`<p class="empty">No companies listed yet.</p>`}
   </section>
 
-  <p class="foot">${ic("clock")}Curated October 2026. Pipeline status changes fast; confirm before citing. Not medical advice.</p>`;
+  <p class="foot">${ic("clock")}Reviewed October 2026. Approval status is US FDA unless noted and changes fast; confirm before citing. Not medical advice.</p>`;
+}
+
+function showDirectory(){
+  showResults(); $("#topQ").value="";
+  const by={}; for(const it of INDEX) (by[it.cat]=by[it.cat]||[]).push(it);
+  $("#out").innerHTML=`
+  <div class="head"><div><div class="label">Directory</div><h1>${INDEX.length} rare diseases</h1><div class="aka">Search by name, abbreviation or gene-related name. Pick a category to scan.</div></div></div>
+  <div class="dirgrid">${Object.entries(CATS).filter(([k])=>by[k]).map(([k,c])=>`
+    <section class="dircat" style="--qc:var(--q${{immuno:1,inflam:4,metabolic:2,nmd:3,neuro:2,blood:4,lung:1,kidney:3,endo:1,skin:4,heart:4,liver:3,eye:1,syndrome:2}[k]})">
+      <header><span class="ico">${ic(c.i)}</span><h2>${esc(c.l)}</h2><span class="label">${by[k].length}</span></header>
+      <ul>${by[k].sort((a,b)=>a.name.localeCompare(b.name)).map(it=>`<li><button type="button" data-open="${it.kind}:${it.key}">${esc(it.name)}</button></li>`).join("")}</ul>
+    </section>`).join("")}</div>`;
+  setHash("directory");
 }
 
 function renderGeneric(q){
   const e=encodeURIComponent(q);
   const L=(i,t,s,u)=>`<li><a ${ext(u)}><span class="ico">${ic(i)}</span><span class="t">${esc(t)}<small>${esc(s)}</small></span>${ic("ext","go")}</a></li>`;
   return `
-  <div class="notice">${ic("search")}No curated profile for “${esc(q)}” yet. Live research links below.</div>
+  <div class="notice">${ic("search")}“${esc(q)}” isn't in the directory yet. Live research links below, or <button type="button" class="linkbtn" id="toDir">browse the directory</button>.</div>
   <div class="head"><div><div class="label">Quick research</div><h1>${esc(q)}</h1></div></div>
   <div class="board">
     <article class="quad" data-q="1">${qhead("01","About the disease")}<ul class="linklist">
@@ -545,7 +806,15 @@ function renderGeneric(q){
     ${L("target","Unmet-need literature","PubMed","https://pubmed.ncbi.nlm.nih.gov/?term="+e+"+unmet+need")}
     ${L("building","Industry-sponsored trials","ClinicalTrials.gov","https://clinicaltrials.gov/search?cond="+e+"&aggFilters=funderType:industry")}</ul></section>`;
 }
+document.addEventListener("click",e=>{ if(e.target.id==="toDir") showDirectory(); });
 
-/* deep link: #bronchiectasis */
-if(location.hash.length>1) go(decodeURIComponent(location.hash.slice(1)));
+/* deep links: #bronchiectasis, #fabry-disease, #directory */
+function fromHash(){
+  const h=decodeURIComponent(location.hash.slice(1)); if(!h) return;
+  if(h==="directory") return showDirectory();
+  const it=INDEX.find(x=>slug(x.name)===h);
+  it ? openItem(it.kind+":"+it.key) : go(h.replace(/-/g," "));
+}
+fromHash();
+window.addEventListener("hashchange",fromHash);
 </script>
