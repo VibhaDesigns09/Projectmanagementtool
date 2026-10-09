@@ -9,6 +9,7 @@
   --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif; --body:"Figtree",ui-sans-serif,system-ui,sans-serif;
   color-scheme:dark;
 }
+[hidden]{display:none!important}
 html,body{min-height:100%}
 body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-deep) 80%) fixed;background-color:var(--felt-deep);color:var(--ink);font-family:var(--body);font-size:15px}
 .wrap{max-width:920px;margin:0 auto;padding-block:16px 32px;padding-inline:16px;display:flex;flex-direction:column;gap:18px}
@@ -118,7 +119,7 @@ function newRound(){
 }
 function log(t){S.log.unshift(t);S.log=S.log.slice(0,7)}
 function publicSee(c){if(c)S.players.forEach(p=>p.mem.add(c.id))}
-function top(){return S.discard[S.discard.length-1]}
+function topCard(){return S.discard[S.discard.length-1]}
 function draw(){
   if(!S.deck.length){const t=S.discard.pop();S.deck=shuffle(S.discard);S.discard=[t];log('Deck reshuffled.')}
   return S.deck.pop()||null;
@@ -143,7 +144,7 @@ function openWindow(){
   render(); const bar=$('bari'); bar.style.transition='none'; bar.style.width='100%';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{bar.style.transition=`width ${len}ms linear`;bar.style.width='0%'}));
   for(let b=1;b<4;b++){
-    const t=top(); if(!t)break;
+    const t=topCard(); if(!t)break;
     const own=cards(b).find(x=>x.c.r===t.r&&S.players[b].mem.has(x.c.id));
     const other=[0,1,2,3].filter(p=>p!==b).flatMap(cards).find(x=>x.c.r===t.r&&S.players[b].mem.has(x.c.id));
     const pick=own&&Math.random()<.8?own:other&&cards(b).length&&Math.random()<.45?other:null;
@@ -152,7 +153,7 @@ function openWindow(){
   later(()=>{if(S.phase==='window'&&S.wid===wid){S.turn=S.next;startTurn()}},len);
 }
 function snap(by,p,i){
-  const c=S.players[p].hand[i], t=top(); if(!c||!t)return;
+  const c=S.players[p].hand[i], t=topCard(); if(!c||!t)return;
   const who=S.players[by].name, whose=p===by?(by===0?'your own':'their own'):`${S.players[p].name}'s`;
   if(c.r===t.r){
     S.players[p].hand[i]=null; S.discard.push(c); publicSee(c);
@@ -211,7 +212,7 @@ function botTurn(b){
   const known=mine.filter(x=>P.mem.has(x.c.id)), unknown=mine.filter(x=>!P.mem.has(x.c.id));
   const est=known.reduce((a,x)=>a+x.c.v,0)+unknown.length*6.5;
   if(S.cabo===null&&S.turns>4&&est<=7){S.cabo=b;log(`${P.name} called CABO! Everyone gets one more turn.`);S.turn=(b+1)%4;return startTurn()}
-  const worst=known.slice().sort((x,y)=>y.c.v-x.c.v)[0], t=top();
+  const worst=known.slice().sort((x,y)=>y.c.v-x.c.v)[0], t=topCard();
   if(t&&mine.length&&t.v<=3&&((worst&&t.v<worst.c.v)||unknown.length)){
     const slot=worst&&worst.c.v>t.v?worst:rnd(unknown);
     replace(b,slot.i,S.discard.pop(),true); return endAction(b);
@@ -239,7 +240,7 @@ function botPower(b,pw,worst){
 
 /* ---------- human input ---------- */
 function clickDeck(){if(S.phase!=='turn')return;S.drawn=draw();if(!S.drawn)return;S.players[0].mem.add(S.drawn.id);S.phase='drawn';render()}
-function clickDiscard(){if(S.phase!=='turn'||!top()||!cards(0).length)return;S.drawn=S.discard.pop();publicSee(S.drawn);S.phase='place';render()}
+function clickDiscard(){if(S.phase!=='turn'||!topCard()||!cards(0).length)return;S.drawn=S.discard.pop();publicSee(S.drawn);S.phase='place';render()}
 function throwDrawn(){
   const c=S.drawn;S.drawn=null;S.discard.push(c);publicSee(c);log(`You discarded a ${c.r}.`);
   const pw=POWER[c.r]; if(pw){S.phase=pw==='jack'?'jack-own':pw==='queen'?'queen-opp':pw;render()}else endAction(0);
@@ -298,7 +299,7 @@ function render(){
   const dk=cardEl({id:-1,r:'',s:''},null,0,false); if(S.phase==='turn'){dk.classList.add('click');dk.onclick=clickDeck}
   deck.append(dk,`Deck · ${S.deck.length}`);
   const dis=document.createElement('div');dis.className='pile';
-  const t=top(); const de=t?cardEl(t,null,0,true):cardEl(null);
+  const t=topCard(); const de=t?cardEl(t,null,0,true):cardEl(null);
   if(S.phase==='turn'&&t&&cards(0).length){de.classList.add('click');de.onclick=clickDiscard}
   dis.append(de,'Discard');
   C.append(deck,dis);
