@@ -20,8 +20,8 @@ button{font:600 14px var(--body);border:1px solid var(--rail);background:transpa
 button.primary{background:var(--rail);color:var(--felt-deep)}
 button:disabled{opacity:.35;cursor:not-allowed}
 button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
-label.help{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:13px}
-.opps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.table{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:". top ." "left mid right" ". me .";gap:12px;align-items:center;justify-items:center}
+.s1{grid-area:left}.s2{grid-area:top}.s3{grid-area:right}.center{grid-area:mid}.table .me{grid-area:me}
 .seat{border:1px solid rgba(233,196,106,.25);border-radius:14px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
 .seat.active{border-color:var(--hi);box-shadow:0 0 0 2px rgba(255,209,102,.35)}
 .seat-name{font-weight:600;font-size:14px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center}
@@ -59,7 +59,7 @@ label.help{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:
 .panel table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .panel td{padding:6px 4px;border-bottom:1px solid rgba(233,196,106,.15)}
 .panel td:not(:first-child){text-align:right}
-@media (max-width:520px){.opps{gap:6px}.seat{padding:6px}.card{--w:34px}.me .card{--w:68px}.pile .card{--w:58px}}
+@media (max-width:520px){.table{gap:6px}.seat{padding:6px}.card{--w:34px}.me .card{--w:68px}.pile .card{--w:58px}}
 @media (prefers-reduced-motion:reduce){.card.click:hover{transform:none}.bar i{transition:none!important}}
 </style>
 
@@ -67,15 +67,16 @@ label.help{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:
   <header>
     <h1>CABO</h1>
     <div class="tools">
-      <label class="help"><input type="checkbox" id="help"> Memory help (show cards you've seen)</label>
       <button id="rules">Rules</button>
     </div>
   </header>
-  <div class="opps" id="opps"></div>
-  <div class="center" id="center"></div>
+  <div class="table" id="table">
+    <div class="seat s1" id="s1"></div><div class="seat s2" id="s2"></div><div class="seat s3" id="s3"></div>
+    <div class="center" id="center"></div>
+    <div class="seat me" id="me"></div>
+  </div>
   <div><div class="msg" id="msg"></div><div class="bar" id="bar" hidden><i id="bari"></i></div></div>
   <div class="actions" id="actions"></div>
-  <div class="seat me" id="me"></div>
   <div class="legend">
     <div><b>7 · 8</b> peek at one of your cards</div>
     <div><b>9 · 10</b> peek at someone else's card</div>
@@ -97,9 +98,6 @@ const NAMES=['You','Maya','Arjun','Zoe'];
 const $=id=>document.getElementById(id);
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 let S, totals=[0,0,0,0], round=0, timers=[];
-let help=false; try{help=localStorage.getItem('cabo-help')==='1'}catch(e){}
-$('help').checked=help;
-$('help').onchange=e=>{help=e.target.checked;try{localStorage.setItem('cabo-help',help?'1':'0')}catch(_){}render()};
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function later(fn,ms){const t=setTimeout(fn,ms);timers.push(t);return t}
@@ -111,9 +109,8 @@ function newRound(){
   const players=NAMES.map(n=>({name:n,hand:[],mem:new Set()}));
   for(let k=0;k<4;k++)players.forEach(p=>p.hand.push(deck.pop()));
   players.forEach(p=>{p.mem.add(p.hand[2].id);p.mem.add(p.hand[3].id)});
-  S={deck,discard:[deck.pop()],players,turn:(round-1)%4,phase:'peek-start',drawn:null,cabo:null,sel:null,
+  S={deck,discard:[],players,turn:(round-1)%4,phase:'peek-start',drawn:null,cabo:null,sel:null,
      reveal:new Set(),flash:new Set(),log:[],turns:0,wid:0,next:0,snapMode:false,give:null};
-  publicSee(S.discard[0]);
   log(`Round ${round}. Memorise your bottom two cards.`);
   render();
 }
@@ -133,7 +130,7 @@ function reveal(ids,ms,then){ids.forEach(i=>S.reveal.add(i));render();later(()=>
 function startTurn(){
   S.turns++;
   if(S.cabo!==null&&S.turn===S.cabo)return endRound();
-  S.phase=S.turn===0?'turn':'bot'; S.drawn=null; S.sel=null; render();
+  S.phase=S.turn===0?'turn':'bot'; S.botMsg=''; S.drawn=null; S.sel=null; render();
   if(S.turn!==0)later(()=>botTurn(S.turn),1100);
 }
 function endAction(actor){
@@ -206,6 +203,7 @@ function swap(a,ai,b,bi){
 }
 
 /* ---------- bots ---------- */
+function done(b){S.botMsg=S.log[0];render();later(()=>endAction(b),1600)}
 function botTurn(b){
   if(S.phase!=='bot'||S.turn!==b)return;
   const P=S.players[b], mine=cards(b);
@@ -215,13 +213,13 @@ function botTurn(b){
   const worst=known.slice().sort((x,y)=>y.c.v-x.c.v)[0], t=topCard();
   if(t&&mine.length&&t.v<=3&&((worst&&t.v<worst.c.v)||unknown.length)){
     const slot=worst&&worst.c.v>t.v?worst:rnd(unknown);
-    replace(b,slot.i,S.discard.pop(),true); return endAction(b);
+    replace(b,slot.i,S.discard.pop(),true); return done(b);
   }
-  const c=draw(); if(!c)return endAction(b); P.mem.add(c.id);
-  if(worst&&c.v<worst.c.v-1){replace(b,worst.i,c,false);return endAction(b)}
-  if(unknown.length&&c.v<=4){replace(b,rnd(unknown).i,c,false);return endAction(b)}
+  const c=draw(); if(!c)return done(b); P.mem.add(c.id);
+  if(worst&&c.v<worst.c.v-1){replace(b,worst.i,c,false);return done(b)}
+  if(unknown.length&&c.v<=4){replace(b,rnd(unknown).i,c,false);return done(b)}
   S.discard.push(c); publicSee(c); log(`${P.name} drew and discarded a ${c.r}.`);
-  botPower(b,POWER[c.r],worst); endAction(b);
+  botPower(b,POWER[c.r],worst); done(b);
 }
 function botPower(b,pw,worst){
   if(!pw)return; const P=S.players[b];
@@ -249,7 +247,7 @@ function clickCard(p,i){
   const c=S.players[p].hand[i]; if(!c)return; const ph=S.phase;
   if(S.snapMode&&ph==='window'){S.snapMode=false;return snap(0,p,i)}
   if(ph==='give'){if(p!==0)return;const g=S.give;S.players[g.p].hand[g.i]=c;S.players[0].hand[i]=null;log(`You gave ${S.players[g.p].name} a card.`);S.give=null;flash([c.id]);return openWindow()}
-  if((ph==='drawn'||ph==='place')&&p===0){const d=S.drawn;S.drawn=null;replace(0,i,d,ph==='place');return endAction(0)}
+  if((ph==='drawn'||ph==='place')&&p===0){const d=S.drawn;S.drawn=null;S.phase='busy';replace(0,i,d,ph==='place');return endAction(0)}
   if(ph==='peek-own'&&p===0){S.players[0].mem.add(c.id);S.phase='busy';log('You peeked at one of your cards.');return reveal([c.id],2000,()=>endAction(0))}
   if(ph==='peek-other'&&p!==0){S.players[0].mem.add(c.id);S.phase='busy';log(`You peeked at ${S.players[p].name}'s card.`);return reveal([c.id],2000,()=>endAction(0))}
   if(ph==='jack-own'&&p===0){S.sel={p,i};S.phase='jack-opp';return render()}
@@ -280,7 +278,7 @@ function cardEl(c,p,i,show){
 function isShown(c,p,i){
   if(S.phase==='end'||S.reveal.has(c.id))return true;
   if(p===0&&S.phase==='peek-start'&&i>=2)return true;
-  return p===0&&help&&S.players[0].mem.has(c.id);
+  return false;
 }
 function seat(p){
   const P=S.players[p], d=document.createElement('div');
@@ -292,8 +290,8 @@ function seat(p){
 }
 function btn(t,fn,primary){const b=document.createElement('button');b.textContent=t;b.onclick=fn;if(primary)b.className='primary';return b}
 function render(){
-  const opps=$('opps');opps.innerHTML='';[1,2,3].forEach(p=>opps.append(seat(p)));
-  const me=$('me');me.replaceWith(seat(0));document.querySelector('.seat.me').id='me';
+  [1,2,3].forEach(p=>{const el=seat(p);el.classList.add('s'+p);el.id='s'+p;$('s'+p).replaceWith(el)});
+  const me=seat(0);me.id='me';$('me').replaceWith(me);
   const C=$('center');C.innerHTML='';
   const deck=document.createElement('div');deck.className='pile';
   const dk=cardEl({id:-1,r:'',s:''},null,0,false); if(S.phase==='turn'){dk.classList.add('click');dk.onclick=clickDeck}
@@ -309,17 +307,17 @@ function render(){
   const nm=S.players[S.turn].name;
   if(ph==='peek-start'){m='Your <b>bottom two</b> cards are face up. Remember them!';A.append(btn("I've got them",()=>{log('Game on.');startTurn()},true))}
   else if(ph==='turn'){m='Your turn: tap the <b>deck</b> to draw, or tap the <b>discard</b> to take it.';if(S.cabo===null)A.append(btn('Call CABO',()=>{S.cabo=0;log('You called CABO! Everyone gets one more turn.');S.turn=1;startTurn()}))}
-  else if(ph==='drawn'){const pw=POWER[S.drawn.r];m=`You drew a <b>${S.drawn.r}</b>. Tap one of your cards to swap it in, or throw it away.`;A.append(btn(pw?`Discard & ${POWER_LABEL[pw]}`:'Discard it',throwDrawn,true))}
-  else if(ph==='place')m=`Tap the card of yours that the <b>${S.drawn.r}</b> replaces.`;
+  else if(ph==='drawn'){const pw=POWER[(S.drawn||{}).r];m=`You drew a <b>${(S.drawn||{}).r}</b>. Tap one of your cards to swap it in, or throw it away.`;A.append(btn(pw?`Discard & ${POWER_LABEL[pw]}`:'Discard it',throwDrawn,true))}
+  else if(ph==='place')m=`Tap the card of yours that the <b>${(S.drawn||{}).r}</b> replaces.`;
   else if(ph==='peek-own')m='Tap one of <b>your</b> cards to peek at it.';
   else if(ph==='peek-other')m="Tap <b>someone else's</b> card to peek at it.";
   else if(ph==='jack-own')m='Jack: pick <b>your</b> card to swap away.';
   else if(ph==='jack-opp')m="Now pick <b>their</b> card to swap with (no peeking).";
   else if(ph==='queen-opp')m="Queen: tap <b>someone else's</b> card to look at it.";
   else if(ph==='queen-own'){m='Tap one of <b>your</b> cards to swap, or keep things as they are.';A.append(btn('Keep as is',()=>{S.reveal.clear();log('You looked and kept things as they were.');endAction(0)}))}
-  else if(ph==='window'){m=S.snapMode?'Tap the card you think matches the <b>'+t.r+'</b>.':`Got a <b>${t?t.r:''}</b>? Snap it before the bar runs out.`;A.append(btn(S.snapMode?'Cancel':'Snap!',()=>{S.snapMode=!S.snapMode;render()},!S.snapMode))}
+  else if(ph==='window'){m=S.snapMode?'Tap the card you think matches the <b>'+t.r+'</b>.':(t?`Got a <b>${t.r}</b>? Snap it before the bar runs out.`:'Next player…');A.append(btn(S.snapMode?'Cancel':'Snap!',()=>{S.snapMode=!S.snapMode;render()},!S.snapMode))}
   else if(ph==='give')m=`Nice snap! Pick one of <b>your</b> cards to give ${S.players[S.give.p].name}.`;
-  else if(ph==='bot')m=`${nm} is thinking…`;
+  else if(ph==='bot')m=S.botMsg?`<b>${S.botMsg}</b>`:`${nm} is taking their turn…`;
   else if(ph==='busy')m='Take a good look…';
   else if(ph==='end')m='Round over. Every card is face up.';
   if(['peek-own','peek-other','jack-own','jack-opp','queen-opp'].includes(ph))A.append(btn('Skip power',()=>endAction(0)));
