@@ -20,7 +20,7 @@ button{font:600 14px var(--body);border:1px solid var(--rail);background:transpa
 button.primary{background:var(--rail);color:var(--felt-deep)}
 button:disabled{opacity:.35;cursor:not-allowed}
 button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
-.table{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:". top ." "left mid right" ". me .";gap:12px;align-items:center;justify-items:center}
+.table{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"left top right" "mid mid mid" "me me me";gap:12px;align-items:start;justify-items:center}
 .s1{grid-area:left}.s2{grid-area:top}.s3{grid-area:right}.center{grid-area:mid}.table .me{grid-area:me}
 .seat{border:1px solid rgba(233,196,106,.25);border-radius:14px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
 .seat.active{border-color:var(--hi);box-shadow:0 0 0 2px rgba(255,209,102,.35)}
@@ -45,6 +45,11 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .pile .card{--w:70px}
 .msg{text-align:center;font-size:16px;min-height:2.6em;text-wrap:balance}
 .msg b{color:var(--hi)}
+.card.land{animation:land .7s cubic-bezier(.2,1.4,.4,1)}
+@keyframes land{0%{transform:translateY(-40px) rotate(-14deg) scale(1.25);box-shadow:0 0 0 4px var(--hi),0 0 30px var(--hi)}60%{box-shadow:0 0 0 4px var(--hi),0 0 30px var(--hi)}100%{transform:none;box-shadow:0 0 0 0 transparent}}
+.toast{position:absolute;left:50%;top:-12px;transform:translate(-50%,-100%);background:var(--hi);color:var(--felt-deep);font-weight:600;font-size:13px;padding:4px 10px;border-radius:999px;white-space:nowrap;animation:toast 2.2s forwards;pointer-events:none;text-transform:none;letter-spacing:0}
+@keyframes toast{0%,80%{opacity:1}100%{opacity:0}}
+.pile{position:relative}
 .bar{height:4px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden;max-width:320px;margin:6px auto 0}
 .bar i{display:block;height:100%;background:var(--hi);width:100%}
 .actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;min-height:38px}
@@ -60,7 +65,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .panel td{padding:6px 4px;border-bottom:1px solid rgba(233,196,106,.15)}
 .panel td:not(:first-child){text-align:right}
 @media (max-width:520px){.table{gap:6px}.seat{padding:6px}.card{--w:34px}.me .card{--w:68px}.pile .card{--w:58px}}
-@media (prefers-reduced-motion:reduce){.card.click:hover{transform:none}.bar i{transition:none!important}}
+@media (prefers-reduced-motion:reduce){.card.land,.toast{animation:none}.card.click:hover{transform:none}.bar i{transition:none!important}}
 </style>
 
 <div class="wrap">
@@ -97,7 +102,7 @@ const POWER_LABEL={'peek-own':'peek at one of yours','peek-other':"peek at someo
 const NAMES=['You','Maya','Arjun','Zoe'];
 const $=id=>document.getElementById(id);
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
-let S, totals=[0,0,0,0], round=0, timers=[];
+let lastTop=null, landAt=0, landWho='', S, totals=[0,0,0,0], round=0, timers=[];
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function later(fn,ms){const t=setTimeout(fn,ms);timers.push(t);return t}
@@ -136,8 +141,8 @@ function startTurn(){
 function endAction(actor){
   S.drawn=null;S.sel=null;S.next=(actor+1)%4;openWindow();
 }
-function openWindow(){
-  clearTimers(); S.phase='window'; S.snapMode=false; const wid=++S.wid; const len=2600;
+function openWindow(len=30000){
+  clearTimers(); S.phase='window'; S.snapMode=false; const wid=++S.wid;
   render(); const bar=$('bari'); bar.style.transition='none'; bar.style.width='100%';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{bar.style.transition=`width ${len}ms linear`;bar.style.width='0%'}));
   for(let b=1;b<4;b++){
@@ -145,7 +150,7 @@ function openWindow(){
     const own=cards(b).find(x=>x.c.r===t.r&&S.players[b].mem.has(x.c.id));
     const other=[0,1,2,3].filter(p=>p!==b).flatMap(cards).find(x=>x.c.r===t.r&&S.players[b].mem.has(x.c.id));
     const pick=own&&Math.random()<.8?own:other&&cards(b).length&&Math.random()<.45?other:null;
-    if(pick)later(()=>{if(S.phase==='window'&&S.wid===wid)snap(b,pick.p,pick.i)},700+Math.random()*1500);
+    if(pick)later(()=>{if(S.phase==='window'&&S.wid===wid)snap(b,pick.p,pick.i)},1000+Math.random()*Math.min(len-500,5000));
   }
   later(()=>{if(S.phase==='window'&&S.wid===wid){S.turn=S.next;startTurn()}},len);
 }
@@ -161,7 +166,7 @@ function snap(by,p,i){
       const g=known[0]||rnd(mine); S.players[p].hand[i]=g.c; S.players[by].hand[g.i]=null;
       log(`${who} gave ${S.players[p].name} a card in return.`); flash([g.c.id]);
     }
-    openWindow();
+    openWindow(2500);
   }else{
     publicSee(c); const pen=draw(); if(pen)S.players[by].hand.push(pen);
     log(`${who} tried to snap a ${c.r} on a ${t.r}. Penalty card!`);
@@ -246,7 +251,7 @@ function throwDrawn(){
 function clickCard(p,i){
   const c=S.players[p].hand[i]; if(!c)return; const ph=S.phase;
   if(S.snapMode&&ph==='window'){S.snapMode=false;return snap(0,p,i)}
-  if(ph==='give'){if(p!==0)return;const g=S.give;S.players[g.p].hand[g.i]=c;S.players[0].hand[i]=null;log(`You gave ${S.players[g.p].name} a card.`);S.give=null;flash([c.id]);return openWindow()}
+  if(ph==='give'){if(p!==0)return;const g=S.give;S.players[g.p].hand[g.i]=c;S.players[0].hand[i]=null;log(`You gave ${S.players[g.p].name} a card.`);S.give=null;flash([c.id]);return openWindow(2500)}
   if((ph==='drawn'||ph==='place')&&p===0){const d=S.drawn;S.drawn=null;S.phase='busy';replace(0,i,d,ph==='place');return endAction(0)}
   if(ph==='peek-own'&&p===0){S.players[0].mem.add(c.id);S.phase='busy';log('You peeked at one of your cards.');return reveal([c.id],2000,()=>endAction(0))}
   if(ph==='peek-other'&&p!==0){S.players[0].mem.add(c.id);S.phase='busy';log(`You peeked at ${S.players[p].name}'s card.`);return reveal([c.id],2000,()=>endAction(0))}
@@ -299,6 +304,10 @@ function render(){
   const dis=document.createElement('div');dis.className='pile';
   const t=topCard(); const de=t?cardEl(t,null,0,true):cardEl(null);
   if(S.phase==='turn'&&t&&cards(0).length){de.classList.add('click');de.onclick=clickDiscard}
+  if(t&&t.id!==lastTop){lastTop=t.id;landAt=Date.now();landWho=(S.log[0]||'').split(' ')[0]}
+  if(!t)lastTop=null;
+  const age=Date.now()-landAt;
+  if(t&&age<2200){de.classList.add('land');de.style.animationDelay=`-${age}ms`;const ts=document.createElement('span');ts.className='toast';ts.style.animationDelay=`-${age}ms`;ts.textContent=`${landWho} discarded ${t.r}`;dis.append(ts)}
   dis.append(de,'Discard');
   C.append(deck,dis);
   if(S.drawn){const dr=document.createElement('div');dr.className='pile';dr.append(cardEl(S.drawn,null,0,true),'In hand');C.append(dr)}
@@ -315,7 +324,7 @@ function render(){
   else if(ph==='jack-opp')m="Now pick <b>their</b> card to swap with (no peeking).";
   else if(ph==='queen-opp')m="Queen: tap <b>someone else's</b> card to look at it.";
   else if(ph==='queen-own'){m='Tap one of <b>your</b> cards to swap, or keep things as they are.';A.append(btn('Keep as is',()=>{S.reveal.clear();log('You looked and kept things as they were.');endAction(0)}))}
-  else if(ph==='window'){m=S.snapMode?'Tap the card you think matches the <b>'+t.r+'</b>.':(t?`Got a <b>${t.r}</b>? Snap it before the bar runs out.`:'Next player…');A.append(btn(S.snapMode?'Cancel':'Snap!',()=>{S.snapMode=!S.snapMode;render()},!S.snapMode))}
+  else if(ph==='window'){m=S.snapMode?'Tap the card you think matches the <b>'+t.r+'</b>.':(t?`Got a <b>${t.r}</b>? Snap it before the bar runs out.`:'Next player…');if(t)A.append(btn(S.snapMode?'Cancel':'Snap!',()=>{S.snapMode=!S.snapMode;render()},!S.snapMode));if(!S.snapMode)A.append(btn('No snap, carry on',()=>{clearTimers();S.turn=S.next;startTurn()}))}
   else if(ph==='give')m=`Nice snap! Pick one of <b>your</b> cards to give ${S.players[S.give.p].name}.`;
   else if(ph==='bot')m=S.botMsg?`<b>${S.botMsg}</b>`:`${nm} is taking their turn…`;
   else if(ph==='busy')m='Take a good look…';
