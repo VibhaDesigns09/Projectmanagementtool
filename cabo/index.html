@@ -85,13 +85,39 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .panel td:not(:first-child){text-align:right}
 @media (max-width:520px){.table{gap:6px}.seat{padding:6px}.card{--w:34px}.me .card{--w:68px}.pile .card{--w:58px}}
 @media (prefers-reduced-motion:reduce){.toast{animation:none}.card.click:hover{transform:none}.bar i{transition:none!important}}
+.start{position:fixed;inset:0;z-index:30;background:var(--felt);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
+.start-card{width:100%;max-width:380px;display:flex;flex-direction:column;gap:18px;align-items:stretch;text-align:center}
+.start-card .logo{width:72px;height:72px;margin:0 auto}
+.start-card h2{font-family:var(--display);font-weight:800;font-size:44px;letter-spacing:.04em;margin:0;color:var(--brown-text)}
+.start-card p{margin:0;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:6px;text-align:left;font-size:13px;color:var(--muted)}
+.field input{font:16px var(--body);padding:12px 14px;border-radius:12px;border:1px solid var(--rail);background:var(--felt-deep);color:var(--ink)}
+.field input:focus-visible{outline:3px solid var(--hi);outline-offset:1px}
+.start-card .choices{display:grid;gap:10px}
+.start-card .choices button{padding:14px;font-size:16px;border-radius:14px;display:flex;flex-direction:column;gap:2px;align-items:center}
+.start-card .choices small{font-weight:400;font-size:12px;color:inherit;opacity:.75}
+.coach{border:1px dashed var(--rail);border-radius:12px;padding:10px 14px;font-size:14px;line-height:1.45;max-width:560px;margin:8px auto 0;text-align:left;background:var(--felt-deep)}
+.coach b{color:var(--brown-text)}
+.coach .lbl{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 </style>
 
+<div class="start" id="start">
+  <form class="start-card" id="startForm">
+    <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect x="13" y="5" width="20" height="28" rx="3" fill="#2b2a29" transform="rotate(14 23 19)"/><rect x="7" y="7" width="20" height="28" rx="3" fill="#f4eddf" stroke="#2b2a29" stroke-width="1.5" transform="rotate(-8 17 21)"/><path d="M17 16l4 5-4 5-4-5z" fill="#b8a588" transform="rotate(-8 17 21)"/></svg>
+    <h2>CABO</h2>
+    <p>The memory card game. Lowest total wins.</p>
+    <label class="field" for="pname">Your name<input id="pname" maxlength="16" autocomplete="nickname" placeholder="e.g. Vibha"></label>
+    <div class="choices">
+      <button type="submit" class="primary" id="playBtn" value="play">Play game<small>You vs Maya, Arjun and Zoe</small></button>
+      <button type="submit" id="learnBtn" value="learn">Learner mode<small>A guided game with tips at every step</small></button>
+    </div>
+  </form>
+</div>
 <div class="wrap">
   <header>
     <h1 class="brand"><svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect x="13" y="5" width="20" height="28" rx="3" fill="#2b2a29" transform="rotate(14 23 19)"/><rect x="7" y="7" width="20" height="28" rx="3" fill="#f4eddf" stroke="#2b2a29" stroke-width="1.5" transform="rotate(-8 17 21)"/><path d="M17 16l4 5-4 5-4-5z" fill="#b8a588" transform="rotate(-8 17 21)"/></svg>CABO</h1>
     <div class="tools">
-      <button class="dots" id="profile" aria-label="Profile"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="8.5" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20c1.2-4 4-5.5 7.5-5.5s6.3 1.5 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><div class="menu-wrap"><button class="dots" id="dots" aria-label="Menu" aria-expanded="false">⋮</button><div class="menu" id="menu" hidden><button id="rules">How to play</button><button id="powers">Card powers</button><button id="newgame">New game</button></div></div>
+      <button class="dots" id="profile" aria-label="Profile"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="8.5" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20c1.2-4 4-5.5 7.5-5.5s6.3 1.5 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><div class="menu-wrap"><button class="dots" id="dots" aria-label="Menu" aria-expanded="false">⋮</button><div class="menu" id="menu" hidden><button id="mainmenu">Main menu</button><button id="rules">How to play</button><button id="powers">Card powers</button><button id="newgame">New game</button></div></div>
     </div>
   </header>
   <div class="table" id="table">
@@ -99,7 +125,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
     <div class="center" id="center"></div>
     <div class="seat me" id="me"></div>
   </div>
-  <div><div class="msg" id="msg"></div><div class="bar" id="bar" hidden><i id="bari"></i></div></div>
+  <div><div class="msg" id="msg"></div><div class="coach" id="coach" hidden></div><div class="bar" id="bar" hidden><i id="bari"></i></div></div>
   <div class="actions" id="actions"></div>
   <div class="logrow"><div class="log" id="log"></div><button class="mode" id="mode" role="switch" aria-checked="false" aria-label="Dark mode"></button></div>
 </div>
@@ -130,6 +156,7 @@ function faceSVG(c){
   }
   return `<svg viewBox="0 0 50 70" aria-hidden="true">${suit}${body}</svg>`;
 }
+let playerName='You', learner=false, gameOn=false;
 const NAMES=['You','Maya','Arjun','Zoe'];
 const $=id=>document.getElementById(id);
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
@@ -167,7 +194,7 @@ function startTurn(){
   S.turns++;
   if(S.cabo!==null&&S.turn===S.cabo)return endRound();
   S.phase=S.turn===0?'turn':'bot'; S.botMsg=''; S.drawn=null; S.sel=null; render();
-  if(S.turn!==0)later(()=>botTurn(S.turn),1100);
+  if(S.turn!==0)later(()=>botTurn(S.turn),learner?2200:1100);
 }
 function endAction(actor){
   S.drawn=null;S.sel=null;S.next=(actor+1)%4;openWindow();
@@ -180,7 +207,7 @@ function openWindow(len=30000){
     const t=topCard(); if(!t)break;
     const own=cards(b).find(x=>x.c.r===t.r&&S.players[b].mem.has(x.c.id));
     const other=[0,1,2,3].filter(p=>p!==b).flatMap(cards).find(x=>x.c.r===t.r&&S.players[b].mem.has(x.c.id));
-    const pick=own&&Math.random()<.8?own:other&&cards(b).length&&Math.random()<.45?other:null;
+    const pick=own&&Math.random()<.8?own:other&&!learner&&cards(b).length&&Math.random()<.45?other:null;
     if(pick)later(()=>{if(S.phase==='window'&&S.wid===wid)snap(b,pick.p,pick.i)},1000+Math.random()*Math.min(len-500,5000));
   }
   later(()=>{if(S.phase==='window'&&S.wid===wid){S.turn=S.next;startTurn()}},len);
@@ -239,7 +266,7 @@ function swap(a,ai,b,bi){
 }
 
 /* ---------- bots ---------- */
-function done(b){S.botMsg=S.log[0];render();later(()=>endAction(b),1600)}
+function done(b){S.botMsg=S.log[0];render();later(()=>endAction(b),learner?2600:1600)}
 function botTurn(b){
   if(S.phase!=='bot'||S.turn!==b)return;
   const P=S.players[b], mine=cards(b);
@@ -319,7 +346,7 @@ function isShown(c,p,i){
 function seat(p){
   const P=S.players[p], d=document.createElement('div');
   d.className='seat'+(p===0?' me':'')+((S.turn===p&&!['window','end','peek-start'].includes(S.phase))?' active':'');
-  d.innerHTML=`<div class="seat-name">${P.name}${S.cabo===p?' <span class="tag">Cabo</span>':''}<span class="score">${totals[p]} pts</span></div>`;
+  d.innerHTML=`<div class="seat-name">${p===0?playerName:P.name}${S.cabo===p?' <span class="tag">Cabo</span>':''}<span class="score">${totals[p]} pts</span></div>`;
   const g=document.createElement('div');g.className='grid';
   P.hand.forEach((c,i)=>g.append(cardEl(c,p,i,c&&isShown(c,p,i))));
   d.append(g);return d;
@@ -337,6 +364,43 @@ function throwCard(target,who){
     {transform:`translate(${b.left}px,${b.top}px) rotate(${spin}deg) scale(1)`,filter:'drop-shadow(0 0 0 transparent)'}
   ],{duration:440,easing:'cubic-bezier(.2,.9,.3,1)'}).onfinish=()=>f.remove();
 }
+function coachTip(ph,t){
+  const d=S.drawn;
+  switch(ph){
+  case 'peek-start':return `<b>The goal:</b> finish with the lowest total. A=1, 2–10 are face value, J=11, Q=12, K=13. Right now you can see only your <b>bottom two</b> cards. Remember them, because they turn face down and stay that way.`;
+  case 'turn':
+    if(S.turns<=2&&!t)return `Your first move. The discard pile is empty, so <b>tap the deck</b> to draw a card. Only you will see it.`;
+    if(t&&t.v<=3)return `The top discard is a <b>${t.r}</b> (${t.v} pt${t.v>1?'s':''}). That's low and everyone knows it. Tap the <b>discard</b> to take it and swap out one of your high or unknown cards.`;
+    return `Choose: <b>tap the deck</b> for a mystery card, or <b>tap the discard</b> to take ${t?'the '+t.r:'it'}. Think you have the lowest total? <b>Call CABO</b> and everyone else gets one last turn.`;
+  case 'drawn':
+    if(!d)return '';
+    if(d.v<=4)return `A <b>${d.r}</b> is only ${d.v} point${d.v>1?'s':''}. Keep it: <b>tap one of your cards</b> to swap it in. Pick one you know is high, or one you haven't seen.`;
+    if(POWER[d.r])return `A <b>${d.r}</b> is worth ${d.v} points, too high to keep. But throwing it away gives you a power: <b>${POWER_LABEL[POWER[d.r]]}</b>. Tap the discard button to use it.`;
+    return `A <b>${d.r}</b> is ${d.v} points and has no power. Just <b>discard it</b>.`;
+  case 'place':return `You must keep the ${d?d.r:'card'}. <b>Tap the card of yours</b> it should replace. The card you give up goes face up on the discard pile.`;
+  case 'peek-own':return `<b>7 and 8</b> let you look at one of your own cards. Pick one you haven't seen yet so you know more of your total.`;
+  case 'peek-other':return `<b>9 and 10</b> let you look at another player's card. Useful for snapping later, or for choosing a target for a J or Q.`;
+  case 'jack-own':return `<b>Jack: blind swap.</b> First pick one of <b>your</b> cards to give away, ideally one you know is high.`;
+  case 'jack-opp':return `Now pick any other player's card to take. You don't get to look first. That's the gamble.`;
+  case 'queen-opp':return `<b>Queen: look, then decide.</b> Tap another player's card to see it.`;
+  case 'queen-own':return `If their card is lower than one of yours, <b>tap your card</b> to swap. If not, tap <b>Keep as is</b>.`;
+  case 'window':return t?`<b>Snap time.</b> If you remember a <b>${t.r}</b> anywhere, yours or someone else's, hit <b>Snap!</b> and tap it. It goes on the pile for free. A wrong guess costs you an extra card. Nothing to snap? Tap <b>No snap, carry on</b>.`:'';
+  case 'give':return `You snapped another player's card, so you hand them one of yours. Give away your highest card.`;
+  case 'bot':return `Watch the bots. When someone throws a card away, everyone learns what it was. Keep track; it helps you snap.`;
+  case 'end':return `Round over. If the Cabo caller had the lowest total they score −5; otherwise everyone scores their card total. Lowest score after several rounds wins.`;
+  }
+  return '';
+}
+function showStart(){
+  clearTimers(); gameOn=false; $('overlay').hidden=true; $('menu').hidden=true;
+  $('pname').value=playerName==='You'?'':playerName; $('start').hidden=false; setTimeout(()=>$('pname').focus(),50);
+}
+$('startForm').onsubmit=e=>{
+  e.preventDefault(); const v=$('pname').value.trim(); playerName=v||'You';
+  try{localStorage.setItem('cabo-name',v)}catch(_){}
+  learner=(e.submitter&&e.submitter.value)==='learn';
+  $('start').hidden=true; totals=[0,0,0,0]; round=0; gameOn=true; newRound();
+};
 function btn(t,fn,primary){const b=document.createElement('button');b.textContent=t;b.onclick=fn;if(primary)b.className='primary';return b}
 function render(){
   [1,2,3].forEach(p=>{const el=seat(p);el.classList.add('s'+p);el.id='s'+p;$('s'+p).replaceWith(el)});
@@ -378,6 +442,7 @@ function render(){
   if(['peek-own','peek-other','jack-own','jack-opp','queen-opp'].includes(ph))A.append(btn('Skip power',()=>endAction(0)));
   if(S.cabo!==null&&ph!=='end')m+=` <span class="score">· Final lap (${S.players[S.cabo].name} called Cabo)</span>`;
   $('msg').innerHTML=m; $('bar').hidden=ph!=='window';
+  const tip=learner?coachTip(ph,t):''; $('coach').hidden=!tip; $('coach').innerHTML=tip?`<span class="lbl">Coach</span>${tip}`:'';
   $('log').innerHTML=S.log.map(l=>`<div>${l}</div>`).join('');
 }
 
@@ -395,8 +460,13 @@ function setMode(m){document.documentElement.dataset.mode=m;$('mode').innerHTML=
 let mode0='light';try{mode0=localStorage.getItem('cabo-mode')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch(e){}
 setMode(mode0);
 $('mode').onclick=()=>setMode(document.documentElement.dataset.mode==='dark'?'light':'dark');
-$('profile').onclick=()=>{const best=Math.min(...totals);$('panel').innerHTML=`<h2>You</h2><p>Round ${round} · Total score <b>${totals[0]}</b> pts${round>1&&totals[0]===best?' · leading':''}</p><p class="score">Profiles and playing with friends online come later.</p><div style="text-align:right"><button class="primary" id="closeP">Close</button></div>`;$('overlay').hidden=false;$('closeP').onclick=()=>{$('overlay').hidden=true}};
+$('profile').onclick=()=>{const best=Math.min(...totals);$("panel").innerHTML=`<h2>${playerName}</h2><p>Round ${round} · Total score <b>${totals[0]}</b> pts${round>1&&totals[0]===best?' · leading':''}</p><p class="score">Profiles and playing with friends online come later.</p><div style="text-align:right"><button class="primary" id="closeP">Close</button></div>`;$('overlay').hidden=false;$('closeP').onclick=()=>{$('overlay').hidden=true}};
 $('powers').onclick=()=>{$('panel').innerHTML=`<h2>Card powers</h2>${LEGEND}<div style="text-align:right"><button class="primary" id="closeP">Got it</button></div>`;$('overlay').hidden=false;$('closeP').onclick=()=>{$('overlay').hidden=true}};
+$('mainmenu').onclick=()=>{
+  if(!gameOn)return showStart();
+  $('panel').innerHTML=`<h2>End this game?</h2><p>Going to the main menu ends the current game. You won't be able to come back to it.</p><div style="display:flex;gap:8px;justify-content:flex-end"><button id="stayG">Keep playing</button><button class="primary" id="endG">End game</button></div>`;
+  $('overlay').hidden=false;$('stayG').onclick=()=>{$('overlay').hidden=true};$('endG').onclick=showStart;
+};
 $('newgame').onclick=()=>{totals=[0,0,0,0];round=0;$('overlay').hidden=true;newRound()};
 $('rules').onclick=()=>{
   $('panel').innerHTML=`<h2>How to play</h2>
@@ -407,5 +477,6 @@ $('rules').onclick=()=>{
   <div style="text-align:right"><button class="primary" id="closeRules">Got it</button></div>`;
   $('overlay').hidden=false;$('closeRules').onclick=()=>{$('overlay').hidden=true};
 };
-newRound();
+try{playerName=localStorage.getItem('cabo-name')||'You'}catch(e){}
+newRound();showStart();
 </script>
