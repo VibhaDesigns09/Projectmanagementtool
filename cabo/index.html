@@ -64,7 +64,9 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .legend b{color:var(--ink);font-family:var(--display)}
 .logrow{display:flex;gap:12px;align-items:flex-start;border-top:1px solid var(--rail);padding-top:10px}
 .log{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
-.mode{flex:none;display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:13px}
+.mode{flex:none;position:relative;width:56px;height:30px;padding:0;border-radius:999px;background:var(--felt-deep);border:1px solid var(--rail)}
+.mode .knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--rail);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;transition:transform .2s ease}
+.mode[aria-checked="true"] .knob{transform:translateX(26px)}
 /* Dark mode: the same table with the lights dimmed — charcoal tabletop, deeper shadows */
 :root[data-mode="dark"]{--felt:#1e1c1b;--felt-deep:#2a2826;--ink:#f1eadb;--muted:#a59c92;color-scheme:dark}
 :root[data-mode="dark"] body{background:radial-gradient(ellipse 60% 90% at 0% 45%,rgba(255,236,200,.06),transparent 70%),radial-gradient(ellipse 60% 90% at 100% 45%,rgba(255,236,200,.06),transparent 70%),#1e1c1b fixed}
@@ -95,7 +97,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
   </div>
   <div><div class="msg" id="msg"></div><div class="bar" id="bar" hidden><i id="bari"></i></div></div>
   <div class="actions" id="actions"></div>
-  <div class="logrow"><div class="log" id="log"></div><button class="mode" id="mode" aria-pressed="false"></button></div>
+  <div class="logrow"><div class="log" id="log"></div><button class="mode" id="mode" role="switch" aria-checked="false" aria-label="Dark mode"></button></div>
 </div>
 <div class="overlay" id="overlay" hidden><div class="panel" id="panel"></div></div>
 
@@ -385,7 +387,7 @@ const LEGEND=`<div class="legend">
   </div>`;
 $('dots').onclick=e=>{e.stopPropagation();const m=$('menu');m.hidden=!m.hidden;$('dots').setAttribute('aria-expanded',String(!m.hidden))};
 document.addEventListener('click',()=>{$('menu').hidden=true;$('dots').setAttribute('aria-expanded','false')});
-function setMode(m){document.documentElement.dataset.mode=m;$('mode').textContent=m==='dark'?'☀ Light mode':'☾ Dark mode';$('mode').setAttribute('aria-pressed',String(m==='dark'));try{localStorage.setItem('cabo-mode',m)}catch(e){}}
+function setMode(m){document.documentElement.dataset.mode=m;$('mode').innerHTML=`<span class="knob">${m==='dark'?'☾':'☀'}</span>`;$('mode').setAttribute('aria-checked',String(m==='dark'));try{localStorage.setItem('cabo-mode',m)}catch(e){}}
 let mode0='light';try{mode0=localStorage.getItem('cabo-mode')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch(e){}
 setMode(mode0);
 $('mode').onclick=()=>setMode(document.documentElement.dataset.mode==='dark'?'light':'dark');
