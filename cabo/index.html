@@ -24,7 +24,8 @@ button:disabled{opacity:.35;cursor:not-allowed}
 button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
 .table{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"left top right" "mid me me" "ctrl ctrl ctrl";gap:36px 12px;align-items:start;justify-items:center}
 .s1{grid-area:left}.s2{grid-area:top}.s3{grid-area:right}.center{grid-area:mid}.table .me{grid-area:me}.ctrl{grid-area:ctrl;width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:10px;align-self:center}
-.ctrl>.say{flex:1 1 180px;min-width:0}.ctrl .msg{text-align:left;min-height:0}.ctrl .bar{margin:6px 0 0}.ctrl .actions{flex:0 1 auto;justify-content:flex-end}.ctrl .coach{flex:1 1 100%;margin:0;max-width:none}
+.ctrl>.say{flex:1 1 180px;min-width:0}.ctrl .msg{text-align:left;min-height:0}.ctrl .right{margin-left:auto;display:flex;align-items:center;gap:10px}.ctrl .bar{margin:0;width:140px}.ctrl .actions{justify-content:flex-end;min-height:0}
+.xbtn{width:34px;height:34px;padding:0;border-radius:50%;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center}.ctrl .coach{flex:1 1 100%;margin:0;max-width:none}
 @media (min-width:760px){.table{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"left top right" "mid ctrl me"}}
 .table .me{align-self:center}
 .seat{border:1px solid var(--rail);border-radius:14px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
@@ -129,7 +130,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
     <div class="seat s1" id="s1"></div><div class="seat s2" id="s2"></div><div class="seat s3" id="s3"></div>
     <div class="center" id="center"></div>
     <div class="seat me" id="me"></div>
-    <div class="ctrl"><div class="say"><div class="msg" id="msg"></div><div class="bar" id="bar" hidden><i id="bari"></i></div></div><div class="actions" id="actions"></div><div class="coach" id="coach" hidden></div></div>
+    <div class="ctrl"><div class="say"><div class="msg" id="msg"></div></div><div class="right"><div class="bar" id="bar" hidden><i id="bari"></i></div><div class="actions" id="actions"></div></div><div class="coach" id="coach" hidden></div></div>
   </div>
   <div class="logrow"><button class="logbtn" id="logbtn" aria-expanded="false">Show game log</button><span style="flex:1"></span><div class="log" id="log" hidden></div><button class="mode" id="mode" role="switch" aria-checked="false" aria-label="Dark mode"></button></div>
 </div>
@@ -312,7 +313,7 @@ function throwDrawn(){
 }
 function clickCard(p,i){
   const c=S.players[p].hand[i]; if(!c)return; const ph=S.phase;
-  if(S.snapMode&&ph==='window'){S.snapMode=false;return snap(0,p,i)}
+  if(ph==='window')return snap(0,p,i);
   if(ph==='give'){if(p!==0)return;const g=S.give;S.players[g.p].hand[g.i]=c;S.players[0].hand[i]=null;log(`You gave ${S.players[g.p].name} a card.`);S.give=null;flash([c.id]);return openWindow(2500)}
   if((ph==='drawn'||ph==='place')&&p===0){const d=S.drawn;S.drawn=null;S.phase='busy';replace(0,i,d,ph==='place');return endAction(0)}
   if(ph==='peek-own'&&p===0){S.players[0].mem.add(c.id);S.phase='busy';log('You peeked at one of your cards.');return reveal([c.id],2000,()=>endAction(0))}
@@ -324,7 +325,7 @@ function clickCard(p,i){
 }
 function clickable(p,i){
   const ph=S.phase, mine=p===0;
-  if(ph==='window')return S.snapMode;
+  if(ph==='window')return !!topCard();
   if(ph==='give'||ph==='drawn'||ph==='place'||ph==='peek-own'||ph==='jack-own'||ph==='queen-own')return mine;
   if(ph==='peek-other'||ph==='jack-opp'||ph==='queen-opp')return !mine;
   return false;
@@ -388,7 +389,7 @@ function coachTip(ph,t){
   case 'jack-opp':return `Now pick any other player's card to take. You don't get to look first. That's the gamble.`;
   case 'queen-opp':return `<b>Queen: look, then decide.</b> Tap another player's card to see it.`;
   case 'queen-own':return `If their card is lower than one of yours, <b>tap your card</b> to swap. If not, tap <b>Keep as is</b>.`;
-  case 'window':return t?`<b>Snap time.</b> If you remember a <b>${t.r}</b> anywhere, yours or someone else's, hit <b>Snap!</b> and tap it. It goes on the pile for free. A wrong guess costs you an extra card. Nothing to snap? Tap <b>No snap, carry on</b>.`:'';
+  case 'window':return t?`<b>Snap time.</b> If you remember a <b>${t.r}</b> anywhere, yours or someone else's, just <b>tap that card</b>. It goes on the pile for free. A wrong guess costs you an extra card. Nothing to snap? Tap the <b>✕</b> to move on.`:'';
   case 'give':return `You snapped another player's card, so you hand them one of yours. Give away your highest card.`;
   case 'bot':return `Watch the bots. When someone throws a card away, everyone learns what it was. Keep track; it helps you snap.`;
   case 'end':return `Round over. If the Cabo caller had the lowest total they score −5; otherwise everyone scores their card total. Lowest score after several rounds wins.`;
@@ -444,7 +445,7 @@ function render(){
   else if(ph==='jack-opp')m="Now pick <b>their</b> card to swap with (no peeking).";
   else if(ph==='queen-opp')m="Queen: tap <b>someone else's</b> card to look at it.";
   else if(ph==='queen-own'){m='Tap one of <b>your</b> cards to swap, or keep things as they are.';A.append(btn('Keep as is',()=>{S.reveal.clear();log('You looked and kept things as they were.');endAction(0)}))}
-  else if(ph==='window'){m=S.snapMode?'Tap the card you think matches the <b>'+t.r+'</b>.':(t?`Got a <b>${t.r}</b>? Snap it before the bar runs out.`:'Next player…');if(t)A.append(btn(S.snapMode?'Cancel':'Snap!',()=>{S.snapMode=!S.snapMode;render()},!S.snapMode));if(!S.snapMode)A.append(btn('No snap, carry on',()=>{clearTimers();S.turn=S.next;startTurn()}))}
+  else if(ph==='window'){m=t?`Got a <b>${t.r}</b>? Tap the matching card to snap it before the bar runs out.`:'Next player…';const x=btn('✕',()=>{clearTimers();S.turn=S.next;startTurn()});x.className='xbtn';x.title='No snap, carry on';x.setAttribute('aria-label','No snap, carry on');A.append(x)}
   else if(ph==='give')m=`Nice snap! Pick one of <b>your</b> cards to give ${S.players[S.give.p].name}.`;
   else if(ph==='bot')m=S.botMsg?`<b>${S.botMsg}</b>`:`${nm} is taking their turn…`;
   else if(ph==='busy')m='Take a good look…';
@@ -484,7 +485,7 @@ $('rules').onclick=()=>{
   $('panel').innerHTML=`<h2>How to play</h2>
   <p>Everyone gets 4 face-down cards. You see your bottom two once at the start. Lowest total wins.</p>
   <p><b>Your turn:</b> draw from the deck and either swap it for one of your cards or throw it away (7–Q let you use their power when thrown). Or take the top discard and swap it in.</p>
-  <p><b>Snap:</b> after any discard, a bar runs. If you know a card (yours or anyone's) with the same rank, hit Snap and tap it. Snap someone else's and you give them one of yours. Wrong guess = penalty card. Play continues from the player after the snapper.</p>
+  <p><b>Snap:</b> after any discard, a bar runs. If you know a card (yours or anyone's) with the same rank, tap it to snap it. Tap ✕ to skip. Snap someone else's and you give them one of yours. Wrong guess = penalty card. Play continues from the player after the snapper.</p>
   <p><b>Cabo:</b> call it at the start of your turn instead of playing. Everyone else gets one more turn. Lowest (or tied lowest) caller scores −5, otherwise their sum. No cards left = 0.</p>
   <div style="text-align:right"><button class="primary" id="closeRules">Got it</button></div>`;
   $('overlay').hidden=false;$('closeRules').onclick=()=>{$('overlay').hidden=true};
