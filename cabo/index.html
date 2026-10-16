@@ -4,8 +4,8 @@
 <style>
 /* Layout: flat grey table — opponents across the top, piles in the middle, your 2x2 grid at the bottom. Single light theme to match the deck. */
 :root{
-  --felt:#fbfaf7; --felt-deep:#ffffff; --rail:#c4532d; --ink:#232120; --muted:#7a716a;
-  --cream:#f4eddf; --charcoal:#2b2a29; --rust:#c4532d; --red:#c4532d; --hi:#c4532d;
+  --felt:#fbfaf7; --felt-deep:#ffffff; --rail:#b8a588; --brown-text:#8c7656; --ink:#232120; --muted:#7a716a;
+  --cream:#f4eddf; --charcoal:#2b2a29; --rust:#c4532d; --red:#b8a588; --hi:#b8a588;
   --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif; --body:"Figtree",ui-sans-serif,system-ui,sans-serif;
   --num:"Big Shoulders Display","Arial Narrow",sans-serif;
   color-scheme:light;
@@ -15,18 +15,18 @@ html,body{min-height:100%}
 body{background:radial-gradient(ellipse 60% 90% at 0% 45%,rgba(255,250,235,.9),transparent 70%),radial-gradient(ellipse 60% 90% at 100% 45%,rgba(255,250,235,.9),transparent 70%),radial-gradient(ellipse 80% 60% at 50% 50%,#fdfcf9,#ecebe6 120%) fixed;background-color:var(--felt);color:var(--ink);font-family:var(--body);font-size:15px}
 .wrap{max-width:920px;margin:0 auto;padding-block:16px 32px;padding-inline:16px;display:flex;flex-direction:column;gap:18px}
 header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-h1{font-family:var(--display);font-weight:800;font-size:28px;margin:0;letter-spacing:.02em;color:var(--rail)}
+h1{font-family:var(--display);font-weight:800;font-size:28px;margin:0;letter-spacing:.02em;color:var(--brown-text)}
 .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 button{font:600 14px var(--body);border:1px solid var(--rail);background:transparent;color:var(--ink);padding:8px 14px;border-radius:999px;cursor:pointer}
-button.primary{background:var(--rail);color:#fff}
+button.primary{background:var(--rail);color:var(--ink)}
 button:disabled{opacity:.35;cursor:not-allowed}
 button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
 .table{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"left top right" "mid mid mid" "me me me";gap:12px;align-items:start;justify-items:center}
 .s1{grid-area:left}.s2{grid-area:top}.s3{grid-area:right}.center{grid-area:mid}.table .me{grid-area:me}
 .seat{border:1px solid var(--rail);border-radius:14px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
-.seat.active{border-color:var(--hi);box-shadow:0 0 0 3px rgba(196,83,45,.25);background:rgba(196,83,45,.05)}
+.seat.active{border-color:var(--hi);box-shadow:0 0 0 3px rgba(184,165,136,.25);background:rgba(184,165,136,.05)}
 .seat-name{font-weight:600;font-size:14px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center}
-.tag{font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:var(--red);color:#fff;padding:2px 6px;border-radius:4px}
+.tag{font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:var(--red);color:var(--ink);padding:2px 6px;border-radius:4px}
 .score{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
 .grid{display:grid;grid-template-columns:repeat(2,auto);gap:6px}
 .card{--sh:5px 4px 7px rgba(40,36,30,.16),-5px 4px 7px rgba(40,36,30,.16),0 1px 1.5px rgba(40,36,30,.3);--w:44px;width:var(--w);aspect-ratio:5/7;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:var(--display);font-weight:800;user-select:none;position:relative;border:none;padding:0}
@@ -34,23 +34,23 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .card.face{background:var(--cream);color:var(--ink);overflow:hidden;box-shadow:var(--sh)}
 .card.face svg{width:100%;height:100%}
 .card svg{width:74%;height:auto}
-.card.empty{background:transparent;border:1.5px dashed rgba(196,83,45,.35)}
+.card.empty{background:transparent;border:1.5px dashed rgba(184,165,136,.35)}
 .card.click{cursor:pointer}
 .card.click:hover{transform:translateY(-3px)}
 .card.flash{box-shadow:0 0 0 3px var(--hi),0 0 18px var(--hi)}
-.card.sel{box-shadow:0 0 0 3px var(--rust),var(--sh)}
+.card.sel{box-shadow:0 0 0 3px var(--hi),var(--sh)}
 .me .card{--w:76px}
 .center{display:flex;justify-content:center;align-items:flex-end;gap:22px;flex-wrap:wrap}
 .pile{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
 .pile .card{--w:70px}
 .msg{text-align:center;font-size:16px;min-height:2.6em;text-wrap:balance}
-.msg b{color:var(--hi)}
+.msg b{color:var(--brown-text)}
 .card.hidden-land{visibility:hidden}
 .flyer{position:fixed;left:0;top:0;z-index:20;pointer-events:none;margin:0}
-.toast{position:absolute;left:50%;top:-12px;transform:translate(-50%,-100%);background:var(--hi);color:#fff;font-weight:600;font-size:13px;padding:4px 10px;border-radius:999px;white-space:nowrap;animation:toast 2.2s forwards;pointer-events:none;text-transform:none;letter-spacing:0}
+.toast{position:absolute;left:50%;top:-12px;transform:translate(-50%,-100%);background:var(--hi);color:var(--ink);font-weight:600;font-size:13px;padding:4px 10px;border-radius:999px;white-space:nowrap;animation:toast 2.2s forwards;pointer-events:none;text-transform:none;letter-spacing:0}
 @keyframes toast{0%,80%{opacity:1}100%{opacity:0}}
 .pile{position:relative}
-.bar{height:4px;background:rgba(196,83,45,.15);border-radius:2px;overflow:hidden;max-width:320px;margin:6px auto 0}
+.bar{height:4px;background:rgba(184,165,136,.15);border-radius:2px;overflow:hidden;max-width:320px;margin:6px auto 0}
 .bar i{display:block;height:100%;background:var(--hi);width:100%}
 .actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;min-height:38px}
 .me{align-self:center}
@@ -60,15 +60,16 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .dots{width:40px;height:40px;padding:0;border-radius:50%;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center}
 .menu{position:absolute;right:0;top:46px;background:var(--felt-deep);border:1px solid var(--rail);border-radius:12px;padding:6px;display:flex;flex-direction:column;min-width:170px;z-index:5;box-shadow:0 8px 24px rgba(43,42,41,.15)}
 .menu button{border:none;border-radius:8px;text-align:left}
-.menu button:hover{background:rgba(196,83,45,.08)}
+.menu button:hover{background:rgba(184,165,136,.08)}
 .legend b{color:var(--ink);font-family:var(--display)}
 .logrow{display:flex;gap:12px;align-items:flex-start;border-top:1px solid var(--rail);padding-top:10px}
 .log{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
 .mode{flex:none;position:relative;width:56px;height:30px;padding:0;border-radius:999px;background:var(--felt-deep);border:1px solid var(--rail)}
-.mode .knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--rail);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;transition:transform .2s ease}
+.mode .knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--rail);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;transition:transform .2s ease}
 .mode[aria-checked="true"] .knob{transform:translateX(26px)}
 /* Dark mode: the same table with the lights dimmed — charcoal tabletop, deeper shadows */
-:root[data-mode="dark"]{--felt:#3a3735;--felt-deep:#46423f;--rail:#e6dcc6;--hi:#e6dcc6;--ink:#f1eadb;--muted:#a59c92;color-scheme:dark}
+
+:root[data-mode="dark"]{--brown-text:#e6dcc6;--felt:#3a3735;--felt-deep:#46423f;--rail:#e6dcc6;--hi:#e6dcc6;--ink:#f1eadb;--muted:#a59c92;color-scheme:dark}
 :root[data-mode="dark"] body{background:radial-gradient(ellipse 60% 90% at 0% 45%,rgba(255,236,200,.06),transparent 70%),radial-gradient(ellipse 60% 90% at 100% 45%,rgba(255,236,200,.06),transparent 70%),#3a3735 fixed}
 :root[data-mode="dark"] button.primary,:root[data-mode="dark"] .toast,:root[data-mode="dark"] .mode .knob{color:#2b2a29}
 :root[data-mode="dark"] .brand{color:var(--rail)}
@@ -78,9 +79,9 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .log div:first-child{color:var(--ink)}
 .overlay{position:fixed;inset:0;background:rgba(43,42,41,.35);display:flex;align-items:center;justify-content:center;padding:16px}
 .panel{background:var(--felt-deep);border:1px solid var(--rail);border-radius:16px;padding:22px;max-width:440px;width:100%;display:flex;flex-direction:column;gap:12px}
-.panel h2{font-family:var(--display);margin:0;color:var(--rail)}
+.panel h2{font-family:var(--display);margin:0;color:var(--brown-text)}
 .panel table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-.panel td{padding:6px 4px;border-bottom:1px solid rgba(196,83,45,.2)}
+.panel td{padding:6px 4px;border-bottom:1px solid rgba(184,165,136,.2)}
 .panel td:not(:first-child){text-align:right}
 @media (max-width:520px){.table{gap:6px}.seat{padding:6px}.card{--w:34px}.me .card{--w:68px}.pile .card{--w:58px}}
 @media (prefers-reduced-motion:reduce){.toast{animation:none}.card.click:hover{transform:none}.bar i{transition:none!important}}
@@ -88,7 +89,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 
 <div class="wrap">
   <header>
-    <h1 class="brand"><svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect x="13" y="5" width="20" height="28" rx="3" fill="#2b2a29" transform="rotate(14 23 19)"/><rect x="7" y="7" width="20" height="28" rx="3" fill="#f4eddf" stroke="#2b2a29" stroke-width="1.5" transform="rotate(-8 17 21)"/><path d="M17 16l4 5-4 5-4-5z" fill="#c4532d" transform="rotate(-8 17 21)"/></svg>CABO</h1>
+    <h1 class="brand"><svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect x="13" y="5" width="20" height="28" rx="3" fill="#2b2a29" transform="rotate(14 23 19)"/><rect x="7" y="7" width="20" height="28" rx="3" fill="#f4eddf" stroke="#2b2a29" stroke-width="1.5" transform="rotate(-8 17 21)"/><path d="M17 16l4 5-4 5-4-5z" fill="#b8a588" transform="rotate(-8 17 21)"/></svg>CABO</h1>
     <div class="tools">
       <button class="dots" id="profile" aria-label="Profile"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="8.5" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20c1.2-4 4-5.5 7.5-5.5s6.3 1.5 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><div class="menu-wrap"><button class="dots" id="dots" aria-label="Menu" aria-expanded="false">⋮</button><div class="menu" id="menu" hidden><button id="rules">How to play</button><button id="powers">Card powers</button><button id="newgame">New game</button></div></div>
     </div>
