@@ -4,7 +4,7 @@
 <style>
 /* Layout: flat grey table — opponents across the top, piles in the middle, your 2x2 grid at the bottom. Single light theme to match the deck. */
 :root{
-  --felt:#fbfaf7; --felt-deep:#ffffff; --rail:#b8a588; --brown-text:#8c7656; --ink:#232120; --muted:#7a716a;
+  --felt:#fbfaf7; --felt-deep:#ffffff; --rail:#b8a588; --peek:#1b1a19; --peek-dot:#f4eddf; --brown-text:#8c7656; --ink:#232120; --muted:#7a716a;
   --cream:#f4eddf; --charcoal:#2b2a29; --rust:#c4532d; --red:#b8a588; --hi:#b8a588;
   --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif; --body:"Figtree",ui-sans-serif,system-ui,sans-serif;
   --num:"Big Shoulders Display","Arial Narrow",sans-serif;
@@ -42,6 +42,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .card.empty{background:transparent;border:1.5px dashed rgba(184,165,136,.35)}
 .card.click{cursor:pointer}
 .card.click:hover{transform:translateY(-3px)}
+.card.back.peeked{background:radial-gradient(circle at 50% 50%,var(--peek-dot) 0 7%,transparent 7.5%),var(--peek);transition:background .15s}
 .card.flash{box-shadow:0 0 0 3px var(--hi),0 0 18px var(--hi)}
 .card.sel{box-shadow:0 0 0 3px var(--hi),var(--sh)}
 .me .card{--w:76px}
@@ -78,7 +79,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .mode[aria-checked="true"] .knob{transform:translateX(26px)}
 /* Dark mode: the same table with the lights dimmed — charcoal tabletop, deeper shadows */
 
-:root[data-mode="dark"]{--brown-text:#e6dcc6;--felt:#3a3735;--felt-deep:#46423f;--rail:#e6dcc6;--hi:#e6dcc6;--ink:#f1eadb;--muted:#a59c92;color-scheme:dark}
+:root[data-mode="dark"]{--peek:#f4f0e8;--peek-dot:#2b2a29;--brown-text:#e6dcc6;--felt:#3a3735;--felt-deep:#46423f;--rail:#e6dcc6;--hi:#e6dcc6;--ink:#f1eadb;--muted:#a59c92;color-scheme:dark}
 :root[data-mode="dark"] body{background:radial-gradient(ellipse 60% 90% at 0% 45%,rgba(255,236,200,.06),transparent 70%),radial-gradient(ellipse 60% 90% at 100% 45%,rgba(255,236,200,.06),transparent 70%),#3a3735 fixed}
 :root[data-mode="dark"] button.primary,:root[data-mode="dark"] .toast,:root[data-mode="dark"] .mode .knob{color:#2b2a29}
 :root[data-mode="dark"] .brand{color:var(--rail)}
@@ -182,7 +183,7 @@ function newRound(){
   for(let k=0;k<4;k++)players.forEach(p=>p.hand.push(deck.pop()));
   players.forEach(p=>{p.mem.add(p.hand[2].id);p.mem.add(p.hand[3].id)});
   S={deck,discard:[],players,turn:(round-1)%4,phase:'peek-start',drawn:null,cabo:null,sel:null,
-     reveal:new Set(),flash:new Set(),log:[],turns:0,wid:0,next:0,snapMode:false,give:null};
+     reveal:new Set(),flash:new Set(),peek:new Set(),log:[],turns:0,wid:0,next:0,snapMode:false,give:null};
   log(`Round ${round}. Memorise your bottom two cards.`);
   render();
 }
@@ -195,6 +196,7 @@ function draw(){
 }
 function cards(p){return S.players[p].hand.map((c,i)=>c?{c,i,p}:null).filter(Boolean)}
 function sum(p){return S.players[p].hand.reduce((a,c)=>a+(c?c.v:0),0)}
+function peekFx(ids,ms=1600){ids.forEach(i=>S.peek.add(i));render();later(()=>{ids.forEach(i=>S.peek.delete(i));render()},ms)}
 function flash(ids,ms=1300){ids.forEach(i=>S.flash.add(i));render();later(()=>{ids.forEach(i=>S.flash.delete(i));render()},ms)}
 function reveal(ids,ms,then){ids.forEach(i=>S.reveal.add(i));render();later(()=>{ids.forEach(i=>S.reveal.delete(i));render();then&&then()},ms)}
 
@@ -296,14 +298,14 @@ function botPower(b,pw,worst){
   if(!pw)return; const P=S.players[b];
   const opp=[0,1,2,3].filter(p=>p!==b).flatMap(cards);
   const oppUnknown=opp.filter(x=>!P.mem.has(x.c.id)), oppKnownLow=opp.filter(x=>P.mem.has(x.c.id)).sort((a,c)=>a.c.v-c.c.v)[0];
-  if(pw==='peek-own'){const u=cards(b).filter(x=>!P.mem.has(x.c.id));if(u.length){const x=rnd(u);P.mem.add(x.c.id);log(`${P.name} peeked at one of their cards.`);flash([x.c.id])}}
-  if(pw==='peek-other'&&oppUnknown.length){const x=rnd(oppUnknown);P.mem.add(x.c.id);log(`${P.name} peeked at ${S.players[x.p].name==='You'?'your':S.players[x.p].name+"'s"} card.`);flash([x.c.id])}
+  if(pw==='peek-own'){const u=cards(b).filter(x=>!P.mem.has(x.c.id));if(u.length){const x=rnd(u);P.mem.add(x.c.id);log(`${P.name} peeked at one of their cards.`);peekFx([x.c.id])}}
+  if(pw==='peek-other'&&oppUnknown.length){const x=rnd(oppUnknown);P.mem.add(x.c.id);log(`${P.name} peeked at ${S.players[x.p].name==='You'?'your':S.players[x.p].name+"'s"} card.`);peekFx([x.c.id])}
   if(pw==='jack'&&worst&&worst.c.v>=7&&opp.length){
     const tgt=oppKnownLow&&oppKnownLow.c.v<worst.c.v?oppKnownLow:rnd(opp); swap(b,worst.i,tgt.p,tgt.i);
   }
   if(pw==='queen'&&opp.length){
-    const tgt=oppKnownLow||rnd(opp); P.mem.add(tgt.c.id);
-    if(worst&&tgt.c.v<worst.c.v)swap(b,worst.i,tgt.p,tgt.i);else{log(`${P.name} looked at a card and kept things as they were.`);flash([tgt.c.id])}
+    const tgt=oppKnownLow||rnd(opp); P.mem.add(tgt.c.id); peekFx([tgt.c.id],1200);
+    if(worst&&tgt.c.v<worst.c.v)swap(b,worst.i,tgt.p,tgt.i);else{log(`${P.name} looked at a card and kept things as they were.`)}
   }
 }
 
@@ -342,6 +344,8 @@ function cardEl(c,p,i,show){
   if(show)el.innerHTML=faceSVG(c);
   el.setAttribute('aria-label',show?`${c.r}${c.s} (${c.v} points)`:'face-down card');
   if(S.flash.has(c.id))el.classList.add('flash');
+  if(S.peek.has(c.id))el.classList.add('peeked');
+  if(c.id>=0)el.dataset.id=c.id;
   if(S.sel&&S.sel.p===p&&S.sel.i===i)el.classList.add('sel');
   if(p!=null&&clickable(p,i)){el.classList.add('click');el.onclick=()=>clickCard(p,i)}else el.tabIndex=-1;
   return el;
@@ -360,10 +364,9 @@ function seat(p){
   d.append(g);return d;
 }
 function throwCard(target,who){
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const p=NAMES.indexOf(who); const src=p<0?null:$(p===0?'me':'s'+p); if(!src||!target.isConnected)return;
   const a=src.getBoundingClientRect(), b=target.getBoundingClientRect();
-  const f=target.cloneNode(true); f.classList.remove('hidden-land','click'); f.classList.add('flyer');
+  const f=target.cloneNode(true); f.classList.remove('hidden-land','click'); f.classList.add('flyer'); delete f.dataset.id;
   f.style.width=b.width+'px'; document.body.append(f);
   const sx=a.left+a.width/2-b.width/2, sy=a.top+a.height/2-b.height/2, spin=(b.left<a.left?-1:1)*360;
   f.animate([
@@ -383,8 +386,8 @@ function coachTip(ph,t){
   case 'drawn':
     if(!d)return '';
     if(d.v<=4)return `A <b>${d.r}</b> is only ${d.v} point${d.v>1?'s':''}. Keep it: <b>tap one of your cards</b> to swap it in. Pick one you know is high, or one you haven't seen.`;
-    if(POWER[d.r])return `A <b>${d.r}</b> is worth ${d.v} points, too high to keep. But throwing it away gives you a power: <b>${POWER_LABEL[POWER[d.r]]}</b>. Tap the discard button to use it.`;
-    return `A <b>${d.r}</b> is ${d.v} points and has no power. Just <b>discard it</b>.`;
+    if(POWER[d.r])return `A <b>${d.r}</b> is worth ${d.v} points, too high to keep. But throwing it away gives you a power: <b>${POWER_LABEL[POWER[d.r]]}</b>. Tap the discard pile (or the button) to use it.`;
+    return `A <b>${d.r}</b> is ${d.v} points and has no power. Just <b>tap the discard pile</b> to throw it away.`;
   case 'place':return `You must keep the ${d?d.r:'card'}. <b>Tap the card of yours</b> it should replace. The card you give up goes face up on the discard pile.`;
   case 'peek-own':return `<b>7 and 8</b> let you look at one of your own cards. Pick one you haven't seen yet so you know more of your total.`;
   case 'peek-other':return `<b>9 and 10</b> let you look at another player's card. Useful for snapping later, or for choosing a target for a J or Q.`;
@@ -415,14 +418,27 @@ function tickBar(){
   $('bari').style.transform=`scaleX(${left})`;
 }
 setInterval(tickBar,100);
+function animateMoves(before){
+  const k=window.__k||1, deck=document.querySelector('.pile .card.back'), dr=deck&&deck.getBoundingClientRect();
+  document.querySelectorAll('.wrap [data-id]').forEach(el=>{
+    if(el.classList.contains('hidden-land'))return;
+    const now=el.getBoundingClientRect(); let from=before.get(el.dataset.id);
+    if(!from){if(!dr||!before.size)return; from=dr}
+    const dx=(from.left-now.left)/k, dy=(from.top-now.top)/k;
+    if(Math.abs(dx)<2&&Math.abs(dy)<2)return;
+    el.style.zIndex=6;
+    el.animate([{transform:`translate(${dx}px,${dy}px) scale(1.06)`,filter:'drop-shadow(8px 10px 8px rgba(40,36,30,.25))'},{transform:'none',filter:'none'}],{duration:480,easing:'cubic-bezier(.2,.8,.2,1)'}).onfinish=()=>{el.style.zIndex=''};
+  });
+}
 function fit(){
   const w=document.querySelector('.wrap'); w.style.transform='none'; w.style.minHeight='0';
-  const k=Math.min(1,(innerHeight-2)/w.scrollHeight); w.style.minHeight='';
+  const k=Math.min(1,(innerHeight-2)/w.scrollHeight); w.style.minHeight=''; window.__k=k;
   w.style.transform=k<1?`scale(${k})`:'none';
 }
 addEventListener('resize',()=>fit());
 function btn(t,fn,primary){const b=document.createElement('button');b.textContent=t;b.onclick=fn;if(primary)b.className='primary';return b}
 function render(){
+  const before=new Map(); document.querySelectorAll('.wrap [data-id]').forEach(e=>before.set(e.dataset.id,e.getBoundingClientRect()));
   [1,2,3].forEach(p=>{const el=seat(p);el.classList.add('s'+p);el.id='s'+p;$('s'+p).replaceWith(el)});
   const me=seat(0);me.id='me';$('me').replaceWith(me);
   const C=$('center');C.innerHTML='';
@@ -432,6 +448,7 @@ function render(){
   const dis=document.createElement('div');dis.className='pile';
   const t=topCard(); const de=t?cardEl(t,null,0,true):cardEl(null);
   if(S.phase==='turn'&&t&&cards(0).length){de.classList.add('click');de.onclick=clickDiscard}
+  if(S.phase==='drawn'){de.classList.add('click');de.onclick=throwDrawn;de.title='Throw the card away'}
   if(t&&t.id!==lastTop){lastTop=t.id;landAt=Date.now();landWho=(S.log[0]||'').split(' ')[0]}
   if(!t)lastTop=null;
   const age=Date.now()-landAt;
@@ -446,7 +463,7 @@ function render(){
   const nm=S.players[S.turn].name;
   if(ph==='peek-start'){m='Your <b>bottom two</b> cards are face up. Remember them!';A.append(btn("I've got them",()=>{log('Game on.');startTurn()},true))}
   else if(ph==='turn'){m='Your turn: tap the <b>deck</b> to draw, or tap the <b>discard</b> to take it.';if(S.cabo===null)A.append(btn('Call CABO',()=>{S.cabo=0;log('You called CABO! Everyone gets one more turn.');S.turn=1;startTurn()}))}
-  else if(ph==='drawn'){const pw=POWER[(S.drawn||{}).r];m=`You drew a <b>${(S.drawn||{}).r}</b>. Tap one of your cards to swap it in, or throw it away.`;A.append(btn(pw?`Discard & ${POWER_LABEL[pw]}`:'Discard it',throwDrawn,true))}
+  else if(ph==='drawn'){const pw=POWER[(S.drawn||{}).r];m=`You drew a <b>${(S.drawn||{}).r}</b>. Tap one of your cards to swap it in, or tap the <b>discard pile</b> to throw it away.`;A.append(btn(pw?`Discard & ${POWER_LABEL[pw]}`:'Discard it',throwDrawn,true))}
   else if(ph==='place')m=`Tap the card of yours that the <b>${(S.drawn||{}).r}</b> replaces.`;
   else if(ph==='peek-own')m='Tap one of <b>your</b> cards to peek at it.';
   else if(ph==='peek-other')m="Tap <b>someone else's</b> card to peek at it.";
@@ -465,6 +482,7 @@ function render(){
   const tip=learner?coachTip(ph,t):''; $('coach').hidden=!tip; $('coach').innerHTML=tip?`<span class="lbl">Coach</span>${tip}`:'';
   $('log').innerHTML=S.log.map(l=>`<div>${l}</div>`).join('');
   fit();
+  animateMoves(before);
 }
 
 const LEGEND=`<div class="legend">
