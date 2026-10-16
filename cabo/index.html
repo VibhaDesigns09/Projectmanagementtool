@@ -69,8 +69,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .legend b{color:var(--ink);font-family:var(--display)}
 .timer{height:5px;border-radius:3px;background:rgba(184,165,136,.25);overflow:hidden;visibility:hidden;margin-bottom:-6px}
 .timer.on{visibility:visible}
-.timer i{display:block;height:100%;width:100%;background:var(--hi);transform-origin:left center;animation:drain var(--len,30s) linear forwards}
-@keyframes drain{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.timer i{display:block;height:100%;width:100%;background:var(--hi);transform-origin:left center}
 .logrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--rail);padding-top:10px}
 .logbtn{font-size:13px;padding:6px 12px}
 .log{flex-basis:100%!important;order:3;max-height:62px;overflow-y:auto;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
@@ -94,7 +93,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .panel td{padding:6px 4px;border-bottom:1px solid rgba(184,165,136,.2)}
 .panel td:not(:first-child){text-align:right}
 @media (max-width:520px){.table{gap:28px 6px}.seat{padding:6px}.card{--w:34px}.me .card{--w:56px}.pile .card{--w:50px}.center{gap:10px}}
-@media (prefers-reduced-motion:reduce){.toast{animation:none}.card.click:hover{transform:none}.timer i{animation:none!important;transform:scaleX(.5)}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}.card.click:hover{transform:none}}
 .start{position:fixed;inset:0;z-index:30;background:var(--felt);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
 .start-card{width:100%;max-width:380px;display:flex;flex-direction:column;gap:18px;align-items:stretch;text-align:center}
 .start-card .logo{width:72px;height:72px;margin:0 auto}
@@ -211,7 +210,7 @@ function endAction(actor){
 }
 function openWindow(len=30000){
   clearTimers(); S.phase='window'; S.snapMode=false; const wid=++S.wid;
-  S.winStart=Date.now(); S.winLen=len; const bi=$('bari'); bi.style.animation='none'; void bi.offsetWidth; bi.style.animation=''; render();
+  S.winStart=Date.now(); S.winLen=len; render();
   for(let b=1;b<4;b++){
     const t=topCard(); if(!t)break;
     const own=cards(b).find(x=>x.c.r===t.r&&S.players[b].mem.has(x.c.id));
@@ -410,6 +409,12 @@ $('startForm').onsubmit=e=>{
   learner=(e.submitter&&e.submitter.value)==='learn';
   $('start').hidden=true; totals=[0,0,0,0]; round=0; gameOn=true; newRound();
 };
+function tickBar(){
+  if(!S||S.phase!=='window'||!S.winLen)return;
+  const left=Math.max(0,1-(Date.now()-S.winStart)/S.winLen);
+  $('bari').style.transform=`scaleX(${left})`;
+}
+setInterval(tickBar,100);
 function fit(){
   const w=document.querySelector('.wrap'); w.style.transform='none'; w.style.minHeight='0';
   const k=Math.min(1,(innerHeight-2)/w.scrollHeight); w.style.minHeight='';
@@ -456,7 +461,7 @@ function render(){
   else if(ph==='end')m='Round over. Every card is face up.';
   if(['peek-own','peek-other','jack-own','jack-opp','queen-opp'].includes(ph))A.append(btn('Skip power',()=>endAction(0)));
   if(S.cabo!==null&&ph!=='end')m+=` <span class="score">· Final lap (${S.players[S.cabo].name} called Cabo)</span>`;
-  $('msg').innerHTML=m; $('bar').classList.toggle('on',ph==='window'); if(ph==='window'){const bi=$('bari');bi.style.setProperty('--len',S.winLen+'ms');bi.style.animationDelay=`-${Date.now()-S.winStart}ms`}
+  $('msg').innerHTML=m; $('bar').classList.toggle('on',ph==='window'); tickBar();
   const tip=learner?coachTip(ph,t):''; $('coach').hidden=!tip; $('coach').innerHTML=tip?`<span class="lbl">Coach</span>${tip}`:'';
   $('log').innerHTML=S.log.map(l=>`<div>${l}</div>`).join('');
   fit();
