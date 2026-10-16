@@ -31,6 +31,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .seat{border:1px solid var(--rail);border-radius:14px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
 .seat.active{border-color:var(--hi);box-shadow:0 0 0 3px rgba(184,165,136,.25);background:rgba(184,165,136,.05)}
 .seat-name{font-weight:600;font-size:14px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center}
+.tag.spec{background:transparent;border:1px solid var(--rail);color:var(--muted)}
 .tag{font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:var(--red);color:var(--ink);padding:2px 6px;border-radius:4px}
 .score{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
 .grid{display:grid;grid-template-rows:repeat(2,auto);grid-auto-columns:auto;gap:6px}
@@ -217,7 +218,14 @@ function reveal(ids,ms,then){ids.forEach(i=>S.reveal.add(i));render();later(()=>
 /* ---------- turn flow ---------- */
 function startTurn(){
   S.turns++;
-  if(S.cabo!==null&&S.turn===S.cabo)return endRound();
+  // players with no cards left sit out as spectators (they score 0)
+  for(let k=0;k<4;k++){
+    if(S.cabo!==null&&S.turn===S.cabo)return endRound();
+    if(cards(S.turn).length)break;
+    if(k===3)return endRound();
+    S.turn=(S.turn+1)%4;
+  }
+  if(S.cabo===null&&[0,1,2,3].filter(p=>cards(p).length).length<=1)return endRound();
   S.phase=S.turn===0?'turn':'bot'; S.botMsg=''; S.drawn=null; S.sel=null; render();
   if(S.turn!==0)later(()=>botTurn(S.turn),learner?2200:1100);
 }
@@ -266,10 +274,10 @@ function endRound(){
     return s;
   });
   res.forEach((r,i)=>totals[i]+=r);
-  const caller=S.players[S.cabo].name, ok=res[S.cabo]===-5;
+  const caller=S.cabo===null?'':S.players[S.cabo].name, ok=S.cabo!==null&&res[S.cabo]===-5;
   render();
   $('panel').innerHTML=`<h2>Round ${round} over</h2>
-    <p>${caller} called Cabo and ${ok?'had the lowest hand: −5!':(cards(S.cabo).length?'was not the lowest. No bonus.':'had no cards left: 0.')}</p>
+    <p>${S.cabo===null?'Only one player still had cards, so the round ended. Players with no cards score 0.':`${caller} called Cabo and ${ok?'had the lowest hand: −5!':(cards(S.cabo).length?'was not the lowest. No bonus.':'had no cards left: 0.')}`}</p>
     <table><tr><td></td><td>Cards</td><td>Round</td><td>Total</td></tr>
     ${S.players.map((p,i)=>`<tr><td>${p.name}</td><td>${sums[i]}</td><td>${res[i]}</td><td><b>${totals[i]}</b></td></tr>`).join('')}</table>
     <div style="display:flex;gap:8px;justify-content:flex-end"><button id="peekTable">See table</button><button class="primary" id="nextRound">Next round</button></div>`;
@@ -335,7 +343,7 @@ function throwDrawn(){
 }
 function clickCard(p,i){
   const c=S.players[p].hand[i]; if(!c)return; const ph=S.phase;
-  if(ph==='window')return snap(0,p,i);
+  if(ph==='window'){if(!cards(0).length)return;return snap(0,p,i)}
   if(ph==='give'){if(p!==0)return;const g=S.give;S.players[g.p].hand[g.i]=c;S.players[0].hand[i]=null;log(`You gave ${S.players[g.p].name} a card.`);S.give=null;S.phase='busy';flash([c.id]);return afterSnap()}
   if((ph==='drawn'||ph==='place')&&p===0){const d=S.drawn;S.drawn=null;S.phase='busy';replace(0,i,d,ph==='place');return endAction(0)}
   if(ph==='peek-own'&&p===0){S.players[0].mem.add(c.id);S.phase='busy';log('You peeked at one of your cards.');SFX.peek();return reveal([c.id],2000,()=>endAction(0))}
@@ -347,7 +355,7 @@ function clickCard(p,i){
 }
 function clickable(p,i){
   const ph=S.phase, mine=p===0;
-  if(ph==='window')return !!topCard();
+  if(ph==='window')return !!topCard()&&cards(0).length>0;
   if(ph==='give'||ph==='drawn'||ph==='place'||ph==='peek-own'||ph==='jack-own'||ph==='queen-own')return mine;
   if(ph==='peek-other'||ph==='jack-opp'||ph==='queen-opp')return !mine;
   return false;
@@ -375,7 +383,7 @@ function isShown(c,p,i){
 function seat(p){
   const P=S.players[p], d=document.createElement('div');
   d.className='seat'+(p===0?' me':'')+((S.turn===p&&!['window','end','peek-start'].includes(S.phase))?' active':'');
-  d.innerHTML=`<div class="seat-name">${p===0?playerName:P.name}${S.cabo===p?' <span class="tag">Cabo</span>':''}<span class="score">${totals[p]} pts</span></div>`;
+  d.innerHTML=`<div class="seat-name">${p===0?playerName:P.name}${S.cabo===p?' <span class="tag">Cabo</span>':''}${!cards(p).length?' <span class="tag spec">Spectator</span>':''}<span class="score">${totals[p]} pts</span></div>`;
   const g=document.createElement('div');g.className='grid';
   P.hand.forEach((c,i)=>{const el=cardEl(c,p,i,c&&isShown(c,p,i));el.style.gridRow=i<4?(i<2?1:2):(i-4)%2+1;el.style.gridColumn=i<4?i%2+1:3+Math.floor((i-4)/2);g.append(el)});
   d.append(g);return d;
@@ -488,7 +496,7 @@ function render(){
   else if(ph==='jack-opp')m="Now pick <b>their</b> card to swap with (no peeking).";
   else if(ph==='queen-opp')m="Queen: tap <b>someone else's</b> card to look at it.";
   else if(ph==='queen-own'){m='Tap one of <b>your</b> cards to swap, or keep things as they are.';A.append(btn('Keep as is',()=>{S.reveal.clear();log('You looked and kept things as they were.');endAction(0)}))}
-  else if(ph==='window'){m=t?`Got a <b>${t.r}</b>? Tap the matching card to snap it before the bar runs out.`:'Next player…';const x=btn('✕',()=>{clearTimers();S.turn=S.next;startTurn()});x.className='xbtn';x.title='No snap, carry on';x.setAttribute('aria-label','No snap, carry on');if(S.next===1&&S.cabo===null&&!S.give)A.append(btn('Call CABO',()=>{S.cabo=0;log('You called CABO! Everyone gets one more turn.');clearTimers();S.turn=S.next;startTurn()},true));A.append(x)}
+  else if(ph==='window'){m=t?`Got a <b>${t.r}</b>? Tap the matching card to snap it before the bar runs out.`:'Next player…';const x=btn('✕',()=>{clearTimers();S.turn=S.next;startTurn()});x.className='xbtn';x.title='No snap, carry on';x.setAttribute('aria-label','No snap, carry on');if(S.next===1&&S.cabo===null&&!S.give&&cards(0).length)A.append(btn('Call CABO',()=>{S.cabo=0;log('You called CABO! Everyone gets one more turn.');clearTimers();S.turn=S.next;startTurn()},true));A.append(x)}
   else if(ph==='give')m=`Nice snap! Pick one of <b>your</b> cards to give ${S.players[S.give.p].name}.`;
   else if(ph==='bot')m=S.botMsg?`<b>${S.botMsg}</b>`:`${nm} is taking their turn…`;
   else if(ph==='busy')m=S.reveal.size?'Take a good look…':`<b>${S.log[0]||''}</b>`;
