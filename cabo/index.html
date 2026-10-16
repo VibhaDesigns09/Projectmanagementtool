@@ -21,7 +21,7 @@ button{font:600 14px var(--body);border:1px solid var(--rail);background:transpa
 button.primary{background:var(--rail);color:var(--ink)}
 button:disabled{opacity:.35;cursor:not-allowed}
 button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
-.table{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"left top right" "mid me me" "ctrl ctrl ctrl";gap:12px;align-items:start;justify-items:center}
+.table{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"left top right" "mid me me" "ctrl ctrl ctrl";gap:36px 12px;align-items:start;justify-items:center}
 .s1{grid-area:left}.s2{grid-area:top}.s3{grid-area:right}.center{grid-area:mid}.table .me{grid-area:me}.ctrl{grid-area:ctrl;width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:10px;align-self:center}
 .ctrl>.say{flex:1 1 180px;min-width:0}.ctrl .msg{text-align:left;min-height:0}.ctrl .bar{margin:6px 0 0}.ctrl .actions{flex:0 1 auto;justify-content:flex-end}.ctrl .coach{flex:1 1 100%;margin:0;max-width:none}
 @media (min-width:760px){.table{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"left top right" "mid ctrl me"}}
@@ -67,7 +67,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .legend b{color:var(--ink);font-family:var(--display)}
 .logrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--rail);padding-top:10px}
 .logbtn{font-size:13px;padding:6px 12px}
-.log{flex-basis:100%!important;order:3;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.log{flex-basis:100%!important;order:3;max-height:62px;overflow-y:auto;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
 .mode{flex:none;position:relative;width:56px;height:30px;padding:0;border-radius:999px;background:var(--felt-deep);border:1px solid var(--rail)}
 .mode .knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--rail);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;transition:transform .2s ease}
 .mode[aria-checked="true"] .knob{transform:translateX(26px)}
