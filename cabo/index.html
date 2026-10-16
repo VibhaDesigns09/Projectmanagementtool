@@ -222,6 +222,7 @@ function openWindow(len=30000){
   }
   later(()=>{if(S.phase==='window'&&S.wid===wid){S.turn=S.next;startTurn()}},len);
 }
+function afterSnap(){clearTimers();S.phase='busy';render();later(()=>{S.turn=S.next;startTurn()},1100)}
 function snap(by,p,i){
   const c=S.players[p].hand[i], t=topCard(); if(!c||!t)return;
   const who=S.players[by].name, whose=p===by?(by===0?'your own':'their own'):`${S.players[p].name}'s`;
@@ -234,7 +235,7 @@ function snap(by,p,i){
       const g=known[0]||rnd(mine); S.players[p].hand[i]=g.c; S.players[by].hand[g.i]=null;
       log(`${who} gave ${S.players[p].name} a card in return.`); flash([g.c.id]);
     }
-    openWindow(2500);
+    afterSnap();
   }else{
     publicSee(c); const pen=draw(); if(pen)S.players[by].hand.push(pen);
     log(`${who} tried to snap a ${c.r} on a ${t.r}. Penalty card!`);
@@ -319,7 +320,7 @@ function throwDrawn(){
 function clickCard(p,i){
   const c=S.players[p].hand[i]; if(!c)return; const ph=S.phase;
   if(ph==='window')return snap(0,p,i);
-  if(ph==='give'){if(p!==0)return;const g=S.give;S.players[g.p].hand[g.i]=c;S.players[0].hand[i]=null;log(`You gave ${S.players[g.p].name} a card.`);S.give=null;flash([c.id]);return openWindow(2500)}
+  if(ph==='give'){if(p!==0)return;const g=S.give;S.players[g.p].hand[g.i]=c;S.players[0].hand[i]=null;log(`You gave ${S.players[g.p].name} a card.`);S.give=null;S.phase='busy';flash([c.id]);return afterSnap()}
   if((ph==='drawn'||ph==='place')&&p===0){const d=S.drawn;S.drawn=null;S.phase='busy';replace(0,i,d,ph==='place');return endAction(0)}
   if(ph==='peek-own'&&p===0){S.players[0].mem.add(c.id);S.phase='busy';log('You peeked at one of your cards.');return reveal([c.id],2000,()=>endAction(0))}
   if(ph==='peek-other'&&p!==0){S.players[0].mem.add(c.id);S.phase='busy';log(`You peeked at ${S.players[p].name}'s card.`);return reveal([c.id],2000,()=>endAction(0))}
@@ -474,7 +475,7 @@ function render(){
   else if(ph==='window'){m=t?`Got a <b>${t.r}</b>? Tap the matching card to snap it before the bar runs out.`:'Next player…';const x=btn('✕',()=>{clearTimers();S.turn=S.next;startTurn()});x.className='xbtn';x.title='No snap, carry on';x.setAttribute('aria-label','No snap, carry on');if(S.next===1&&S.cabo===null&&!S.give)A.append(btn('Call CABO',()=>{S.cabo=0;log('You called CABO! Everyone gets one more turn.');clearTimers();S.turn=S.next;startTurn()},true));A.append(x)}
   else if(ph==='give')m=`Nice snap! Pick one of <b>your</b> cards to give ${S.players[S.give.p].name}.`;
   else if(ph==='bot')m=S.botMsg?`<b>${S.botMsg}</b>`:`${nm} is taking their turn…`;
-  else if(ph==='busy')m='Take a good look…';
+  else if(ph==='busy')m=S.reveal.size?'Take a good look…':`<b>${S.log[0]||''}</b>`;
   else if(ph==='end')m='Round over. Every card is face up.';
   if(['peek-own','peek-other','jack-own','jack-opp','queen-opp'].includes(ph))A.append(btn('Skip power',()=>endAction(0)));
   if(S.cabo!==null&&ph!=='end')m+=` <span class="score">· Final lap (${S.players[S.cabo].name} called Cabo)</span>`;
