@@ -56,6 +56,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .toast{position:absolute;left:50%;top:-12px;transform:translate(-50%,-100%);background:var(--hi);color:var(--ink);font-weight:600;font-size:13px;padding:4px 10px;border-radius:999px;white-space:nowrap;animation:toast 2.2s forwards;pointer-events:none;text-transform:none;letter-spacing:0}
 @keyframes toast{0%,80%{opacity:1}100%{opacity:0}}
 .pile{position:relative}
+.inhand{color:var(--rust);font-weight:600}
 .bar{height:4px;background:rgba(184,165,136,.15);border-radius:2px;overflow:hidden;max-width:320px;margin:6px auto 0}
 .bar i{display:block;height:100%;background:var(--hi);width:100%}
 .actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;min-height:38px}
@@ -447,18 +448,18 @@ function render(){
   const dk=cardEl({id:-1,r:'',s:''},null,0,false); if(S.phase==='turn'){dk.classList.add('click');dk.onclick=clickDeck}
   deck.append(dk,`Deck · ${S.deck.length}`);
   const dis=document.createElement('div');dis.className='pile';
-  const t=topCard(); const de=t?cardEl(t,null,0,true):cardEl(null);
+  const t=topCard(), shown=S.drawn||t; const de=shown?cardEl(shown,null,0,true):cardEl(null);
   if(S.phase==='turn'&&t&&cards(0).length){de.classList.add('click');de.onclick=clickDiscard}
   if(S.phase==='drawn'){de.classList.add('click');de.onclick=throwDrawn;de.title='Throw the card away'}
-  if(t&&t.id!==lastTop){lastTop=t.id;landAt=Date.now();landWho=(S.log[0]||'').split(' ')[0]}
-  if(!t)lastTop=null;
-  const age=Date.now()-landAt;
+  if(S.drawn)lastTop=S.drawn.id;
+  else if(t&&t.id!==lastTop){lastTop=t.id;landAt=Date.now();landWho=(S.log[0]||'').split(' ')[0]}
+  if(!t&&!S.drawn)lastTop=null;
+  const age=S.drawn?1e9:Date.now()-landAt;
   if(t&&age<450){de.classList.add('hidden-land');clearTimeout(window.__land);window.__land=setTimeout(render,460-age)}
   if(t&&age<30)requestAnimationFrame(()=>throwCard(de,landWho));
   if(t&&age<2200){const ts=document.createElement('span');ts.className='toast';ts.style.animationDelay=`-${age}ms`;ts.textContent=`${landWho} discarded ${t.r}`;dis.append(ts)}
-  dis.append(de,'Discard');
+  if(S.drawn){const l=document.createElement('span');l.className='inhand';l.textContent='In hand';dis.append(de,l)}else dis.append(de,'Discard');
   C.append(deck,dis);
-  if(S.drawn){const dr=document.createElement('div');dr.className='pile';dr.append(cardEl(S.drawn,null,0,true),'In hand');C.append(dr)}
 
   const A=$('actions');A.innerHTML='';const ph=S.phase;let m='';
   const nm=S.players[S.turn].name;
