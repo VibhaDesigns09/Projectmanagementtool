@@ -68,10 +68,12 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .mode .knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--rail);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;transition:transform .2s ease}
 .mode[aria-checked="true"] .knob{transform:translateX(26px)}
 /* Dark mode: the same table with the lights dimmed — charcoal tabletop, deeper shadows */
-:root[data-mode="dark"]{--felt:#1e1c1b;--felt-deep:#2a2826;--ink:#f1eadb;--muted:#a59c92;color-scheme:dark}
-:root[data-mode="dark"] body{background:radial-gradient(ellipse 60% 90% at 0% 45%,rgba(255,236,200,.06),transparent 70%),radial-gradient(ellipse 60% 90% at 100% 45%,rgba(255,236,200,.06),transparent 70%),#1e1c1b fixed}
+:root[data-mode="dark"]{--felt:#3a3735;--felt-deep:#46423f;--rail:#e6dcc6;--hi:#e6dcc6;--ink:#f1eadb;--muted:#a59c92;color-scheme:dark}
+:root[data-mode="dark"] body{background:radial-gradient(ellipse 60% 90% at 0% 45%,rgba(255,236,200,.06),transparent 70%),radial-gradient(ellipse 60% 90% at 100% 45%,rgba(255,236,200,.06),transparent 70%),#3a3735 fixed}
+:root[data-mode="dark"] button.primary,:root[data-mode="dark"] .toast,:root[data-mode="dark"] .mode .knob{color:#2b2a29}
+:root[data-mode="dark"] .brand{color:var(--rail)}
 :root[data-mode="dark"] .card{--sh:5px 4px 8px rgba(0,0,0,.45),-5px 4px 8px rgba(0,0,0,.45),0 1px 1.5px rgba(0,0,0,.6)}
-:root[data-mode="dark"] .card.back{background:radial-gradient(circle at 50% 50%,var(--cream) 0 7%,transparent 7.5%),#111;box-shadow:inset 0 0 0 1px #3a3734,var(--sh)}
+:root[data-mode="dark"] .card.back{background:radial-gradient(circle at 50% 50%,var(--cream) 0 7%,transparent 7.5%),#232120;box-shadow:inset 0 0 0 3px #e6dcc6,var(--sh)}
 .log div:first-child{color:var(--ink)}
 .overlay{position:fixed;inset:0;background:rgba(43,42,41,.35);display:flex;align-items:center;justify-content:center;padding:16px}
 .panel{background:var(--felt-deep);border:1px solid var(--rail);border-radius:16px;padding:22px;max-width:440px;width:100%;display:flex;flex-direction:column;gap:12px}
