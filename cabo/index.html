@@ -58,11 +58,18 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .menu-wrap{position:relative}
 .brand{display:flex;align-items:center;gap:8px}.logo{width:34px;height:34px;filter:drop-shadow(3px 2px 2px rgba(40,36,30,.18)) drop-shadow(-3px 2px 2px rgba(40,36,30,.18))}
 .dots{width:40px;height:40px;padding:0;border-radius:50%;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center}
-.menu{position:absolute;right:0;top:46px;background:#fff;border:1px solid var(--rail);border-radius:12px;padding:6px;display:flex;flex-direction:column;min-width:170px;z-index:5;box-shadow:0 8px 24px rgba(43,42,41,.15)}
+.menu{position:absolute;right:0;top:46px;background:var(--felt-deep);border:1px solid var(--rail);border-radius:12px;padding:6px;display:flex;flex-direction:column;min-width:170px;z-index:5;box-shadow:0 8px 24px rgba(43,42,41,.15)}
 .menu button{border:none;border-radius:8px;text-align:left}
 .menu button:hover{background:rgba(196,83,45,.08)}
 .legend b{color:var(--ink);font-family:var(--display)}
-.log{font-size:13px;color:var(--muted);border-top:1px solid var(--rail);padding-top:10px;display:flex;flex-direction:column;gap:3px}
+.logrow{display:flex;gap:12px;align-items:flex-start;border-top:1px solid var(--rail);padding-top:10px}
+.log{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.mode{flex:none;display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:13px}
+/* Dark mode: the same table with the lights dimmed — charcoal tabletop, deeper shadows */
+:root[data-mode="dark"]{--felt:#1e1c1b;--felt-deep:#2a2826;--ink:#f1eadb;--muted:#a59c92;color-scheme:dark}
+:root[data-mode="dark"] body{background:radial-gradient(ellipse 60% 90% at 0% 45%,rgba(255,236,200,.06),transparent 70%),radial-gradient(ellipse 60% 90% at 100% 45%,rgba(255,236,200,.06),transparent 70%),#1e1c1b fixed}
+:root[data-mode="dark"] .card{--sh:5px 4px 8px rgba(0,0,0,.45),-5px 4px 8px rgba(0,0,0,.45),0 1px 1.5px rgba(0,0,0,.6)}
+:root[data-mode="dark"] .card.back{background:radial-gradient(circle at 50% 50%,var(--cream) 0 7%,transparent 7.5%),#111;box-shadow:inset 0 0 0 1px #3a3734,var(--sh)}
 .log div:first-child{color:var(--ink)}
 .overlay{position:fixed;inset:0;background:rgba(43,42,41,.35);display:flex;align-items:center;justify-content:center;padding:16px}
 .panel{background:var(--felt-deep);border:1px solid var(--rail);border-radius:16px;padding:22px;max-width:440px;width:100%;display:flex;flex-direction:column;gap:12px}
@@ -88,7 +95,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
   </div>
   <div><div class="msg" id="msg"></div><div class="bar" id="bar" hidden><i id="bari"></i></div></div>
   <div class="actions" id="actions"></div>
-  <div class="log" id="log"></div>
+  <div class="logrow"><div class="log" id="log"></div><button class="mode" id="mode" aria-pressed="false"></button></div>
 </div>
 <div class="overlay" id="overlay" hidden><div class="panel" id="panel"></div></div>
 
@@ -378,6 +385,10 @@ const LEGEND=`<div class="legend">
   </div>`;
 $('dots').onclick=e=>{e.stopPropagation();const m=$('menu');m.hidden=!m.hidden;$('dots').setAttribute('aria-expanded',String(!m.hidden))};
 document.addEventListener('click',()=>{$('menu').hidden=true;$('dots').setAttribute('aria-expanded','false')});
+function setMode(m){document.documentElement.dataset.mode=m;$('mode').textContent=m==='dark'?'☀ Light mode':'☾ Dark mode';$('mode').setAttribute('aria-pressed',String(m==='dark'));try{localStorage.setItem('cabo-mode',m)}catch(e){}}
+let mode0='light';try{mode0=localStorage.getItem('cabo-mode')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch(e){}
+setMode(mode0);
+$('mode').onclick=()=>setMode(document.documentElement.dataset.mode==='dark'?'light':'dark');
 $('profile').onclick=()=>{const best=Math.min(...totals);$('panel').innerHTML=`<h2>You</h2><p>Round ${round} · Total score <b>${totals[0]}</b> pts${round>1&&totals[0]===best?' · leading':''}</p><p class="score">Profiles and playing with friends online come later.</p><div style="text-align:right"><button class="primary" id="closeP">Close</button></div>`;$('overlay').hidden=false;$('closeP').onclick=()=>{$('overlay').hidden=true}};
 $('powers').onclick=()=>{$('panel').innerHTML=`<h2>Card powers</h2>${LEGEND}<div style="text-align:right"><button class="primary" id="closeP">Got it</button></div>`;$('overlay').hidden=false;$('closeP').onclick=()=>{$('overlay').hidden=true}};
 $('newgame').onclick=()=>{totals=[0,0,0,0];round=0;$('overlay').hidden=true;newRound()};
