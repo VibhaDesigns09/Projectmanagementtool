@@ -11,9 +11,10 @@
   color-scheme:light;
 }
 [hidden]{display:none!important}
-html,body{height:100%;overflow:hidden}
+html,body{height:100%;overflow:hidden;margin:0}
 body{background:radial-gradient(ellipse 60% 90% at 0% 45%,rgba(255,250,235,.9),transparent 70%),radial-gradient(ellipse 60% 90% at 100% 45%,rgba(255,250,235,.9),transparent 70%),radial-gradient(ellipse 80% 60% at 50% 50%,#fdfcf9,#ecebe6 120%) fixed;background-color:var(--felt);color:var(--ink);font-family:var(--body);font-size:15px}
-.wrap{max-width:920px;margin:0 auto;padding-block:12px;padding-inline:16px;display:flex;flex-direction:column;gap:14px;transform-origin:top center}
+.wrap{max-width:920px;margin:0 auto;padding-block:12px;padding-inline:16px;display:flex;flex-direction:column;gap:14px;transform-origin:top center;min-height:100%;box-sizing:border-box}
+.wrap>.table{flex:1;align-content:space-evenly}
 header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 h1{font-family:var(--display);font-weight:800;font-size:28px;margin:0;letter-spacing:.02em;color:var(--brown-text)}
 .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -405,8 +406,8 @@ $('startForm').onsubmit=e=>{
   $('start').hidden=true; totals=[0,0,0,0]; round=0; gameOn=true; newRound();
 };
 function fit(){
-  const w=document.querySelector('.wrap'); w.style.transform='none';
-  const k=Math.min(1,(innerHeight-2)/w.scrollHeight);
+  const w=document.querySelector('.wrap'); w.style.transform='none'; w.style.minHeight='0';
+  const k=Math.min(1,(innerHeight-2)/w.scrollHeight); w.style.minHeight='';
   w.style.transform=k<1?`scale(${k})`:'none';
 }
 addEventListener('resize',()=>fit());
