@@ -4,7 +4,7 @@
 <style>
 /* Layout: flat grey table — opponents across the top, piles in the middle, your 2x2 grid at the bottom. Single light theme to match the deck. */
 :root{
-  --felt:#ececef; --felt-deep:#ffffff; --rail:#4a4af0; --ink:#1a1aa6; --muted:#6b6b8f;
+  --felt:#fbfaf7; --felt-deep:#ffffff; --rail:#4a4af0; --ink:#1a1aa6; --muted:#6b6b8f;
   --yellow:#fcdf6b; --blue:#4a4af0; --navy:#1a1aa6; --white:#ffffff; --red:#4a4af0; --hi:#4a4af0;
   --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif; --body:"Figtree",ui-sans-serif,system-ui,sans-serif;
   --num:"DM Serif Display",Georgia,serif;
@@ -12,7 +12,7 @@
 }
 [hidden]{display:none!important}
 html,body{min-height:100%}
-body{background:var(--felt);color:var(--ink);font-family:var(--body);font-size:15px}
+body{background:radial-gradient(ellipse 60% 90% at 0% 45%,rgba(255,250,235,.9),transparent 70%),radial-gradient(ellipse 60% 90% at 100% 45%,rgba(255,250,235,.9),transparent 70%),radial-gradient(ellipse 80% 60% at 50% 50%,#fdfcf9,#ecebe6 120%) fixed;background-color:var(--felt);color:var(--ink);font-family:var(--body);font-size:15px}
 .wrap{max-width:920px;margin:0 auto;padding-block:16px 32px;padding-inline:16px;display:flex;flex-direction:column;gap:18px}
 header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 h1{font-family:var(--display);font-weight:800;font-size:28px;margin:0;letter-spacing:.02em;color:var(--rail)}
@@ -29,9 +29,9 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .tag{font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:var(--red);color:#fff;padding:2px 6px;border-radius:4px}
 .score{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
 .grid{display:grid;grid-template-columns:repeat(2,auto);gap:6px}
-.card{--w:44px;width:var(--w);aspect-ratio:5/7;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:var(--display);font-weight:800;user-select:none;position:relative;border:none;padding:0}
-.card.back{background:radial-gradient(circle at 50% 50%,var(--yellow) 0 9%,transparent 10%),radial-gradient(circle,rgba(252,223,107,.7) 0 1px,transparent 1.5px) 0 0/9px 9px,var(--navy);box-shadow:inset 0 0 0 3px #fff}
-.card.face{color:var(--navy);overflow:hidden;box-shadow:0 1px 3px rgba(26,26,166,.25)}
+.card{--sh:5px 4px 7px rgba(40,36,30,.16),-5px 4px 7px rgba(40,36,30,.16),0 1px 1.5px rgba(40,36,30,.3);--w:44px;width:var(--w);aspect-ratio:5/7;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:var(--display);font-weight:800;user-select:none;position:relative;border:none;padding:0}
+.card.back{background:radial-gradient(circle at 50% 50%,var(--yellow) 0 9%,transparent 10%),radial-gradient(circle,rgba(252,223,107,.7) 0 1px,transparent 1.5px) 0 0/9px 9px,var(--navy);box-shadow:inset 0 0 0 3px #fff,var(--sh)}
+.card.face{color:var(--navy);overflow:hidden;box-shadow:var(--sh)}
 .card.face.y{background:var(--yellow)}.card.face.b{background:var(--blue);color:var(--yellow)}.card.face.n{background:var(--navy);color:var(--yellow)}.card.face.w{background:var(--white)}
 .card .n1,.card .n2{position:absolute;font-family:var(--num);font-weight:400;font-size:calc(var(--w)*.24);line-height:1}
 .card .n1{top:7%;left:9%}.card .n2{bottom:7%;right:9%;transform:rotate(180deg)}
@@ -47,8 +47,8 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .pile .card{--w:70px}
 .msg{text-align:center;font-size:16px;min-height:2.6em;text-wrap:balance}
 .msg b{color:var(--hi)}
-.card.land{animation:land .7s cubic-bezier(.2,1.4,.4,1)}
-@keyframes land{0%{transform:translateY(-40px) rotate(-14deg) scale(1.25);box-shadow:0 0 0 4px var(--hi),0 0 30px var(--hi)}60%{box-shadow:0 0 0 4px var(--hi),0 0 30px var(--hi)}100%{transform:none;box-shadow:0 0 0 0 transparent}}
+.card.hidden-land{visibility:hidden}
+.flyer{position:fixed;left:0;top:0;z-index:20;pointer-events:none;margin:0}
 .toast{position:absolute;left:50%;top:-12px;transform:translate(-50%,-100%);background:var(--hi);color:#fff;font-weight:600;font-size:13px;padding:4px 10px;border-radius:999px;white-space:nowrap;animation:toast 2.2s forwards;pointer-events:none;text-transform:none;letter-spacing:0}
 @keyframes toast{0%,80%{opacity:1}100%{opacity:0}}
 .pile{position:relative}
@@ -58,6 +58,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .me{align-self:center}
 .legend{display:grid;gap:6px;font-size:14px;color:var(--muted)}
 .menu-wrap{position:relative}
+.brand{display:flex;align-items:center;gap:8px}.logo{width:34px;height:34px;filter:drop-shadow(3px 2px 2px rgba(40,36,30,.18)) drop-shadow(-3px 2px 2px rgba(40,36,30,.18))}
 .dots{width:40px;height:40px;padding:0;border-radius:50%;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center}
 .menu{position:absolute;right:0;top:46px;background:#fff;border:1px solid var(--rail);border-radius:12px;padding:6px;display:flex;flex-direction:column;min-width:170px;z-index:5;box-shadow:0 8px 24px rgba(26,26,166,.15)}
 .menu button{border:none;border-radius:8px;text-align:left}
@@ -72,14 +73,14 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .panel td{padding:6px 4px;border-bottom:1px solid rgba(74,74,240,.2)}
 .panel td:not(:first-child){text-align:right}
 @media (max-width:520px){.table{gap:6px}.seat{padding:6px}.card{--w:34px}.me .card{--w:68px}.pile .card{--w:58px}}
-@media (prefers-reduced-motion:reduce){.card.land,.toast{animation:none}.card.click:hover{transform:none}.bar i{transition:none!important}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}.card.click:hover{transform:none}.bar i{transition:none!important}}
 </style>
 
 <div class="wrap">
   <header>
-    <h1>CABO</h1>
+    <h1 class="brand"><svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect x="13" y="5" width="20" height="28" rx="3" fill="#4a4af0" transform="rotate(14 23 19)"/><rect x="7" y="7" width="20" height="28" rx="3" fill="#fcdf6b" stroke="#1a1aa6" stroke-width="1.5" transform="rotate(-8 17 21)"/><circle cx="17" cy="21" r="4" fill="#1a1aa6" transform="rotate(-8 17 21)"/></svg>CABO</h1>
     <div class="tools">
-      <div class="menu-wrap"><button class="dots" id="dots" aria-label="Menu" aria-expanded="false">⋮</button><div class="menu" id="menu" hidden><button id="rules">How to play</button><button id="powers">Card powers</button><button id="newgame">New game</button></div></div>
+      <button class="dots" id="profile" aria-label="Profile"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="8.5" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20c1.2-4 4-5.5 7.5-5.5s6.3 1.5 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><div class="menu-wrap"><button class="dots" id="dots" aria-label="Menu" aria-expanded="false">⋮</button><div class="menu" id="menu" hidden><button id="rules">How to play</button><button id="powers">Card powers</button><button id="newgame">New game</button></div></div>
     </div>
   </header>
   <div class="table" id="table">
@@ -310,6 +311,19 @@ function seat(p){
   P.hand.forEach((c,i)=>g.append(cardEl(c,p,i,c&&isShown(c,p,i))));
   d.append(g);return d;
 }
+function throwCard(target,who){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const p=NAMES.indexOf(who); const src=p<0?null:$(p===0?'me':'s'+p); if(!src||!target.isConnected)return;
+  const a=src.getBoundingClientRect(), b=target.getBoundingClientRect();
+  const f=target.cloneNode(true); f.classList.remove('hidden-land','click'); f.classList.add('flyer');
+  f.style.width=b.width+'px'; document.body.append(f);
+  const sx=a.left+a.width/2-b.width/2, sy=a.top+a.height/2-b.height/2, spin=(b.left<a.left?-1:1)*360;
+  f.animate([
+    {transform:`translate(${sx}px,${sy}px) rotate(0deg) scale(1.25)`,filter:'drop-shadow(14px 18px 10px rgba(40,36,30,.3))'},
+    {transform:`translate(${b.left+(b.left-sx)*.04}px,${b.top+(b.top-sy)*.04}px) rotate(${spin*.97}deg) scale(1.03)`,filter:'drop-shadow(4px 5px 4px rgba(40,36,30,.25))',offset:.8},
+    {transform:`translate(${b.left}px,${b.top}px) rotate(${spin}deg) scale(1)`,filter:'drop-shadow(0 0 0 transparent)'}
+  ],{duration:440,easing:'cubic-bezier(.2,.9,.3,1)'}).onfinish=()=>f.remove();
+}
 function btn(t,fn,primary){const b=document.createElement('button');b.textContent=t;b.onclick=fn;if(primary)b.className='primary';return b}
 function render(){
   [1,2,3].forEach(p=>{const el=seat(p);el.classList.add('s'+p);el.id='s'+p;$('s'+p).replaceWith(el)});
@@ -324,7 +338,9 @@ function render(){
   if(t&&t.id!==lastTop){lastTop=t.id;landAt=Date.now();landWho=(S.log[0]||'').split(' ')[0]}
   if(!t)lastTop=null;
   const age=Date.now()-landAt;
-  if(t&&age<2200){de.classList.add('land');de.style.animationDelay=`-${age}ms`;const ts=document.createElement('span');ts.className='toast';ts.style.animationDelay=`-${age}ms`;ts.textContent=`${landWho} discarded ${t.r}`;dis.append(ts)}
+  if(t&&age<450){de.classList.add('hidden-land');clearTimeout(window.__land);window.__land=setTimeout(render,460-age)}
+  if(t&&age<30)requestAnimationFrame(()=>throwCard(de,landWho));
+  if(t&&age<2200){const ts=document.createElement('span');ts.className='toast';ts.style.animationDelay=`-${age}ms`;ts.textContent=`${landWho} discarded ${t.r}`;dis.append(ts)}
   dis.append(de,'Discard');
   C.append(deck,dis);
   if(S.drawn){const dr=document.createElement('div');dr.className='pile';dr.append(cardEl(S.drawn,null,0,true),'In hand');C.append(dr)}
@@ -362,6 +378,7 @@ const LEGEND=`<div class="legend">
   </div>`;
 $('dots').onclick=e=>{e.stopPropagation();const m=$('menu');m.hidden=!m.hidden;$('dots').setAttribute('aria-expanded',String(!m.hidden))};
 document.addEventListener('click',()=>{$('menu').hidden=true;$('dots').setAttribute('aria-expanded','false')});
+$('profile').onclick=()=>{const best=Math.min(...totals);$('panel').innerHTML=`<h2>You</h2><p>Round ${round} · Total score <b>${totals[0]}</b> pts${round>1&&totals[0]===best?' · leading':''}</p><p class="score">Profiles and playing with friends online come later.</p><div style="text-align:right"><button class="primary" id="closeP">Close</button></div>`;$('overlay').hidden=false;$('closeP').onclick=()=>{$('overlay').hidden=true}};
 $('powers').onclick=()=>{$('panel').innerHTML=`<h2>Card powers</h2>${LEGEND}<div style="text-align:right"><button class="primary" id="closeP">Got it</button></div>`;$('overlay').hidden=false;$('closeP').onclick=()=>{$('overlay').hidden=true}};
 $('newgame').onclick=()=>{totals=[0,0,0,0];round=0;$('overlay').hidden=true;newRound()};
 $('rules').onclick=()=>{
