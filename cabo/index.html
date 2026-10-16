@@ -128,7 +128,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
   <header>
     <h1 class="brand"><svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect x="13" y="5" width="20" height="28" rx="3" fill="#2b2a29" transform="rotate(14 23 19)"/><rect x="7" y="7" width="20" height="28" rx="3" fill="#f4eddf" stroke="#2b2a29" stroke-width="1.5" transform="rotate(-8 17 21)"/><path d="M17 16l4 5-4 5-4-5z" fill="#b8a588" transform="rotate(-8 17 21)"/></svg>CABO</h1>
     <div class="tools">
-      <button class="dots" id="profile" aria-label="Profile"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="8.5" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20c1.2-4 4-5.5 7.5-5.5s6.3 1.5 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><div class="menu-wrap"><button class="dots" id="dots" aria-label="Menu" aria-expanded="false">⋮</button><div class="menu" id="menu" hidden><button id="mainmenu">Main menu</button><button id="rules">How to play</button><button id="powers">Card powers</button><button id="newgame">New game</button></div></div>
+      <button class="dots" id="profile" aria-label="Profile"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="8.5" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20c1.2-4 4-5.5 7.5-5.5s6.3 1.5 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><div class="menu-wrap"><button class="dots" id="dots" aria-label="Menu" aria-expanded="false">⋮</button><div class="menu" id="menu" hidden><button id="mainmenu">Main menu</button><button id="rules">How to play</button><button id="powers">Card powers</button><button id="soundbtn"></button><button id="newgame">New game</button></div></div>
     </div>
   </header>
   <div class="table" id="table">
@@ -197,7 +197,20 @@ function draw(){
 }
 function cards(p){return S.players[p].hand.map((c,i)=>c?{c,i,p}:null).filter(Boolean)}
 function sum(p){return S.players[p].hand.reduce((a,c)=>a+(c?c.v:0),0)}
-function peekFx(ids,ms=1600){ids.forEach(i=>S.peek.add(i));render();later(()=>{ids.forEach(i=>S.peek.delete(i));render()},ms)}
+/* tiny synthesized tones: no files, nothing plays until the player has tapped once */
+let AC=null, soundOn=true; try{soundOn=localStorage.getItem('cabo-sound')!=='0'}catch(e){}
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+addEventListener('pointerdown',()=>ac(),{once:true});
+function tone(f,t0,dur,vol=.06,type='sine',f2){const a=ac();if(!a||!soundOn)return;const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+t0;
+  o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+.05)}
+const SFX={
+  peek:()=>{tone(1318,0,.18,.05);tone(1760,.09,.25,.04)},
+  swap:()=>{tone(520,0,.22,.05,'triangle',880);tone(880,.12,.22,.04,'triangle',520)},
+  round:()=>{[523,659,784,1047].forEach((f,i)=>tone(f,i*.16,.6,.05));}
+};
+function peekFx(ids,ms=1600){SFX.peek();ids.forEach(i=>S.peek.add(i));render();later(()=>{ids.forEach(i=>S.peek.delete(i));render()},ms)}
 function flash(ids,ms=1300){ids.forEach(i=>S.flash.add(i));render();later(()=>{ids.forEach(i=>S.flash.delete(i));render()},ms)}
 function reveal(ids,ms,then){ids.forEach(i=>S.reveal.add(i));render();later(()=>{ids.forEach(i=>S.reveal.delete(i));render();then&&then()},ms)}
 
@@ -244,6 +257,7 @@ function snap(by,p,i){
   }
 }
 function endRound(){
+  SFX.round();
   clearTimers(); S.phase='end';
   const sums=[0,1,2,3].map(sum), others=sums.filter((_,i)=>i!==S.cabo);
   const res=sums.map((s,i)=>{
@@ -273,6 +287,7 @@ function replace(p,i,card,fromDiscard){
   flash([card.id]);
 }
 function swap(a,ai,b,bi){
+  SFX.swap();
   const A=S.players[a].hand, B=S.players[b].hand; [A[ai],B[bi]]=[B[bi],A[ai]];
   log(`${S.players[a].name} swapped a card with ${S.players[b].name}.`); flash([A[ai].id,B[bi].id]);
 }
@@ -323,11 +338,11 @@ function clickCard(p,i){
   if(ph==='window')return snap(0,p,i);
   if(ph==='give'){if(p!==0)return;const g=S.give;S.players[g.p].hand[g.i]=c;S.players[0].hand[i]=null;log(`You gave ${S.players[g.p].name} a card.`);S.give=null;S.phase='busy';flash([c.id]);return afterSnap()}
   if((ph==='drawn'||ph==='place')&&p===0){const d=S.drawn;S.drawn=null;S.phase='busy';replace(0,i,d,ph==='place');return endAction(0)}
-  if(ph==='peek-own'&&p===0){S.players[0].mem.add(c.id);S.phase='busy';log('You peeked at one of your cards.');return reveal([c.id],2000,()=>endAction(0))}
-  if(ph==='peek-other'&&p!==0){S.players[0].mem.add(c.id);S.phase='busy';log(`You peeked at ${S.players[p].name}'s card.`);return reveal([c.id],2000,()=>endAction(0))}
+  if(ph==='peek-own'&&p===0){S.players[0].mem.add(c.id);S.phase='busy';log('You peeked at one of your cards.');SFX.peek();return reveal([c.id],2000,()=>endAction(0))}
+  if(ph==='peek-other'&&p!==0){S.players[0].mem.add(c.id);S.phase='busy';log(`You peeked at ${S.players[p].name}'s card.`);SFX.peek();return reveal([c.id],2000,()=>endAction(0))}
   if(ph==='jack-own'&&p===0){S.sel={p,i};S.phase='jack-opp';return render()}
   if(ph==='jack-opp'&&p!==0){swap(0,S.sel.i,p,i);return endAction(0)}
-  if(ph==='queen-opp'&&p!==0){S.players[0].mem.add(c.id);S.sel={p,i};S.reveal.add(c.id);S.phase='queen-own';return render()}
+  if(ph==='queen-opp'&&p!==0){S.players[0].mem.add(c.id);S.sel={p,i};S.reveal.add(c.id);SFX.peek();S.phase='queen-own';return render()}
   if(ph==='queen-own'&&p===0){S.reveal.clear();swap(0,i,S.sel.p,S.sel.i);return endAction(0)}
 }
 function clickable(p,i){
@@ -504,6 +519,9 @@ $('mode').onclick=()=>setMode(document.documentElement.dataset.mode==='dark'?'li
 $('logbtn').onclick=()=>{const l=$('log');l.hidden=!l.hidden;$('logbtn').textContent=l.hidden?'Show game log':'Hide game log';$('logbtn').setAttribute('aria-expanded',String(!l.hidden));fit()};
 $('profile').onclick=()=>{const best=Math.min(...totals);$("panel").innerHTML=`<h2>${playerName}</h2><p>Round ${round} · Total score <b>${totals[0]}</b> pts${round>1&&totals[0]===best?' · leading':''}</p><p class="score">Profiles and playing with friends online come later.</p><div style="text-align:right"><button class="primary" id="closeP">Close</button></div>`;$('overlay').hidden=false;$('closeP').onclick=()=>{$('overlay').hidden=true}};
 $('powers').onclick=()=>{$('panel').innerHTML=`<h2>Card powers</h2>${LEGEND}<div style="text-align:right"><button class="primary" id="closeP">Got it</button></div>`;$('overlay').hidden=false;$('closeP').onclick=()=>{$('overlay').hidden=true}};
+function setSound(v){soundOn=v;$('soundbtn').textContent=v?'Sound: on':'Sound: off';try{localStorage.setItem('cabo-sound',v?'1':'0')}catch(e){}}
+setSound(soundOn);
+$('soundbtn').onclick=e=>{e.stopPropagation();setSound(!soundOn);if(soundOn)SFX.peek()};
 $('mainmenu').onclick=()=>{
   if(!gameOn)return showStart();
   $('panel').innerHTML=`<h2>End this game?</h2><p>Going to the main menu ends the current game. You won't be able to come back to it.</p><div style="display:flex;gap:8px;justify-content:flex-end"><button id="stayG">Keep playing</button><button class="primary" id="endG">End game</button></div>`;
