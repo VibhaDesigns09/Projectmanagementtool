@@ -11,9 +11,9 @@
   color-scheme:light;
 }
 [hidden]{display:none!important}
-html,body{min-height:100%}
+html,body{height:100%;overflow:hidden}
 body{background:radial-gradient(ellipse 60% 90% at 0% 45%,rgba(255,250,235,.9),transparent 70%),radial-gradient(ellipse 60% 90% at 100% 45%,rgba(255,250,235,.9),transparent 70%),radial-gradient(ellipse 80% 60% at 50% 50%,#fdfcf9,#ecebe6 120%) fixed;background-color:var(--felt);color:var(--ink);font-family:var(--body);font-size:15px}
-.wrap{max-width:920px;margin:0 auto;padding-block:16px 32px;padding-inline:16px;display:flex;flex-direction:column;gap:18px}
+.wrap{max-width:920px;margin:0 auto;padding-block:12px;padding-inline:16px;display:flex;flex-direction:column;gap:14px;transform-origin:top center}
 header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 h1{font-family:var(--display);font-weight:800;font-size:28px;margin:0;letter-spacing:.02em;color:var(--brown-text)}
 .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -22,8 +22,9 @@ button.primary{background:var(--rail);color:var(--ink)}
 button:disabled{opacity:.35;cursor:not-allowed}
 button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
 .table{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"left top right" "mid me me" "ctrl ctrl ctrl";gap:12px;align-items:start;justify-items:center}
-.s1{grid-area:left}.s2{grid-area:top}.s3{grid-area:right}.center{grid-area:mid}.table .me{grid-area:me}.ctrl{grid-area:ctrl;width:100%;display:flex;flex-direction:column;gap:10px;align-self:center}
-@media (min-width:760px){.table{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"left top right" "mid ctrl me"}.center{flex-direction:column;align-items:center}}
+.s1{grid-area:left}.s2{grid-area:top}.s3{grid-area:right}.center{grid-area:mid}.table .me{grid-area:me}.ctrl{grid-area:ctrl;width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:10px;align-self:center}
+.ctrl>.say{flex:1 1 180px;min-width:0}.ctrl .msg{text-align:left;min-height:0}.ctrl .bar{margin:6px 0 0}.ctrl .actions{flex:0 1 auto;justify-content:flex-end}.ctrl .coach{flex:1 1 100%;margin:0;max-width:none}
+@media (min-width:760px){.table{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"left top right" "mid ctrl me"}}
 .table .me{align-self:center}
 .seat{border:1px solid var(--rail);border-radius:14px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
 .seat.active{border-color:var(--hi);box-shadow:0 0 0 3px rgba(184,165,136,.25);background:rgba(184,165,136,.05)}
@@ -42,7 +43,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .card.flash{box-shadow:0 0 0 3px var(--hi),0 0 18px var(--hi)}
 .card.sel{box-shadow:0 0 0 3px var(--hi),var(--sh)}
 .me .card{--w:76px}
-.center{display:flex;justify-content:center;align-items:flex-end;gap:22px;flex-wrap:wrap}
+.center{display:flex;flex-direction:column;align-items:center;gap:12px}
 .pile{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
 .pile .card{--w:70px}
 .msg{text-align:center;font-size:16px;min-height:2.6em;text-wrap:balance}
@@ -64,8 +65,9 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .menu button{border:none;border-radius:8px;text-align:left}
 .menu button:hover{background:rgba(184,165,136,.08)}
 .legend b{color:var(--ink);font-family:var(--display)}
-.logrow{display:flex;gap:12px;align-items:flex-start;border-top:1px solid var(--rail);padding-top:10px}
-.log{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.logrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--rail);padding-top:10px}
+.logbtn{font-size:13px;padding:6px 12px}
+.log{flex-basis:100%!important;order:3;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
 .mode{flex:none;position:relative;width:56px;height:30px;padding:0;border-radius:999px;background:var(--felt-deep);border:1px solid var(--rail)}
 .mode .knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--rail);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;transition:transform .2s ease}
 .mode[aria-checked="true"] .knob{transform:translateX(26px)}
@@ -126,9 +128,9 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
     <div class="seat s1" id="s1"></div><div class="seat s2" id="s2"></div><div class="seat s3" id="s3"></div>
     <div class="center" id="center"></div>
     <div class="seat me" id="me"></div>
-    <div class="ctrl"><div><div class="msg" id="msg"></div><div class="bar" id="bar" hidden><i id="bari"></i></div></div><div class="actions" id="actions"></div><div class="coach" id="coach" hidden></div></div>
+    <div class="ctrl"><div class="say"><div class="msg" id="msg"></div><div class="bar" id="bar" hidden><i id="bari"></i></div></div><div class="actions" id="actions"></div><div class="coach" id="coach" hidden></div></div>
   </div>
-  <div class="logrow"><div class="log" id="log"></div><button class="mode" id="mode" role="switch" aria-checked="false" aria-label="Dark mode"></button></div>
+  <div class="logrow"><button class="logbtn" id="logbtn" aria-expanded="false">Show game log</button><span style="flex:1"></span><div class="log" id="log" hidden></div><button class="mode" id="mode" role="switch" aria-checked="false" aria-label="Dark mode"></button></div>
 </div>
 <div class="overlay" id="overlay" hidden><div class="panel" id="panel"></div></div>
 
@@ -402,6 +404,12 @@ $('startForm').onsubmit=e=>{
   learner=(e.submitter&&e.submitter.value)==='learn';
   $('start').hidden=true; totals=[0,0,0,0]; round=0; gameOn=true; newRound();
 };
+function fit(){
+  const w=document.querySelector('.wrap'); w.style.transform='none';
+  const k=Math.min(1,(innerHeight-2)/w.scrollHeight);
+  w.style.transform=k<1?`scale(${k})`:'none';
+}
+addEventListener('resize',()=>fit());
 function btn(t,fn,primary){const b=document.createElement('button');b.textContent=t;b.onclick=fn;if(primary)b.className='primary';return b}
 function render(){
   [1,2,3].forEach(p=>{const el=seat(p);el.classList.add('s'+p);el.id='s'+p;$('s'+p).replaceWith(el)});
@@ -445,6 +453,7 @@ function render(){
   $('msg').innerHTML=m; $('bar').hidden=ph!=='window';
   const tip=learner?coachTip(ph,t):''; $('coach').hidden=!tip; $('coach').innerHTML=tip?`<span class="lbl">Coach</span>${tip}`:'';
   $('log').innerHTML=S.log.map(l=>`<div>${l}</div>`).join('');
+  fit();
 }
 
 const LEGEND=`<div class="legend">
@@ -461,6 +470,7 @@ function setMode(m){document.documentElement.dataset.mode=m;$('mode').innerHTML=
 let mode0='light';try{mode0=localStorage.getItem('cabo-mode')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch(e){}
 setMode(mode0);
 $('mode').onclick=()=>setMode(document.documentElement.dataset.mode==='dark'?'light':'dark');
+$('logbtn').onclick=()=>{const l=$('log');l.hidden=!l.hidden;$('logbtn').textContent=l.hidden?'Show game log':'Hide game log';$('logbtn').setAttribute('aria-expanded',String(!l.hidden));fit()};
 $('profile').onclick=()=>{const best=Math.min(...totals);$("panel").innerHTML=`<h2>${playerName}</h2><p>Round ${round} · Total score <b>${totals[0]}</b> pts${round>1&&totals[0]===best?' · leading':''}</p><p class="score">Profiles and playing with friends online come later.</p><div style="text-align:right"><button class="primary" id="closeP">Close</button></div>`;$('overlay').hidden=false;$('closeP').onclick=()=>{$('overlay').hidden=true}};
 $('powers').onclick=()=>{$('panel').innerHTML=`<h2>Card powers</h2>${LEGEND}<div style="text-align:right"><button class="primary" id="closeP">Got it</button></div>`;$('overlay').hidden=false;$('closeP').onclick=()=>{$('overlay').hidden=true}};
 $('mainmenu').onclick=()=>{
