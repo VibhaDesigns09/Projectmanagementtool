@@ -29,7 +29,8 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 @media (min-width:760px){.table{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"left top right" "mid ctrl me"}}
 .table .me{align-self:center}
 .seat{border:1px solid var(--rail);border-radius:14px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
-.seat.active{border-color:var(--hi);box-shadow:0 0 0 3px rgba(184,165,136,.25);background:rgba(184,165,136,.05)}
+.seat.active{border-color:var(--brown-text);box-shadow:0 0 0 3px var(--brown-text),0 0 22px rgba(140,118,86,.35);background:rgba(184,165,136,.14)}
+.seat.active .seat-name{font-weight:800}
 .seat-name{font-weight:600;font-size:14px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center}
 .tag.spec{background:transparent;border:1px solid var(--rail);color:var(--muted)}
 .tag{font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:var(--red);color:var(--ink);padding:2px 6px;border-radius:4px}
@@ -204,8 +205,8 @@ function sum(p){return S.players[p].hand.reduce((a,c)=>a+(c?c.v:0),0)}
 /* tiny synthesized tones: no files, nothing plays until the player has tapped once */
 let AC=null, soundOn=true; try{soundOn=localStorage.getItem('cabo-sound')!=='0'}catch(e){}
 function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
-addEventListener('pointerdown',()=>ac(),{once:true});
-function tone(f,t0,dur,vol=.06,type='sine',f2){const a=ac();if(!a||!soundOn)return;const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+t0;
+['pointerdown','keydown','touchstart'].forEach(ev=>addEventListener(ev,()=>ac(),{passive:true}));
+function tone(f,t0,dur,vol=.06,type='sine',f2){const a=ac();if(!a||!soundOn)return;if(a.state!=='running'){a.resume().then(()=>tone(f,t0,dur,vol,type,f2)).catch(()=>{});return}vol*=3.5;const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+t0;
   o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);
   g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
   o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+.05)}
@@ -385,7 +386,7 @@ function isShown(c,p,i){
 }
 function seat(p){
   const P=S.players[p], d=document.createElement('div');
-  d.className='seat'+(p===0?' me':'')+((S.turn===p&&!['window','end','peek-start'].includes(S.phase))?' active':'');
+  d.className='seat'+(p===0?' me':'')+((S.turn===p&&!['end','peek-start'].includes(S.phase))?' active':'');
   d.innerHTML=`<div class="seat-name">${p===0?playerName:P.name}${S.cabo===p?' <span class="tag">Cabo</span>':''}${!cards(p).length?' <span class="tag spec">Spectator</span>':''}<span class="score">${totals[p]} pts</span></div>`;
   const g=document.createElement('div');g.className='grid';
   P.hand.forEach((c,i)=>{const el=cardEl(c,p,i,c&&isShown(c,p,i));el.style.gridRow=i<4?(i<2?1:2):(i-4)%2+1;el.style.gridColumn=i<4?i%2+1:3+Math.floor((i-4)/2);g.append(el)});
