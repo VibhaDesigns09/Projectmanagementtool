@@ -107,11 +107,13 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .field input:focus-visible{outline:3px solid var(--hi);outline-offset:1px}
 .start-card .choices{display:grid;gap:10px}
 .start-card .choices button{padding:14px;font-size:16px;border-radius:14px;display:flex;flex-direction:column;gap:2px;align-items:center}
-.prow{display:flex;align-items:center;gap:10px}.pico{width:34px;height:20px}
+.prow{display:flex;align-items:center;gap:10px}.pico{display:inline-flex;align-items:center;gap:3px;font-family:var(--num);font-weight:800;font-size:20px;line-height:1}.pico svg{width:13px;height:13px}
 .start-card .choices small{font-weight:400;font-size:12px;color:inherit;opacity:.75}
 .coach{border:1px dashed var(--rail);border-radius:12px;padding:10px 14px;font-size:14px;line-height:1.45;max-width:560px;margin:8px auto 0;text-align:left;background:var(--felt-deep)}
 .coach b{color:var(--brown-text)}
 .coach .lbl{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+body.learner .card.click,body.learner #actions button,body.learner .xbtn{animation:hint 1.4s ease-in-out infinite}
+@keyframes hint{0%,100%{box-shadow:var(--sh,0 0 0 transparent),0 0 0 3px rgba(196,83,45,.9),0 0 0 rgba(196,83,45,0)}50%{box-shadow:var(--sh,0 0 0 transparent),0 0 0 3px rgba(196,83,45,.9),0 0 22px rgba(196,83,45,.6)}}
 </style>
 
 <div class="start" id="start">
@@ -121,7 +123,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
     <p>The memory card game. Lowest total wins.</p>
     <label class="field" for="pname">Your name<input id="pname" maxlength="16" autocomplete="nickname" placeholder="Your name"></label>
     <div class="choices">
-      <button type="submit" class="primary" id="playBtn" value="play"><span class="prow"><svg class="pico" viewBox="0 0 40 24" aria-hidden="true"><circle cx="6" cy="7" r="3.2" fill="currentColor"/><path d="M1 20c0-4 2.2-6 5-6s5 2 5 6z" fill="currentColor"/><circle cx="15.3" cy="7" r="3.2" fill="currentColor"/><path d="M10.3 20c0-4 2.2-6 5-6s5 2 5 6z" fill="currentColor"/><circle cx="24.6" cy="7" r="3.2" fill="currentColor"/><path d="M19.6 20c0-4 2.2-6 5-6s5 2 5 6z" fill="currentColor"/><circle cx="34" cy="7" r="3.2" fill="currentColor"/><path d="M29 20c0-4 2.2-6 5-6s5 2 5 6z" fill="currentColor"/></svg>Play</span></button>
+      <button type="submit" class="primary" id="playBtn" value="play"><span class="prow"><span class="pico">4<svg viewBox="-7 -7 14 14" aria-hidden="true"><path d="M0-7 6 0 0 7-6 0z" fill="currentColor"/></svg></span>Play</span></button>
       <button type="submit" id="learnBtn" value="learn">Learner mode<small>Guided game · tips</small></button>
     </div>
   </form>
@@ -228,7 +230,7 @@ function startTurn(){
   }
   if(S.cabo===null&&[0,1,2,3].filter(p=>cards(p).length).length<=1)return endRound();
   S.phase=S.turn===0?'turn':'bot'; S.botMsg=''; S.drawn=null; S.sel=null; render();
-  if(S.turn!==0)later(()=>botTurn(S.turn),learner?2200:1100);
+  if(S.turn!==0)later(()=>botTurn(S.turn),learner?3800:1100);
 }
 function endAction(actor){
   S.drawn=null;S.sel=null;S.next=(actor+1)%4;openWindow();
@@ -302,7 +304,7 @@ function swap(a,ai,b,bi){
 }
 
 /* ---------- bots ---------- */
-function done(b){S.botMsg=S.log[0];render();later(()=>endAction(b),learner?2600:1600)}
+function done(b){S.botMsg=S.log[0];render();later(()=>endAction(b),learner?4200:1600)}
 function botTurn(b){
   if(S.phase!=='bot'||S.turn!==b)return;
   const P=S.players[b], mine=cards(b);
@@ -436,7 +438,7 @@ $('startForm').onsubmit=e=>{
   e.preventDefault(); const v=$('pname').value.trim(); playerName=v||'You';
   try{localStorage.setItem('cabo-name',v)}catch(_){}
   learner=(e.submitter&&e.submitter.value)==='learn';
-  $('start').hidden=true; totals=[0,0,0,0]; round=0; gameOn=true; newRound();
+  document.body.classList.toggle('learner',learner); $('start').hidden=true; totals=[0,0,0,0]; round=0; gameOn=true; newRound();
 };
 function tickBar(){
   if(!S||S.phase!=='window'||!S.winLen)return;
