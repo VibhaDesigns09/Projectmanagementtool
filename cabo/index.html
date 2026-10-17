@@ -107,6 +107,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .field input:focus-visible{outline:3px solid var(--hi);outline-offset:1px}
 .start-card .choices{display:grid;gap:10px}
 .start-card .choices button{padding:14px;font-size:16px;border-radius:14px;display:flex;flex-direction:column;gap:2px;align-items:center}
+.prow{display:flex;align-items:center;gap:10px}.pico{width:34px;height:20px}
 .start-card .choices small{font-weight:400;font-size:12px;color:inherit;opacity:.75}
 .coach{border:1px dashed var(--rail);border-radius:12px;padding:10px 14px;font-size:14px;line-height:1.45;max-width:560px;margin:8px auto 0;text-align:left;background:var(--felt-deep)}
 .coach b{color:var(--brown-text)}
@@ -118,10 +119,10 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
     <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect x="13" y="5" width="20" height="28" rx="3" fill="#2b2a29" transform="rotate(14 23 19)"/><rect x="7" y="7" width="20" height="28" rx="3" fill="#f4eddf" stroke="#2b2a29" stroke-width="1.5" transform="rotate(-8 17 21)"/><path d="M17 16l4 5-4 5-4-5z" fill="#b8a588" transform="rotate(-8 17 21)"/></svg>
     <h2>CABO</h2>
     <p>The memory card game. Lowest total wins.</p>
-    <label class="field" for="pname">Your name<input id="pname" maxlength="16" autocomplete="nickname" placeholder="e.g. Vibha"></label>
+    <label class="field" for="pname">Your name<input id="pname" maxlength="16" autocomplete="nickname" placeholder="Your name"></label>
     <div class="choices">
-      <button type="submit" class="primary" id="playBtn" value="play">Play game<small>You vs Maya, Arjun and Zoe</small></button>
-      <button type="submit" id="learnBtn" value="learn">Learner mode<small>A guided game with tips at every step</small></button>
+      <button type="submit" class="primary" id="playBtn" value="play"><span class="prow"><svg class="pico" viewBox="0 0 40 24" aria-hidden="true"><circle cx="6" cy="7" r="3.2" fill="currentColor"/><path d="M1 20c0-4 2.2-6 5-6s5 2 5 6z" fill="currentColor"/><circle cx="15.3" cy="7" r="3.2" fill="currentColor"/><path d="M10.3 20c0-4 2.2-6 5-6s5 2 5 6z" fill="currentColor"/><circle cx="24.6" cy="7" r="3.2" fill="currentColor"/><path d="M19.6 20c0-4 2.2-6 5-6s5 2 5 6z" fill="currentColor"/><circle cx="34" cy="7" r="3.2" fill="currentColor"/><path d="M29 20c0-4 2.2-6 5-6s5 2 5 6z" fill="currentColor"/></svg>Play</span></button>
+      <button type="submit" id="learnBtn" value="learn">Learner mode<small>Guided game · tips</small></button>
     </div>
   </form>
 </div>
@@ -147,7 +148,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], SUITS=['♠','♥','♦','♣'];
 const VAL=r=>r==='A'?1:r==='J'?11:r==='Q'?12:r==='K'?13:+r;
 const POWER={'7':'peek-own','8':'peek-own','9':'peek-other','10':'peek-other','J':'jack','Q':'queen'};
-const POWER_LABEL={'peek-own':'peek at one of yours','peek-other':"peek at someone's card",'jack':'blind swap','queen':'look & maybe swap'};
+const POWER_LABEL={'peek-own':'peek yours','peek-other':'peek theirs','jack':'blind swap','queen':'look & swap'};
 const RUST='#c4532d',INK='#232120',CREAM='#f4eddf';
 const SUIT={
   '♦':'<path d="M0-7 6 0 0 7-6 0z"/>',
@@ -169,7 +170,7 @@ function faceSVG(c){
   return `<svg viewBox="0 0 50 70" aria-hidden="true">${suit}${body}</svg>`;
 }
 let playerName='You', learner=false, gameOn=false;
-const NAMES=['You','Maya','Arjun','Zoe'];
+const NAMES=['You','Gaurav','Oshin','Vibha'];
 const $=id=>document.getElementById(id);
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 let lastTop=null, landAt=0, landWho='', S, totals=[0,0,0,0], round=0, timers=[];
@@ -186,14 +187,14 @@ function newRound(){
   players.forEach(p=>{p.mem.add(p.hand[2].id);p.mem.add(p.hand[3].id)});
   S={deck,discard:[],players,turn:(round-1)%4,phase:'peek-start',drawn:null,cabo:null,sel:null,
      reveal:new Set(),flash:new Set(),peek:new Set(),log:[],turns:0,wid:0,next:0,snapMode:false,give:null};
-  log(`Round ${round}. Memorise your bottom two cards.`);
+  log(`Round ${round} · memorise bottom two`);
   render();
 }
 function log(t){S.log.unshift(t);S.log=S.log.slice(0,7)}
 function publicSee(c){if(c)S.players.forEach(p=>p.mem.add(c.id))}
 function topCard(){return S.discard[S.discard.length-1]}
 function draw(){
-  if(!S.deck.length){const t=S.discard.pop();S.deck=shuffle(S.discard);S.discard=[t];log('Deck reshuffled.')}
+  if(!S.deck.length){const t=S.discard.pop();S.deck=shuffle(S.discard);S.discard=[t];log('Deck reshuffled')}
   return S.deck.pop()||null;
 }
 function cards(p){return S.players[p].hand.map((c,i)=>c?{c,i,p}:null).filter(Boolean)}
@@ -211,7 +212,7 @@ const SFX={
   swap:()=>{tone(520,0,.22,.05,'triangle',880);tone(880,.12,.22,.04,'triangle',520)},
   round:()=>{[523,659,784,1047].forEach((f,i)=>tone(f,i*.16,.6,.05));}
 };
-function peekFx(ids,ms=1600){SFX.peek();ids.forEach(i=>S.peek.add(i));render();later(()=>{ids.forEach(i=>S.peek.delete(i));render()},ms)}
+function peekFx(ids,ms=3200,quiet){if(!quiet)SFX.peek();ids.forEach(i=>S.peek.add(i));render();setTimeout(()=>{ids.forEach(i=>S.peek.delete(i));render()},ms)}
 function flash(ids,ms=1300){ids.forEach(i=>S.flash.add(i));render();later(()=>{ids.forEach(i=>S.flash.delete(i));render()},ms)}
 function reveal(ids,ms,then){ids.forEach(i=>S.reveal.add(i));render();later(()=>{ids.forEach(i=>S.reveal.delete(i));render();then&&then()},ms)}
 
@@ -250,17 +251,17 @@ function snap(by,p,i){
   const who=S.players[by].name, whose=p===by?(by===0?'your own':'their own'):`${S.players[p].name}'s`;
   if(c.r===t.r){
     S.players[p].hand[i]=null; S.discard.push(c); publicSee(c);
-    log(`${who} snapped ${whose} ${c.r}!`); S.next=(by+1)%4;
+    log(`${who} · snapped ${c.r}`); S.next=(by+1)%4;
     if(p!==by){
       if(by===0){S.phase='give';S.give={p,i};clearTimers();render();return}
       const mine=cards(by); const known=mine.filter(x=>S.players[by].mem.has(x.c.id)).sort((a,b)=>b.c.v-a.c.v);
       const g=known[0]||rnd(mine); S.players[p].hand[i]=g.c; S.players[by].hand[g.i]=null;
-      log(`${who} gave ${S.players[p].name} a card in return.`); flash([g.c.id]);
+      log(`${who} → ${S.players[p].name} · card given`); flash([g.c.id]);
     }
     afterSnap();
   }else{
     publicSee(c); const pen=draw(); if(pen)S.players[by].hand.push(pen);
-    log(`${who} tried to snap a ${c.r} on a ${t.r}. Penalty card!`);
+    log(`${who} · wrong snap · penalty`);
     reveal([c.id],1400);
   }
 }
@@ -291,13 +292,13 @@ function replace(p,i,card,fromDiscard){
   const old=S.players[p].hand[i]; S.players[p].hand[i]=card;
   S.players[p].mem.add(card.id); if(fromDiscard)publicSee(card);
   S.discard.push(old); publicSee(old);
-  log(`${S.players[p].name} ${fromDiscard?'took the '+card.r+' from the discard':'kept a drawn card'} and threw away a ${old.r}.`);
+  log(`${S.players[p].name} · ${fromDiscard?'took '+card.r:'kept card'} · threw ${old.r}`);
   flash([card.id]);
 }
 function swap(a,ai,b,bi){
   SFX.swap();
   const A=S.players[a].hand, B=S.players[b].hand; [A[ai],B[bi]]=[B[bi],A[ai]];
-  log(`${S.players[a].name} swapped a card with ${S.players[b].name}.`); flash([A[ai].id,B[bi].id]);
+  log(`${S.players[a].name} ⇄ ${S.players[b].name} · swap`); peekFx([A[ai].id,B[bi].id],3200,true);
 }
 
 /* ---------- bots ---------- */
@@ -307,7 +308,7 @@ function botTurn(b){
   const P=S.players[b], mine=cards(b);
   const known=mine.filter(x=>P.mem.has(x.c.id)), unknown=mine.filter(x=>!P.mem.has(x.c.id));
   const est=known.reduce((a,x)=>a+x.c.v,0)+unknown.length*6.5;
-  if(S.cabo===null&&S.turns>4&&est<=7){S.cabo=b;log(`${P.name} called CABO! Everyone gets one more turn.`);S.turn=(b+1)%4;return startTurn()}
+  if(S.cabo===null&&S.turns>4&&est<=7){S.cabo=b;log(`${P.name} · CABO! · last lap`);S.turn=(b+1)%4;return startTurn()}
   const worst=known.slice().sort((x,y)=>y.c.v-x.c.v)[0], t=topCard();
   if(t&&mine.length&&t.v<=3&&((worst&&t.v<worst.c.v)||unknown.length)){
     const slot=worst&&worst.c.v>t.v?worst:rnd(unknown);
@@ -316,21 +317,21 @@ function botTurn(b){
   const c=draw(); if(!c)return done(b); P.mem.add(c.id);
   if(worst&&c.v<worst.c.v-1){replace(b,worst.i,c,false);return done(b)}
   if(unknown.length&&c.v<=4){replace(b,rnd(unknown).i,c,false);return done(b)}
-  S.discard.push(c); publicSee(c); log(`${P.name} drew and discarded a ${c.r}.`);
+  S.discard.push(c); publicSee(c); log(`${P.name} · threw ${c.r}`);
   botPower(b,POWER[c.r],worst); done(b);
 }
 function botPower(b,pw,worst){
   if(!pw)return; const P=S.players[b];
   const opp=[0,1,2,3].filter(p=>p!==b).flatMap(cards);
   const oppUnknown=opp.filter(x=>!P.mem.has(x.c.id)), oppKnownLow=opp.filter(x=>P.mem.has(x.c.id)).sort((a,c)=>a.c.v-c.c.v)[0];
-  if(pw==='peek-own'){const u=cards(b).filter(x=>!P.mem.has(x.c.id));if(u.length){const x=rnd(u);P.mem.add(x.c.id);log(`${P.name} peeked at one of their cards.`);peekFx([x.c.id])}}
-  if(pw==='peek-other'&&oppUnknown.length){const x=rnd(oppUnknown);P.mem.add(x.c.id);log(`${P.name} peeked at ${S.players[x.p].name==='You'?'your':S.players[x.p].name+"'s"} card.`);peekFx([x.c.id])}
+  if(pw==='peek-own'){const u=cards(b).filter(x=>!P.mem.has(x.c.id));if(u.length){const x=rnd(u);P.mem.add(x.c.id);log(`${P.name} · peeked own card`);peekFx([x.c.id])}}
+  if(pw==='peek-other'&&oppUnknown.length){const x=rnd(oppUnknown);P.mem.add(x.c.id);log(`${P.name} · peeked ${S.players[x.p].name==='You'?'your':S.players[x.p].name+"'s"} card`);peekFx([x.c.id])}
   if(pw==='jack'&&worst&&worst.c.v>=7&&opp.length){
     const tgt=oppKnownLow&&oppKnownLow.c.v<worst.c.v?oppKnownLow:rnd(opp); swap(b,worst.i,tgt.p,tgt.i);
   }
   if(pw==='queen'&&opp.length){
-    const tgt=oppKnownLow||rnd(opp); P.mem.add(tgt.c.id); peekFx([tgt.c.id],1200);
-    if(worst&&tgt.c.v<worst.c.v)swap(b,worst.i,tgt.p,tgt.i);else{log(`${P.name} looked at a card and kept things as they were.`)}
+    const tgt=oppKnownLow||rnd(opp); P.mem.add(tgt.c.id); peekFx([tgt.c.id]);
+    if(worst&&tgt.c.v<worst.c.v)swap(b,worst.i,tgt.p,tgt.i);else{log(`${P.name} · looked · no swap`)}
   }
 }
 
@@ -338,16 +339,16 @@ function botPower(b,pw,worst){
 function clickDeck(){if(S.phase!=='turn')return;S.drawn=draw();if(!S.drawn)return;S.players[0].mem.add(S.drawn.id);S.phase='drawn';render()}
 function clickDiscard(){if(S.phase!=='turn'||!topCard()||!cards(0).length)return;S.drawn=S.discard.pop();publicSee(S.drawn);S.phase='place';render()}
 function throwDrawn(){
-  const c=S.drawn;S.drawn=null;S.discard.push(c);publicSee(c);log(`You discarded a ${c.r}.`);
+  const c=S.drawn;S.drawn=null;S.discard.push(c);publicSee(c);log(`You · threw ${c.r}`);
   const pw=POWER[c.r]; if(pw){S.phase=pw==='jack'?'jack-own':pw==='queen'?'queen-opp':pw;render()}else endAction(0);
 }
 function clickCard(p,i){
   const c=S.players[p].hand[i]; if(!c)return; const ph=S.phase;
   if(ph==='window'){if(!cards(0).length)return;return snap(0,p,i)}
-  if(ph==='give'){if(p!==0)return;const g=S.give;S.players[g.p].hand[g.i]=c;S.players[0].hand[i]=null;log(`You gave ${S.players[g.p].name} a card.`);S.give=null;S.phase='busy';flash([c.id]);return afterSnap()}
+  if(ph==='give'){if(p!==0)return;const g=S.give;S.players[g.p].hand[g.i]=c;S.players[0].hand[i]=null;log(`You → ${S.players[g.p].name} · card given`);S.give=null;S.phase='busy';flash([c.id]);return afterSnap()}
   if((ph==='drawn'||ph==='place')&&p===0){const d=S.drawn;S.drawn=null;S.phase='busy';replace(0,i,d,ph==='place');return endAction(0)}
-  if(ph==='peek-own'&&p===0){S.players[0].mem.add(c.id);S.phase='busy';log('You peeked at one of your cards.');SFX.peek();return reveal([c.id],2000,()=>endAction(0))}
-  if(ph==='peek-other'&&p!==0){S.players[0].mem.add(c.id);S.phase='busy';log(`You peeked at ${S.players[p].name}'s card.`);SFX.peek();return reveal([c.id],2000,()=>endAction(0))}
+  if(ph==='peek-own'&&p===0){S.players[0].mem.add(c.id);S.phase='busy';log('You · peeked own card');SFX.peek();return reveal([c.id],2000,()=>endAction(0))}
+  if(ph==='peek-other'&&p!==0){S.players[0].mem.add(c.id);S.phase='busy';log(`You · peeked ${S.players[p].name}'s card`);SFX.peek();return reveal([c.id],2000,()=>endAction(0))}
   if(ph==='jack-own'&&p===0){S.sel={p,i};S.phase='jack-opp';return render()}
   if(ph==='jack-opp'&&p!==0){swap(0,S.sel.i,p,i);return endAction(0)}
   if(ph==='queen-opp'&&p!==0){S.players[0].mem.add(c.id);S.sel={p,i};S.reveal.add(c.id);SFX.peek();S.phase='queen-own';return render()}
@@ -403,27 +404,27 @@ function throwCard(target,who){
 function coachTip(ph,t){
   const d=S.drawn;
   switch(ph){
-  case 'peek-start':return `<b>The goal:</b> finish with the lowest total. A=1, 2–10 are face value, J=11, Q=12, K=13, except the K♦, which is 0. Right now you can see only your <b>bottom two</b> cards. Remember them, because they turn face down and stay that way.`;
+  case 'peek-start':return `Goal: <b>lowest total</b> · A=1 · J11 Q12 K13 · K♦=0`;
   case 'turn':
-    if(S.turns<=2&&!t)return `Your first move. The discard pile is empty, so <b>tap the deck</b> to draw a card. Only you will see it.`;
-    if(t&&t.v<=3)return `The top discard is a <b>${t.r}</b> (${t.v} pt${t.v>1?'s':''}). That's low and everyone knows it. Tap the <b>discard</b> to take it and swap out one of your high or unknown cards.`;
-    return `Choose: <b>tap the deck</b> for a mystery card, or <b>tap the discard</b> to take ${t?'the '+t.r:'it'}. Think you have the lowest total? <b>Call CABO</b> and everyone else gets one last turn.`;
+    if(!t)return `<b>Tap the deck</b> · mystery card`;
+    if(t.v<=3)return `Discard <b>${t.r}</b> is low · <b>take it</b>`;
+    return `Deck = mystery · discard = known · lowest? <b>CABO</b>`;
   case 'drawn':
     if(!d)return '';
-    if(d.v<=4)return `A <b>${d.r}</b> is only ${d.v} point${d.v>1?'s':''}. Keep it: <b>tap one of your cards</b> to swap it in. Pick one you know is high, or one you haven't seen.`;
-    if(POWER[d.r])return `A <b>${d.r}</b> is worth ${d.v} points, too high to keep. But throwing it away gives you a power: <b>${POWER_LABEL[POWER[d.r]]}</b>. Tap the discard pile (or the button) to use it.`;
-    return `A <b>${d.r}</b> is ${d.v} points and has no power. Just <b>tap the discard pile</b> to throw it away.`;
-  case 'place':return `You must keep the ${d?d.r:'card'}. <b>Tap the card of yours</b> it should replace. The card you give up goes face up on the discard pile.`;
-  case 'peek-own':return `<b>7 and 8</b> let you look at one of your own cards. Pick one you haven't seen yet so you know more of your total.`;
-  case 'peek-other':return `<b>9 and 10</b> let you look at another player's card. Useful for snapping later, or for choosing a target for a J or Q.`;
-  case 'jack-own':return `<b>Jack: blind swap.</b> First pick one of <b>your</b> cards to give away, ideally one you know is high.`;
-  case 'jack-opp':return `Now pick any other player's card to take. You don't get to look first. That's the gamble.`;
-  case 'queen-opp':return `<b>Queen: look, then decide.</b> Tap another player's card to see it.`;
-  case 'queen-own':return `If their card is lower than one of yours, <b>tap your card</b> to swap. If not, tap <b>Keep as is</b>.`;
-  case 'window':return t?`<b>Snap time.</b> If you remember a <b>${t.r}</b> anywhere, yours or someone else's, just <b>tap that card</b>. It goes on the pile for free. A wrong guess costs you an extra card. Nothing to snap? Tap the <b>✕</b> to move on.`:'';
-  case 'give':return `You snapped another player's card, so you hand them one of yours. Give away your highest card.`;
-  case 'bot':return `Watch the bots. When someone throws a card away, everyone learns what it was. Keep track; it helps you snap.`;
-  case 'end':return `Round over. If the Cabo caller had the lowest total they score −5; otherwise everyone scores their card total. Lowest score after several rounds wins.`;
+    if(d.v<=4)return `<b>${d.r}</b> is low · <b>keep it</b> · replace a high card`;
+    if(POWER[d.r])return `<b>${d.r}</b> is high · <b>throw</b> · use power`;
+    return `<b>${d.r}</b> is high · <b>throw it</b>`;
+  case 'place':return `Replace your <b>highest</b> or unknown card`;
+  case 'peek-own':return `Peek an <b>unknown</b> card of yours`;
+  case 'peek-other':return `Peek theirs · helps <b>snap</b> later`;
+  case 'jack-own':return `Give away your <b>highest</b> card`;
+  case 'jack-opp':return `Take any card · <b>blind</b>`;
+  case 'queen-opp':return `Look first · then decide`;
+  case 'queen-own':return `Lower than yours? <b>Swap</b> · else keep`;
+  case 'window':return t?`Remember a <b>${t.r}</b>? Tap it · wrong = penalty`:'';
+  case 'give':return `Give your <b>highest</b> card`;
+  case 'bot':return `Watch discards · <b>remember</b> cards`;
+  case 'end':return `Cabo lowest = <b>−5</b> · others = total`;
   }
   return '';
 }
@@ -486,23 +487,23 @@ function render(){
 
   const A=$('actions');A.innerHTML='';const ph=S.phase;let m='';
   const nm=S.players[S.turn].name;
-  if(ph==='peek-start'){m='Your <b>bottom two</b> cards are face up. Remember them!';A.append(btn("I've got them",()=>{log('Game on.');startTurn()},true))}
-  else if(ph==='turn'){m='Your turn: tap the <b>deck</b> to draw, or tap the <b>discard</b> to take it.';if(S.cabo===null)A.append(btn('Call CABO',()=>{S.cabo=0;log('You called CABO! Everyone gets one more turn.');S.turn=1;startTurn()}))}
-  else if(ph==='drawn'){const pw=POWER[(S.drawn||{}).r];m=`You drew a <b>${(S.drawn||{}).r}</b>. Tap one of your cards to swap it in, or tap the <b>discard pile</b> to throw it away.`;A.append(btn(pw?`Discard & ${POWER_LABEL[pw]}`:'Discard it',throwDrawn,true))}
-  else if(ph==='place')m=`Tap the card of yours that the <b>${(S.drawn||{}).r}</b> replaces.`;
-  else if(ph==='peek-own')m='Tap one of <b>your</b> cards to peek at it.';
-  else if(ph==='peek-other')m="Tap <b>someone else's</b> card to peek at it.";
-  else if(ph==='jack-own')m='Jack: pick <b>your</b> card to swap away.';
-  else if(ph==='jack-opp')m="Now pick <b>their</b> card to swap with (no peeking).";
-  else if(ph==='queen-opp')m="Queen: tap <b>someone else's</b> card to look at it.";
-  else if(ph==='queen-own'){m='Tap one of <b>your</b> cards to swap, or keep things as they are.';A.append(btn('Keep as is',()=>{S.reveal.clear();log('You looked and kept things as they were.');endAction(0)}))}
-  else if(ph==='window'){m=t?`Got a <b>${t.r}</b>? Tap the matching card to snap it before the bar runs out.`:'Next player…';const x=btn('✕',()=>{clearTimers();S.turn=S.next;startTurn()});x.className='xbtn';x.title='No snap, carry on';x.setAttribute('aria-label','No snap, carry on');if(S.next===1&&S.cabo===null&&!S.give&&cards(0).length)A.append(btn('Call CABO',()=>{S.cabo=0;log('You called CABO! Everyone gets one more turn.');clearTimers();S.turn=S.next;startTurn()},true));A.append(x)}
-  else if(ph==='give')m=`Nice snap! Pick one of <b>your</b> cards to give ${S.players[S.give.p].name}.`;
-  else if(ph==='bot')m=S.botMsg?`<b>${S.botMsg}</b>`:`${nm} is taking their turn…`;
-  else if(ph==='busy')m=S.reveal.size?'Take a good look…':`<b>${S.log[0]||''}</b>`;
-  else if(ph==='end')m='Round over. Every card is face up.';
-  if(['peek-own','peek-other','jack-own','jack-opp','queen-opp'].includes(ph))A.append(btn('Skip power',()=>endAction(0)));
-  if(S.cabo!==null&&ph!=='end')m+=` <span class="score">· Final lap (${S.players[S.cabo].name} called Cabo)</span>`;
+  if(ph==='peek-start'){m='Memorise your <b>bottom two</b>';A.append(btn("I've got them",()=>{log('Game on');startTurn()},true))}
+  else if(ph==='turn'){m='Your turn · <b>draw</b> or <b>take discard</b>';if(S.cabo===null)A.append(btn('Call CABO',()=>{S.cabo=0;log('You · CABO! · last lap');S.turn=1;startTurn()}))}
+  else if(ph==='drawn'){const pw=POWER[(S.drawn||{}).r];m=`<b>${(S.drawn||{}).r}</b> · swap in or <b>throw</b>`;A.append(btn(pw?`Throw · ${POWER_LABEL[pw]}`:'Throw',throwDrawn,true))}
+  else if(ph==='place')m=`<b>${(S.drawn||{}).r}</b> · pick card to replace`;
+  else if(ph==='peek-own')m='Peek · <b>your</b> card';
+  else if(ph==='peek-other')m='Peek · <b>their</b> card';
+  else if(ph==='jack-own')m='Jack · pick <b>your</b> card';
+  else if(ph==='jack-opp')m='Jack · pick <b>their</b> card';
+  else if(ph==='queen-opp')m='Queen · look at <b>their</b> card';
+  else if(ph==='queen-own'){m='Swap with <b>yours</b> or keep';A.append(btn('Keep as is',()=>{S.reveal.clear();log('You · looked · no swap');endAction(0)}))}
+  else if(ph==='window'){m=t?`Snap a <b>${t.r}</b> · tap card`:'Next player…';const x=btn('✕',()=>{clearTimers();S.turn=S.next;startTurn()});x.className='xbtn';x.title='No snap, carry on';x.setAttribute('aria-label','No snap, carry on');if(S.next===1&&S.cabo===null&&!S.give&&cards(0).length)A.append(btn('Call CABO',()=>{S.cabo=0;log('You · CABO! · last lap');clearTimers();S.turn=S.next;startTurn()},true));A.append(x)}
+  else if(ph==='give')m=`Give ${S.players[S.give.p].name} · <b>one card</b>`;
+  else if(ph==='bot')m=S.botMsg?`<b>${S.botMsg}</b>`:`${nm}'s turn…`;
+  else if(ph==='busy')m=S.reveal.size?'Look…':`<b>${S.log[0]||''}</b>`;
+  else if(ph==='end')m='Round over';
+  if(['peek-own','peek-other','jack-own','jack-opp','queen-opp'].includes(ph))A.append(btn('Skip',()=>endAction(0)));
+  if(S.cabo!==null&&ph!=='end')m+=` <span class="score">· last lap</span>`;
   $('msg').innerHTML=m; $('bar').classList.toggle('on',ph==='window'); tickBar();
   const tip=learner?coachTip(ph,t):''; $('coach').hidden=!tip; $('coach').innerHTML=tip?`<span class="lbl">Coach</span>${tip}`:'';
   $('log').innerHTML=S.log.map(l=>`<div>${l}</div>`).join('');
