@@ -50,7 +50,7 @@ Open `index.html` in a browser. There is no build step. Deep link to a profile w
 
 ## Files
 
-- `index.html`: layout and styles (deep slate #202A44, frosted-glass cards, white text, Helvetica)
+- `index.html`: layout and styles (flat deep slate #202A44, translucent cards, white text, Helvetica)
 - `js/app.js`: search, dashboard, detail drawer, directory, the bronchiectasis profile
 - `js/us.js`: US reference data (credentials, care networks, newborn screening, payer rules, population estimates, age of onset)
 - `js/screener.js`: screener builder and Word/CSV export

@@ -291,8 +291,18 @@
   function showPage() { closeSheet(false); $("#home").hidden = true; $("#dock").hidden = false; $("#page").hidden = false; document.body.classList.remove("is-home"); window.scrollTo(0, 0); }
   function showHome() {
     closeSheet(false); closeDrawer(); CUR = null; $("#page").hidden = true; $("#dock").hidden = true; $("#home").hidden = false; document.body.classList.add("is-home");
-    $("#homeQ").value = ""; setHash(""); emit();
+    $("#homeQ").value = ""; setHash(""); emit(); fitWordmark();
   }
+  /* Size the Rare·Desk wordmark so it is exactly as wide as the tagline under it, whatever font the device has */
+  function fitWordmark() {
+    const logo = $(".logo-lg"), tag = $(".tagline");
+    if (!logo || !tag || $("#home").hidden) return;
+    logo.style.fontSize = "100px";
+    const lw = logo.getBoundingClientRect().width, tw = tag.getBoundingClientRect().width;
+    if (lw && tw) logo.style.fontSize = (100 * tw / lw).toFixed(2) + "px"; else logo.style.fontSize = "";
+  }
+  window.addEventListener("resize", fitWordmark);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitWordmark);
   function emit() { document.dispatchEvent(new CustomEvent("rd:profile", { detail: CUR })); }
 
   function go(q) {
