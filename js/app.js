@@ -63,6 +63,7 @@
     list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
     map: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2Z"/><path d="M9 4v14M15 6v14"/>',
     clipboard: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   };
   const ic = (n, cls = "") => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ICONS.target}</svg>`;
   document.querySelectorAll("[data-i]").forEach(el => { el.outerHTML = ic(el.dataset.i); });
@@ -286,9 +287,9 @@
   let CUR = null;          // current profile
   let lastFocus = null;
   function setHash(h) { try { history.replaceState(null, "", h ? "#" + h : location.pathname + location.search); } catch (_) { /* sandboxed */ } }
-  function showPage() { $("#home").hidden = true; $("#page").hidden = false; document.body.classList.remove("is-home"); window.scrollTo(0, 0); }
+  function showPage() { $("#home").hidden = true; $("#pagehead").hidden = false; $("#page").hidden = false; document.body.classList.remove("is-home"); window.scrollTo(0, 0); }
   function showHome() {
-    closeDrawer(); CUR = null; $("#page").hidden = true; $("#home").hidden = false; document.body.classList.add("is-home");
+    closeDrawer(); CUR = null; $("#page").hidden = true; $("#pagehead").hidden = true; $("#home").hidden = false; document.body.classList.add("is-home");
     $("#homeQ").value = ""; setHash(""); emit();
   }
   function emit() { document.dispatchEvent(new CustomEvent("rd:profile", { detail: CUR })); }
@@ -630,14 +631,16 @@
   }
 
   /* ===================== SEARCH UI ===================== */
-  function wireSearch(form, input, list) {
+  /* withButtons: repeat the home page's two buttons under the suggestions, which otherwise cover them (as Google does) */
+  const SUG_BUTTONS = `<li class="sugfoot" role="presentation"><button type="button" tabindex="-1" data-hb="explore">Explore directory</button><button type="button" tabindex="-1" data-hb="lucky">I'm feeling lucky</button></li>`;
+  function wireSearch(form, input, list, withButtons = false) {
     let sel = -1, items = [];
     const close = () => { list.hidden = true; list.innerHTML = ""; items = []; sel = -1; input.setAttribute("aria-expanded", "false"); };
-    const paint = () => list.querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-selected", i === sel));
+    const paint = () => list.querySelectorAll("button[data-k]").forEach((b, i) => b.setAttribute("aria-selected", i === sel));
     input.addEventListener("input", () => {
       items = rank(input.value).slice(0, 8);
       if (!items.length) { close(); return; }
-      list.innerHTML = items.map(({ it }) => `<li><button type="button" tabindex="-1" data-k="${it.key}">${esc(it.name)}<span class="cat">${ic(CATS[it.cat]?.i || "target")}${esc(CATS[it.cat]?.l || "")}</span></button></li>`).join("");
+      list.innerHTML = items.map(({ it }) => `<li><button type="button" tabindex="-1" data-k="${it.key}">${esc(it.name)}<span class="cat">${ic(CATS[it.cat]?.i || "target")}${esc(CATS[it.cat]?.l || "")}</span></button></li>`).join("") + (withButtons ? SUG_BUTTONS : "");
       list.hidden = false; sel = -1; input.setAttribute("aria-expanded", "true");
     });
     input.addEventListener("keydown", e => {
@@ -647,7 +650,11 @@
       else if (e.key === "Escape") close();
     });
     list.addEventListener("mousedown", e => e.preventDefault());
-    list.addEventListener("click", e => { const b = e.target.closest("button[data-k]"); if (b) { close(); input.value = ""; openItem(b.dataset.k); } });
+    list.addEventListener("click", e => {
+      const hb = e.target.closest("button[data-hb]");
+      if (hb) { close(); if (hb.dataset.hb === "lucky") lucky(); else showDirectory(); return; }
+      const b = e.target.closest("button[data-k]"); if (b) { close(); input.value = ""; openItem(b.dataset.k); }
+    });
     input.addEventListener("blur", () => setTimeout(close, 120));
     form.addEventListener("submit", e => {
       e.preventDefault();
@@ -655,14 +662,18 @@
       else { const v = input.value; close(); go(v); }
     });
   }
-  wireSearch($("#homeForm"), $("#homeQ"), $("#homeSug"));
+  wireSearch($("#homeForm"), $("#homeQ"), $("#homeSug"), true);
   wireSearch($("#topForm"), $("#topQ"), $("#topSug"));
 
-  $("#homeChips").innerHTML = ["Bronchiectasis", "Hereditary angioedema", "Spinal muscular atrophy", "Desmoid tumor", "Demodex blepharitis"]
-    .map(s => `<button class="chip" type="button" data-q="${esc(s)}">${esc(s)}</button>`).join("");
-  $("#browseLink").textContent = `Browse all ${INDEX.length} diseases`;
-  $("#features").innerHTML = [["route", "Journey & stakeholder maps"], ["coins", "US access & payers"], ["clipboard", "Screener builder"], ["badge", "Certifications"], ["chat", "Disease assistant"]]
-    .map(([i, t]) => `<li>${ic(i)}${t}</li>`).join("");
+  /* "I'm feeling lucky": best match for what's typed, or a random disease when the box is empty */
+  function lucky() {
+    const v = $("#homeQ").value.trim();
+    const r = v ? rank(v) : [];
+    if (v && !r.length) { go(v); return; }
+    const key = r.length ? r[0].it.key : INDEX[Math.floor(Math.random() * INDEX.length)].key;
+    $("#homeQ").value = "";
+    openItem(key);
+  }
 
   /* ===================== EVENTS ===================== */
   document.addEventListener("click", e => {
@@ -692,7 +703,8 @@
   });
   $("#homeBtn").addEventListener("click", showHome);
   $("#dirBtn").addEventListener("click", () => showDirectory());
-  $("#browseLink").addEventListener("click", () => showDirectory());
+  $("#exploreBtn").addEventListener("click", () => showDirectory());
+  $("#luckyBtn").addEventListener("click", lucky);
 
   /* deep links: #bronchiectasis, #fabry-disease, #directory */
   function fromHash() {

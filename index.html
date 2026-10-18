@@ -2,28 +2,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rare Disease Desk</title>
 <style>
-/* Layout: navy top bar · Google-style search home · one-screen disease dashboard (12-col cards) · right detail drawer · floating assistant */
+/* Layout: Google-style home (wordmark, tagline, search, two buttons) · results header (wordmark, search below) · one-screen disease dashboard (12-col cards) · right detail drawer · floating assistant. One navy theme with white text. */
 :root{
-  --bar:#0B2447; --bar-ink:#FFFFFF; --bar-muted:#A9BCDA;
-  --bg:#F3F6FA; --surface:#FFFFFF; --sunk:#EDF1F7; --ink:#0C1A2E; --muted:#56667E; --line:#D8E0EB;
-  --accent:#19376D; --accent-ink:#FFFFFF; --accent-soft:#E3EBF7; --link:#1C4A96;
-  --good:#1D7650; --good-soft:#E2F2E9; --mid:#9A6110; --mid-soft:#FBF0DB; --bad:#AE3527; --bad-soft:#FAE7E3;
-  --g-patient:#B4530A; --g-care:#1C4A96; --g-dx:#0E7068; --g-sys:#5B6B82;
+  --bg:#0B2447; --surface:#112F58; --sunk:#183B69; --ink:#FFFFFF; --muted:#B3C3DD; --line:#2B4C7C; --line-strong:#4A6FA5;
+  --bar:#071A36; --bar-ink:#FFFFFF; --bar-muted:#A9BCDA;
+  --accent:#8FB8F5; --accent-ink:#0B2447; --accent-soft:#284874; --link:#A8CBFF;
+  --good:#63D3A2; --good-soft:#1E4964; --mid:#F2C46B; --mid-soft:#35475B; --bad:#FF9E8C; --bad-soft:#374160;
+  --g-patient:#F5A65B; --g-care:#8FB8F5; --g-dx:#4FD1C1; --g-sys:#B3C3DD;
   --font:"Helvetica Neue",Helvetica,Arial,sans-serif;
-  --r:10px; --shadow:0 1px 2px rgba(11,36,71,.06),0 6px 20px rgba(11,36,71,.07);
+  --r:10px; --shadow:0 2px 6px rgba(0,0,0,.25),0 10px 28px rgba(0,0,0,.25);
+  color-scheme:dark;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bar:#081A35; --bar-ink:#FFFFFF; --bar-muted:#93A8C8;
-  --bg:#07111F; --surface:#0E1B30; --sunk:#132440; --ink:#E6ECF5; --muted:#9AAAC0; --line:#22334E;
-  --accent:#8EB2EC; --accent-ink:#071327; --accent-soft:#16294A; --link:#93B7F2;
-  --good:#5CC497; --good-soft:#12301F; --mid:#E3B25C; --mid-soft:#33260E; --bad:#F08C7B; --bad-soft:#371A16;
-  --g-patient:#F0A15B; --g-care:#8EB2EC; --g-dx:#4FC3B5; --g-sys:#9AAAC0; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bar:#081A35; --bar-ink:#FFFFFF; --bar-muted:#93A8C8;
-  --bg:#07111F; --surface:#0E1B30; --sunk:#132440; --ink:#E6ECF5; --muted:#9AAAC0; --line:#22334E;
-  --accent:#8EB2EC; --accent-ink:#071327; --accent-soft:#16294A; --link:#93B7F2;
-  --good:#5CC497; --good-soft:#12301F; --mid:#E3B25C; --mid-soft:#33260E; --bad:#F08C7B; --bad-soft:#371A16;
-  --g-patient:#F0A15B; --g-care:#8EB2EC; --g-dx:#4FC3B5; --g-sys:#9AAAC0; color-scheme:dark}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -38,49 +27,50 @@ h1,h2,h3{margin:0;line-height:1.2;text-wrap:balance}
 .eyebrow{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
 .wrap{max-width:1280px;margin:0 auto;padding-inline:16px}
 
-/* ---------- Top bar ---------- */
-.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bar);color:var(--bar-ink)}
-.bar .wrap{display:flex;align-items:center;gap:18px;min-height:56px;flex-wrap:wrap;padding-block:8px}
-.logo{background:none;border:0;color:var(--bar-ink);font:700 20px/1 var(--font);letter-spacing:-.01em;cursor:pointer;padding:0}
-.logo span,.logo-lg span{color:#7FA8E8}
-.bar .search{flex:1;min-width:220px;max-width:560px}
-.barnav{margin-left:auto;display:flex;align-items:center;gap:14px}
-.navlink{background:none;border:0;color:var(--bar-muted);font-weight:600;cursor:pointer;padding:4px 0}
-.navlink:hover{color:var(--bar-ink)}
-.badge-us{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:3px 9px;color:var(--bar-ink)}
-body.is-home .bar .search{visibility:hidden}
-@media (max-width:640px){.bar .wrap{gap:10px;flex-wrap:nowrap}.logo{font-size:17px}.bar .search{min-width:0}.bar .search input{padding-right:12px}.bar .search button[type=submit]{display:none}.badge-us{display:none}.barnav{gap:8px}}
+/* ---------- Results header: wordmark, then search below (not a bar) ---------- */
+.pagehead{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding-block:18px 0}
+.logo{background:none;border:0;color:var(--ink);font:700 22px/1 var(--font);letter-spacing:-.01em;cursor:pointer;padding:0}
+.logo span,.logo-lg span{color:var(--accent)}
+.headrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%}
+.headrow .search{flex:1 1 300px;max-width:620px}
 
 /* ---------- Search ---------- */
-.search{position:relative;width:100%}
-.search input{width:100%;font:16px var(--font);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:13px 104px 13px 44px;box-shadow:0 1px 6px rgba(11,36,71,.08)}
-.search input:focus{outline:none;border-color:var(--link);box-shadow:0 2px 14px rgba(11,36,71,.18)}
-.search>.i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--muted)}
-.search button[type=submit]{position:absolute;right:5px;top:5px;bottom:5px;border:0;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:700;padding:0 18px;cursor:pointer}
-.bar .search input{padding-block:9px;font-size:15px;border-color:transparent}
-.bar .search button[type=submit]{background:#2C5AA0;color:#fff}
-.suggest{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(11,36,71,.18);list-style:none;margin:0;padding:6px;z-index:35;max-height:360px;overflow:auto;text-align:left}
+.search{position:relative;width:100%;margin:0}
+.search input{width:100%;font:16px var(--font);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:13px 54px 13px 46px}
+.search input::placeholder{color:var(--muted);opacity:1}
+.search input:hover{border-color:var(--line-strong)}
+.search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.search>.i{position:absolute;left:17px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.search button[type=submit]{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:38px;height:38px;border:0;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;cursor:pointer;padding:0}
+.search button[type=submit]:hover{filter:brightness(1.08)}
+.search button[type=submit] .i{width:18px;height:18px;stroke-width:2.2}
+.pagehead .search input{padding-block:10px;font-size:15px}
+.pagehead .search button[type=submit]{width:32px;height:32px}
+.suggest{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.45);list-style:none;margin:0;padding:6px;z-index:35;max-height:360px;overflow:auto;text-align:left}
 .suggest button{display:flex;width:100%;justify-content:space-between;align-items:center;gap:12px;padding:9px 12px;border:0;background:none;border-radius:8px;text-align:left;cursor:pointer}
 .suggest button:hover,.suggest button[aria-selected="true"]{background:var(--sunk)}
 .suggest .cat{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);white-space:nowrap}
 .suggest .cat .i{width:13px;height:13px}
+.suggest .sugfoot{display:flex;justify-content:center;gap:10px;padding:10px 6px 6px;margin-top:4px;border-top:1px solid var(--line)}
+.suggest .sugfoot button{width:auto;display:inline-block;background:var(--sunk);color:var(--ink);border:1px solid transparent;border-radius:8px;padding:9px 16px;font-weight:600;font-size:13.5px}
+.suggest .sugfoot button:hover{background:var(--sunk);border-color:var(--line-strong)}
 
 /* ---------- Home ---------- */
-#home{min-height:calc(100vh - 140px);display:flex;align-items:center;justify-content:center;padding-block:40px}
-.hero{width:100%;max-width:640px;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
-.logo-lg{font:700 clamp(44px,9vw,72px)/1 var(--font);letter-spacing:-.03em;color:var(--accent)}
-.tagline{color:var(--muted);margin:-8px 0 0;font-size:15px;max-width:52ch}
-.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+#home{min-height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));display:flex;align-items:center;justify-content:center;padding-block:40px 12vh}
+.hero{width:100%;max-width:640px;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center}
+.logo-lg{margin:0;font:700 clamp(48px,10vw,80px)/1 var(--font);letter-spacing:-.03em;color:var(--ink)}
+.tagline{color:var(--muted);margin:-6px 0 8px;font-size:17px}
+.homebtns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
+.hbtn{background:var(--sunk);color:var(--ink);border:1px solid transparent;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.hbtn:hover{border-color:var(--line-strong)}
+.pagehead .hbtn{padding:9px 14px;font-size:13.5px}
 .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;cursor:pointer;font-size:13.5px}
 .chip:hover{border-color:var(--link);color:var(--link)}
 .linkbtn{background:none;border:0;padding:0;color:var(--link);font-weight:600;cursor:pointer}
 .linkbtn:hover{text-decoration:underline;text-underline-offset:3px}
-.features{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;color:var(--muted);font-size:13px}
-.features li{display:inline-flex;align-items:center;gap:6px}
-.features .i{width:15px;height:15px;color:var(--accent)}
 
 /* ---------- Disease dashboard ---------- */
-#page{padding-block:18px 64px}
+#page{padding-block:14px 72px}
 .notice{display:flex;gap:8px;align-items:center;background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13.5px}
 .dhead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 20px;align-items:end;margin-bottom:14px}
 .dhead h1{font-size:clamp(26px,3.6vw,34px);font-weight:700;letter-spacing:-.015em}
@@ -124,10 +114,10 @@ body.is-home .bar .search{visibility:hidden}
 .rows span.ok{color:var(--good);font-weight:600}.rows span.warn{color:var(--mid);font-weight:600}
 .dot{width:8px;height:8px;border-radius:50%;flex:none}
 .sev-high{background:var(--bad)}.sev-med{background:var(--mid)}.sev-low{background:var(--muted)}
-.statrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-.stat{background:var(--sunk);border-radius:8px;padding:7px 8px}
+.statrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.stat{background:var(--sunk);border-radius:8px;padding:7px 6px}
 .stat b{display:block;font-size:20px;line-height:1.1}
-.stat span{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat span{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat.ok b{color:var(--good)}
 .pill{display:inline-flex;align-items:center;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap;background:var(--sunk);color:var(--muted)}
 .pill.A{background:var(--good-soft);color:var(--good)}.pill.F{background:var(--accent-soft);color:var(--link)}
@@ -156,8 +146,8 @@ body.is-home .bar .search{visibility:hidden}
 
 /* ---------- Drawer ---------- */
 .drawer{position:fixed;inset:0;z-index:40}
-.drawer-backdrop{position:absolute;inset:0;background:rgba(5,14,30,.5)}
-.drawer-panel{position:absolute;top:0;right:0;bottom:0;width:min(1100px,100%);background:var(--bg);display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(0,0,0,.25);padding-top:env(safe-area-inset-top,0px)}
+.drawer-backdrop{position:absolute;inset:0;background:rgba(2,8,20,.6)}
+.drawer-panel{position:absolute;top:0;right:0;bottom:0;width:min(1100px,100%);background:var(--bg);display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(0,0,0,.4);border-left:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
 .drawer-head{background:var(--surface);border-bottom:1px solid var(--line);padding:12px 20px 0}
 .drawer-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .drawer-title h2{font-size:19px;font-weight:700}
@@ -337,8 +327,8 @@ body.is-home .bar .search{visibility:hidden}
 .tilelinks .linkbtn{font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
 .tilelinks .i{width:14px;height:14px}
 @media (max-width:520px){.q .qs,.q ul,.qsrc{margin-left:0}}
-.copybox{position:fixed;inset:0;z-index:60;background:rgba(5,14,30,.5);display:grid;place-items:center;padding:16px;padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
-.copybox-panel{width:min(680px,100%);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;box-shadow:0 16px 48px rgba(5,14,30,.3)}
+.copybox{position:fixed;inset:0;z-index:60;background:rgba(2,8,20,.6);display:grid;place-items:center;padding:16px;padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.copybox-panel{width:min(680px,100%);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;box-shadow:0 16px 48px rgba(0,0,0,.45)}
 .copybox-head{display:flex;align-items:center;gap:10px}
 .copybox-head b{flex:1;font-size:15px}
 .copybox p{margin:0;color:var(--muted);font-size:13px}
@@ -360,10 +350,10 @@ body.is-home .bar .search{visibility:hidden}
 .dircat button:hover{color:var(--link)}
 
 /* assistant */
-.chat-fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:45;display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-ink);border:0;border-radius:999px;padding:12px 18px;font-weight:700;box-shadow:0 8px 24px rgba(11,36,71,.3);cursor:pointer;max-width:calc(100vw - 32px)}
+.chat-fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:45;display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-ink);border:0;border-radius:999px;padding:12px 18px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer;max-width:calc(100vw - 32px)}
 .chat-fab span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:640px){.chat-fab{padding:14px}.chat-fab span:last-child{display:none}.chat-fab .i{width:22px;height:22px}}
-.chat{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(430px,calc(100vw - 32px));height:min(660px,calc(100vh - 96px));z-index:50;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 48px rgba(5,14,30,.3);display:flex;flex-direction:column;overflow:hidden}
+.chat{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(430px,calc(100vw - 32px));height:min(660px,calc(100vh - 96px));z-index:50;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,.45);display:flex;flex-direction:column;overflow:hidden}
 @media (max-width:640px){.chat{right:0;bottom:0;width:100%;height:100%;border-radius:0;padding-top:env(safe-area-inset-top,0px)}}
 .chat-head{background:var(--bar);color:var(--bar-ink);padding:12px 14px;display:flex;gap:10px;align-items:center}
 .chat-head .t{flex:1;min-width:0}
@@ -417,36 +407,34 @@ body.is-home .bar .search{visibility:hidden}
 @keyframes slide{from{transform:translateX(24px)}to{transform:none}}
 </style>
 
-<header class="bar" id="bar">
-  <div class="wrap">
-    <button class="logo" id="homeBtn" type="button" aria-label="Rare Desk home">Rare<span>·</span>Desk</button>
+<header class="pagehead wrap" id="pagehead" hidden>
+  <button class="logo" id="homeBtn" type="button" aria-label="Rare Desk home">Rare<span>·</span>Desk</button>
+  <div class="headrow">
     <form class="search" id="topForm" role="search">
       <span data-i="search"></span>
       <input id="topQ" type="search" autocomplete="off" aria-label="Search a rare disease" placeholder="Search a rare disease" role="combobox" aria-controls="topSug" aria-expanded="false">
-      <button type="submit">Search</button>
+      <button type="submit" aria-label="Search"><span data-i="arrow"></span></button>
       <ul class="suggest" id="topSug" role="listbox" hidden></ul>
     </form>
-    <nav class="barnav">
-      <button class="navlink" id="dirBtn" type="button">Directory</button>
-      <span class="badge-us" title="Data and terminology follow the US health system">US edition</span>
-    </nav>
+    <button class="hbtn" id="dirBtn" type="button">Explore directory</button>
   </div>
 </header>
 
 <main>
   <section id="home">
     <div class="hero wrap">
-      <div class="logo-lg">Rare<span>·</span>Desk</div>
-      <p class="tagline">US rare disease desk research. Search a disease to see its patient journey, stakeholders, access and pipeline on one screen.</p>
+      <h1 class="logo-lg">Rare<span>·</span>Desk</h1>
+      <p class="tagline">Market research for rare life sciences</p>
       <form class="search" id="homeForm" role="search">
         <span data-i="search"></span>
         <input id="homeQ" type="search" autocomplete="off" aria-label="Search a rare disease" placeholder="Search a rare disease, e.g. bronchiectasis" role="combobox" aria-controls="homeSug" aria-expanded="false">
-        <button type="submit">Search</button>
+        <button type="submit" aria-label="Search"><span data-i="arrow"></span></button>
         <ul class="suggest" id="homeSug" role="listbox" hidden></ul>
       </form>
-      <div class="chips" id="homeChips"></div>
-      <button type="button" class="linkbtn" id="browseLink">Browse all diseases</button>
-      <ul class="features" id="features"></ul>
+      <div class="homebtns">
+        <button class="hbtn" id="exploreBtn" type="button">Explore directory</button>
+        <button class="hbtn" id="luckyBtn" type="button" title="Opens the best match, or a random disease when the box is empty">I'm feeling lucky</button>
+      </div>
     </div>
   </section>
   <section id="page" class="wrap" hidden></section>

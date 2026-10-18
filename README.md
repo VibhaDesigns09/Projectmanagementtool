@@ -1,6 +1,8 @@
 # Rare·Desk
 
-A US desk-research tool for rare diseases. Search a disease from a Google-style search bar to get a one-screen dashboard. Every card opens a detail drawer.
+Market research for rare life sciences: a US desk-research tool for rare diseases.
+
+The home page works like Google: type a disease into the search bar, or use **Explore directory** (every disease by category) or **I'm feeling lucky** (opens the best match for what you typed, or a random disease when the box is empty). Each disease opens a one-screen dashboard, and every card opens a detail drawer.
 
 - **About the disease**: summary, cause, diagnosis, treatment, top articles (NIH, NORD, GeneReviews, PubMed) and videos
 - **Patient journey**: stages, what happens, how the patient feels and the pain point at each stage, laid out alongside the stakeholder map (who leads or supports at each stage)
@@ -48,7 +50,7 @@ Open `index.html` in a browser. There is no build step. Deep link to a profile w
 
 ## Files
 
-- `index.html`: layout and styles (navy theme, Helvetica)
+- `index.html`: layout and styles (navy with white text, Helvetica)
 - `js/app.js`: search, dashboard, detail drawer, directory, the bronchiectasis profile
 - `js/us.js`: US reference data (credentials, care networks, newborn screening, payer rules, population estimates, age of onset)
 - `js/screener.js`: screener builder and Word/CSV export
