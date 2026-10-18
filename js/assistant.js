@@ -7,7 +7,7 @@
   if (!RD) return;
   const { ic, esc } = RD;
   const $ = s => document.querySelector(s);
-  const fab = $("#chatFab"), fabLabel = $("#chatFabLabel"), box = $("#chat"), log = $("#chatLog"), form = $("#chatForm"),
+  const fab = $("#dockChat"), box = $("#chat"), log = $("#chatLog"), form = $("#chatForm"),
     input = $("#chatInput"), sendBtn = $("#chatSend"), stopBtn = $("#chatStop"), clearBtn = $("#chatClear"), closeBtn = $("#chatClose"),
     titleEl = $("#chatTitle"), modeEl = $("#chatMode"), attachEl = $("#chatAttach"), forgetBtn = $("#chatForget"), tierEl = $("#chatTier");
 
@@ -323,20 +323,19 @@
   /* ---------- open / close ---------- */
   function open(detail) {
     if (!P) return;
-    box.hidden = false; fab.hidden = true;
+    box.hidden = false; fab.setAttribute("aria-expanded", "true"); document.body.classList.add("chat-open");
     if (detail && detail.context) attach = detail.context;
     if (detail && detail.prompt) { input.value = detail.prompt; }
     paint(); autosize();
     if (!input.disabled) input.focus(); else (log.querySelector("#apiKey") || closeBtn).focus();
   }
   function close() {
-    box.hidden = true;
-    fab.hidden = !P;
-    if (P) fab.focus();
+    box.hidden = true; fab.setAttribute("aria-expanded", "false"); document.body.classList.remove("chat-open");
+    if (P && fab.getClientRects().length) fab.focus();
   }
 
   /* ---------- events ---------- */
-  fab.addEventListener("click", () => open());
+  fab.addEventListener("click", () => (box.hidden ? open() : close()));
   closeBtn.addEventListener("click", close);
   stopBtn.addEventListener("click", () => ctl && ctl.abort());
   clearBtn.addEventListener("click", () => {
@@ -366,12 +365,12 @@
     if (busyKey && ctl && (!next || next.key !== busyKey)) ctl.abort();
     if (!next || !P || next.key !== P.key) attach = null;
     P = next;
-    if (!P) { box.hidden = true; fab.hidden = true; return; }
-    fabLabel.textContent = "Ask about " + (P.name.length > 28 ? P.name.slice(0, 26) + "…" : P.name);
-    fab.setAttribute("aria-label", "Ask about " + P.name);
-    if (box.hidden) fab.hidden = false; else paint();
+    if (!P) { box.hidden = true; fab.hidden = true; fab.setAttribute("aria-expanded", "false"); document.body.classList.remove("chat-open"); return; }
+    fab.hidden = false; fab.setAttribute("aria-label", "Ask about " + P.name); fab.title = "Ask about " + P.name;
+    if (!box.hidden) paint();
   });
 
-  if (P) { fabLabel.textContent = "Ask about " + (P.name.length > 28 ? P.name.slice(0, 26) + "…" : P.name); fab.setAttribute("aria-label", "Ask about " + P.name); fab.hidden = false; }
+  fab.hidden = !P;
+  if (P) { fab.setAttribute("aria-label", "Ask about " + P.name); fab.title = "Ask about " + P.name; }
   controls();
 })();

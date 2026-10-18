@@ -2,7 +2,7 @@
 
 Market research for rare life sciences: a US desk-research tool for rare diseases.
 
-The home page works like Google: type a disease into the search bar, or use **Explore directory** (every disease by category) or **I'm feeling lucky** (opens the best match for what you typed, or a random disease when the box is empty). Each disease opens a one-screen dashboard, and every card opens a detail drawer.
+The home page works like Google: type a disease into the search bar, or use **Explore directory** (every disease by category) or **I'm feeling lucky** (opens the best match for what you typed, or a random disease when the box is empty). Each disease opens a one-screen dashboard of short cards (icon, title, a few key points); click a card for the full detail. A small dock at the bottom centre has **Home**, **Search** (or press `/`) and **Ask the assistant**.
 
 - **About the disease**: summary, cause, diagnosis, treatment, top articles (NIH, NORD, GeneReviews, PubMed) and videos
 - **Patient journey**: stages, what happens, how the patient feels and the pain point at each stage, laid out alongside the stakeholder map (who leads or supports at each stage)
@@ -50,7 +50,7 @@ Open `index.html` in a browser. There is no build step. Deep link to a profile w
 
 ## Files
 
-- `index.html`: layout and styles (navy with white text, Helvetica)
+- `index.html`: layout and styles (deep slate #202A44, frosted-glass cards, white text, Helvetica)
 - `js/app.js`: search, dashboard, detail drawer, directory, the bronchiectasis profile
 - `js/us.js`: US reference data (credentials, care networks, newborn screening, payer rules, population estimates, age of onset)
 - `js/screener.js`: screener builder and Word/CSV export

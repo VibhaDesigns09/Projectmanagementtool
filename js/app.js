@@ -64,6 +64,7 @@
     map: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2Z"/><path d="M9 4v14M15 6v14"/>',
     clipboard: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/>',
     arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5.5h4V20"/>',
   };
   const ic = (n, cls = "") => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ICONS.target}</svg>`;
   document.querySelectorAll("[data-i]").forEach(el => { el.outerHTML = ic(el.dataset.i); });
@@ -287,9 +288,9 @@
   let CUR = null;          // current profile
   let lastFocus = null;
   function setHash(h) { try { history.replaceState(null, "", h ? "#" + h : location.pathname + location.search); } catch (_) { /* sandboxed */ } }
-  function showPage() { $("#home").hidden = true; $("#pagehead").hidden = false; $("#page").hidden = false; document.body.classList.remove("is-home"); window.scrollTo(0, 0); }
+  function showPage() { closeSheet(false); $("#home").hidden = true; $("#dock").hidden = false; $("#page").hidden = false; document.body.classList.remove("is-home"); window.scrollTo(0, 0); }
   function showHome() {
-    closeDrawer(); CUR = null; $("#page").hidden = true; $("#pagehead").hidden = true; $("#home").hidden = false; document.body.classList.add("is-home");
+    closeSheet(false); closeDrawer(); CUR = null; $("#page").hidden = true; $("#dock").hidden = true; $("#home").hidden = false; document.body.classList.add("is-home");
     $("#homeQ").value = ""; setHash(""); emit();
   }
   function emit() { document.dispatchEvent(new CustomEvent("rd:profile", { detail: CUR })); }
@@ -323,11 +324,11 @@
       .map((r, i) => ({ r, i, L: (r[3].match(/L/g) || []).length }))
       .sort((a, b) => b.L - a.L || a.i - b.i).map(x => x.r);
   }
-  function card(id, size, icon, title, count, body, moreLabel) {
+  /* Card: icon + title on top (what it is at a glance), a few key points, chevron to open the details */
+  function card(id, size, icon, title, count, body) {
     return `<article class="card ${size}" data-tab="${id}">
-      <header>${ic(icon)}<h2>${title}</h2>${count ? `<span class="count">${count}</span>` : ""}</header>
+      <header><span class="cico">${ic(icon)}</span><h2>${title}</h2>${count ? `<span class="count">${count}</span>` : ""}<button class="go" type="button" data-tab="${id}" aria-label="Open ${title} details">${ic("chev")}</button></header>
       ${body}
-      <button class="more" type="button" data-tab="${id}">${moreLabel} ${ic("chev")}</button>
     </article>`;
   }
   function miniJourney(P) {
@@ -343,13 +344,9 @@
   }
   function metaChips(P) {
     const c = counts(P), out = [];
-    out.push(`<span class="meta">${ic(P.catIcon)}${esc(P.catLabel)}</span>`);
-    if (P.icd) out.push(`<span class="meta" title="US diagnosis code family; confirm the billable code">ICD-10-CM <b>${esc(P.icd)}</b></span>`);
-    if (P.est) out.push(`<span class="meta" title="${P.est.source === "calc" ? "Calculated from the prevalence or incidence rate × US population/births" : "Published US estimate"}">${ic("users")}<b>${esc(P.est.text)}</b></span>`);
-    if (P.orphan) out.push(`<span class="meta ${P.orphan.level === "rare" ? "good" : "warn"}">${esc(P.orphan.text)}</span>`);
-    out.push(c.A ? `<span class="meta good">${ic("check")}<b>${c.A}</b> FDA-approved</span>` : `<span class="meta bad">${ic("alert")}No FDA-approved therapy</span>`);
-    if (c.F) out.push(`<span class="meta">${ic("clock")}<b>${c.F}</b> under FDA review</span>`);
-    if (P.nbs.level !== "none") out.push(`<span class="meta ${P.nbs.level === "core" ? "good" : "warn"}">${ic("target")}${esc(P.nbs.text)}</span>`);
+    if (P.est) out.push(`<span class="meta" title="${P.est.source === "calc" ? "Calculated from the prevalence or incidence rate × US population/births" : "Published US estimate"}">${ic("users")}${esc(P.est.text.replace(/\s*\([^)]*\)/g, ""))}</span>`);
+    out.push(c.A ? `<span class="meta good">${ic("check")}${c.A} FDA-approved</span>` : `<span class="meta bad">${ic("alert")}No FDA-approved therapy</span>`);
+    if (P.nbs.level !== "none") out.push(`<span class="meta">${ic("target")}${esc(P.nbs.text)}</span>`);
     return out.join("");
   }
 
@@ -357,54 +354,47 @@
     const c = counts(P);
     const lead = leads(P);
     const lowest = P.stages.reduce((m, s) => s.f < m.f ? s : m, P.stages[0]);
-    const top3 = P.pipeline.slice(0, 3);
-    const chips = P.companies.slice(0, 7);
+    const top2 = P.pipeline.slice(0, 2);
+    const chips = P.companies.slice(0, 5);
     return `
     ${typed ? `<div class="notice">${ic("search")}Showing <b>${esc(P.name)}</b> for “${esc(typed)}”</div>` : ""}
     <div class="dhead">
-      <div><div class="eyebrow">${P.curated ? "In-depth profile" : "Directory profile"} · US</div><h1>${esc(P.name)}</h1>${P.aka ? `<div class="aka">${esc(P.aka)}</div>` : ""}</div>
+      <div class="dtitle"><span class="catico" title="${esc(P.catLabel)}">${ic(P.catIcon)}</span>
+        <div class="dname"><h1>${esc(P.name)}</h1><div class="aka">${esc(P.catLabel)}${P.aka ? " · " + esc(P.aka) : ""}</div></div></div>
       <div class="dactions">
-        <button class="btn primary" type="button" data-act="chat">${ic("chat")}Ask the assistant</button>
-        <button class="btn" type="button" data-tab="screener">${ic("clipboard")}Screener builder</button>
+        <button class="btn" type="button" data-tab="screener">${ic("clipboard")}Screener</button>
         <button class="btn" type="button" data-tab="certs">${ic("badge")}Certifications</button>
       </div>
       <div class="metas">${metaChips(P)}</div>
     </div>
     ${also.length ? `<div class="also"><span class="eyebrow">Also matching</span>${also.map(it => `<button class="chip" type="button" data-open="${it.key}">${esc(it.name)}</button>`).join("")}</div>` : ""}
     <div class="dash">
-      ${card("about", "s4", "book", "About the disease", "", `
+      ${card("about", "s4", "book", "About", "", `
         <p class="lede">${esc(P.what)}</p>
-        <dl class="facts"><dt>Cause</dt><dd title="${esc(P.cause)}">${esc(P.cause)}</dd><dt>Diagnosis</dt><dd title="${esc(P.dx)}">${esc(P.dx)}</dd><dt>Treatment</dt><dd title="${esc(P.tx)}">${esc(P.tx)}</dd></dl>`,
-        `${P.read.length} sources & ${P.watch.length} videos`)}
+        <div class="chipset">${P.specialists[0] ? `<span class="tag">${ic("steth")}${esc(P.specialists[0])}</span>` : ""}<span class="tag">${ic("file")}${P.read.length} sources</span><span class="tag">${ic("play")}${P.watch.length} videos</span></div>`)}
       ${card("journey", "s5", "route", "Patient journey", `${P.stages.length} stages`, `
         ${miniJourney(P)}
-        <div class="painline">${ic("alert")}<span>Hardest point: <b>${esc(lowest.n)}</b> · ${esc(lowest.p)}</span></div>`,
-        "Open journey & stakeholder map")}
+        <p class="painline">${ic("alert")}<span>Hardest: <b>${esc(lowest.n)}</b> · ${esc(lowest.p)}</span></p>`)}
       ${card("stakeholders", "s3", "users", "Stakeholders", `${P.stakeholders.length}`, `
-        <ul class="rows">${lead.slice(0, 6).map(r => `<li class="g-${r[0]}">${ic(r[2])}<span title="${esc(r[4])}">${esc(r[1])}</span></li>`).join("")}</ul>`,
-        "Who leads at each stage")}
-      ${card("access", "s3", "coins", "US access & payers", "", `
+        <ul class="rows">${lead.slice(0, 4).map(r => `<li class="g-${r[0]}">${ic(r[2])}<span title="${esc(r[4])}">${esc(r[1])}</span></li>`).join("")}</ul>`)}
+      ${card("access", "s3", "coins", "Access & payers", "", `
         <ul class="rows">
-          <li>${ic("landmark")}<span class="${c.A ? "ok" : "warn"}">${c.A ? `FDA: ${c.A} approved` : "FDA: none approved"}${c.F ? ` · ${c.F} in review` : ""}</span></li>
-          <li>${ic("users")}<span title="${esc(P.payer[1])}">Payer focus: <b>${esc(P.payer[0])}</b></span></li>
+          <li>${ic("landmark")}<span class="${c.A ? "ok" : "warn"}">${c.A ? `${c.A} FDA-approved` : "None FDA-approved"}</span></li>
+          <li>${ic("users")}<span title="${esc(P.payer[1])}">Payer: <b>${esc(P.payer[0])}</b></span></li>
           <li>${ic("hospital")}<span title="${esc(P.networks[0][1])}">${esc(P.networks[0][0])}</span></li>
-          ${P.nbs.level !== "none" ? `<li>${ic("target")}<span title="${esc(P.nbs.text)}">${esc(P.nbs.text)}</span></li>` : `<li>${ic("scale")}<span>ICER may review high-cost drugs</span></li>`}
-        </ul>`, "Who influences access")}
-      ${card("pipeline", "s3", "pill", "Therapies & pipeline", "", `
+        </ul>`)}
+      ${card("pipeline", "s3", "pill", "Pipeline", "", `
         <div class="statrow">
           <div class="stat ok"><b>${c.A}</b><span>Approved</span></div><div class="stat"><b>${c.F}</b><span>At FDA</span></div>
           <div class="stat"><b>${c["3"]}</b><span>Phase 3</span></div><div class="stat"><b>${c.early}</b><span>Earlier</span></div>
         </div>
-        ${top3.length ? `<ul class="rows">${top3.map(r => `<li><span title="${esc(r[0])} · ${esc(r[1])} · ${esc(STATUS[r[2]].label)}">${esc(r[0])}</span><span class="pill ${esc(r[2])}">${esc(STATUS[r[2]].short)}</span></li>`).join("")}</ul>` : `<p class="lede">No approved or late-stage therapy listed yet.</p>`}`,
-        "Full pipeline")}
-      ${card("gaps", "s3", "alert", "Gaps people talk about", `${P.gaps.length}`, `
-        <ul class="rows">${P.gaps.slice(0, 5).map(g => `<li><span class="dot sev-${g[3]}"></span><span title="${esc(g[1])}: ${esc(g[2])}"><b>${esc(g[1])}</b></span></li>`).join("")}</ul>`,
-        `All ${P.gaps.length} gaps & owners`)}
-      ${card("companies", "s3", "building", "Companies & organizations", `${P.companies.length}`, `
-        <div class="chipset">${chips.map(x => `<span class="tag" title="${esc(x[2])}">${ic(x[0])}${esc(x[1])}</span>`).join("")}${P.companies.length > chips.length ? `<span class="tag">+${P.companies.length - chips.length} more</span>` : ""}</div>`,
-        "Who works on the gaps")}
+        ${top2.length ? `<ul class="rows">${top2.map(r => `<li><span title="${esc(r[0])} · ${esc(r[1])} · ${esc(STATUS[r[2]].label)}">${esc(r[0].replace(/ \(.*\)$/, ""))}</span><span class="pill ${esc(r[2])}">${esc(STATUS[r[2]].short)}</span></li>`).join("")}</ul>` : `<p class="lede">No therapy in late-stage development yet.</p>`}`)}
+      ${card("gaps", "s3", "alert", "Gaps", `${P.gaps.length}`, `
+        <ul class="rows">${P.gaps.slice(0, 3).map(g => `<li><span class="dot sev-${g[3]}"></span><span title="${esc(g[1])}: ${esc(g[2])}">${esc(g[1])}</span></li>`).join("")}</ul>`)}
+      ${card("companies", "s3", "building", "Companies", `${P.companies.length}`, `
+        <div class="chipset">${chips.map(x => `<span class="tag" title="${esc(x[2])}">${ic(x[0])}${esc(x[1])}</span>`).join("")}${P.companies.length > chips.length ? `<span class="tag">+${P.companies.length - chips.length} more</span>` : ""}</div>`)}
     </div>
-    <p class="foot">${ic("clock")}Reviewed October 2026 · US data (FDA, CMS, RUSP). Approval status changes fast; verify before citing. Not medical advice.</p>`;
+    <p class="foot">${ic("clock")}Reviewed October 2026 · US data (FDA, CMS, RUSP) · Verify before citing · Not medical advice</p>`;
   }
 
   /* ===================== DRAWER ===================== */
@@ -617,12 +607,12 @@
     <div class="notice">${ic("search")}“${esc(q)}” isn't in the directory yet. These US research links search live sources. <button type="button" class="linkbtn" data-act="dir">Browse the directory</button></div>
     <div class="dhead"><div><div class="eyebrow">Quick research · US</div><h1>${esc(q)}</h1></div></div>
     <div class="dash">
-      <article class="card s6"><header>${ic("book")}<h2>About the disease</h2></header><ul class="linklist">
+      <article class="card s6 static"><header><span class="cico">${ic("book")}</span><h2>About the disease</h2></header><ul class="linklist">
         ${L("book", "Patient overview", "NIH GARD", "https://rarediseases.info.nih.gov/search?term=" + e)}
         ${L("users", "Rare disease report", "NORD", "https://rarediseases.org/?s=" + e)}
         ${L("file", "Reviews", "PubMed", "https://pubmed.ncbi.nlm.nih.gov/?term=" + e + "&filter=pubt.review")}
         ${L("play", "Explainer videos", "YouTube", "https://www.youtube.com/results?search_query=" + e + "+explained")}</ul></article>
-      <article class="card s6"><header>${ic("coins")}<h2>US access & pipeline</h2></header><ul class="linklist">
+      <article class="card s6 static"><header><span class="cico">${ic("coins")}</span><h2>US access & pipeline</h2></header><ul class="linklist">
         ${L("flask", "Recruiting US trials", "ClinicalTrials.gov", "https://clinicaltrials.gov/search?cond=" + e + "&country=United%20States&aggFilters=status:rec")}
         ${L("landmark", "Orphan drug designations", "FDA", "https://www.accessdata.fda.gov/scripts/opdlisting/oopd/")}
         ${L("scale", "Value assessments", "ICER", "https://icer.org/?s=" + e)}
@@ -652,7 +642,7 @@
     list.addEventListener("mousedown", e => e.preventDefault());
     list.addEventListener("click", e => {
       const hb = e.target.closest("button[data-hb]");
-      if (hb) { close(); if (hb.dataset.hb === "lucky") lucky(); else showDirectory(); return; }
+      if (hb) { close(); if (hb.dataset.hb === "lucky") lucky(input); else showDirectory(); return; }
       const b = e.target.closest("button[data-k]"); if (b) { close(); input.value = ""; openItem(b.dataset.k); }
     });
     input.addEventListener("blur", () => setTimeout(close, 120));
@@ -663,16 +653,31 @@
     });
   }
   wireSearch($("#homeForm"), $("#homeQ"), $("#homeSug"), true);
-  wireSearch($("#topForm"), $("#topQ"), $("#topSug"));
+  wireSearch($("#topForm"), $("#topQ"), $("#topSug"), true);
 
   /* "I'm feeling lucky": best match for what's typed, or a random disease when the box is empty */
-  function lucky() {
-    const v = $("#homeQ").value.trim();
+  function lucky(input = $("#homeQ")) {
+    const v = input.value.trim();
     const r = v ? rank(v) : [];
     if (v && !r.length) { go(v); return; }
     const key = r.length ? r[0].it.key : INDEX[Math.floor(Math.random() * INDEX.length)].key;
-    $("#homeQ").value = "";
+    input.value = "";
     openItem(key);
+  }
+
+  /* ===================== DOCK SEARCH SHEET ===================== */
+  let sheetReturn = null;
+  function openSheet() {
+    const sh = $("#sheet"); if (!sh.hidden) return;
+    sheetReturn = document.activeElement;
+    sh.hidden = false; $("#topQ").value = ""; $("#topQ").focus();
+    $("#dockSearch").setAttribute("aria-expanded", "true");
+  }
+  function closeSheet(restore = true) {
+    const sh = $("#sheet"); if (sh.hidden) return;
+    sh.hidden = true; $("#topSug").hidden = true; $("#topSug").innerHTML = "";
+    $("#dockSearch").setAttribute("aria-expanded", "false");
+    if (restore && sheetReturn && document.contains(sheetReturn) && sheetReturn.getClientRects().length) sheetReturn.focus();
   }
 
   /* ===================== EVENTS ===================== */
@@ -694,15 +699,36 @@
   });
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && !$("#drawer").hidden && !e.defaultPrevented) { closeDrawer(); }
-    if (e.key === "Tab" && !$("#drawer").hidden && $("#chat").hidden) {
-      const f = [...$("#drawer").querySelectorAll("button,a[href],input,select,textarea,[contenteditable=true]"), $("#chatFab")].filter(x => x.getClientRects().length);
+    if (e.key === "Tab") {
+      const box = !$("#sheet").hidden ? $("#sheet") : (!$("#drawer").hidden && $("#chat").hidden ? $("#drawer") : null);
+      if (!box) return;
+      const extra = box.id === "drawer" ? [...$("#dock").querySelectorAll("button")] : [];
+      const f = [...box.querySelectorAll("button,a[href],input,select,textarea,[contenteditable=true]"), ...extra].filter(x => x.getClientRects().length && x.getAttribute("tabindex") !== "-1");
       if (!f.length) return;
       if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
       else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
     }
+    /* "/" opens search from anywhere (unless typing) */
+    if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const a = document.activeElement;
+      if (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;
+      e.preventDefault();
+      if (!$("#home").hidden) $("#homeQ").focus(); else openSheet();
+    }
   });
-  $("#homeBtn").addEventListener("click", showHome);
-  $("#dirBtn").addEventListener("click", () => showDirectory());
+  /* Esc in the sheet: first closes suggestions, then the sheet; never the drawer behind it */
+  $("#sheet").addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    e.preventDefault();
+    if ($("#topSug").hidden) { e.stopPropagation(); closeSheet(); }
+  }, true);
+  $("#sheet").addEventListener("click", e => {
+    if (e.target.closest("[data-sheetclose]")) { closeSheet(); return; }
+    const b = e.target.closest("[data-sheet]"); if (!b) return;
+    if (b.dataset.sheet === "lucky") lucky($("#topQ")); else showDirectory();
+  });
+  $("#dockHome").addEventListener("click", showHome);
+  $("#dockSearch").addEventListener("click", openSheet);
   $("#exploreBtn").addEventListener("click", () => showDirectory());
   $("#luckyBtn").addEventListener("click", lucky);
 
