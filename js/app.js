@@ -293,18 +293,8 @@
   function showPage() { closeSheet(false); $("#home").hidden = true; $("#dock").hidden = false; $("#page").hidden = false; document.body.classList.remove("is-home"); window.scrollTo(0, 0); }
   function showHome() {
     closeSheet(false); closeDrawer(); CUR = null; $("#page").hidden = true; $("#dock").hidden = false; $("#home").hidden = false; document.body.classList.add("is-home");
-    $("#homeQ").value = ""; setHash(""); emit(); fitWordmark();
+    $("#homeQ").value = ""; setHash(""); emit();
   }
-  /* Size the Rare·Desk wordmark so it is exactly as wide as the tagline under it, whatever font the device has */
-  function fitWordmark() {
-    const logo = $(".logo-lg"), tag = $(".tagline");
-    if (!logo || !tag || $("#home").hidden) return;
-    logo.style.fontSize = "100px";
-    const lw = logo.getBoundingClientRect().width, tw = tag.getBoundingClientRect().width;
-    if (lw && tw) logo.style.fontSize = (100 * tw / lw).toFixed(2) + "px"; else logo.style.fontSize = "";
-  }
-  window.addEventListener("resize", fitWordmark);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitWordmark);
   function emit() { document.dispatchEvent(new CustomEvent("rd:profile", { detail: CUR })); }
 
   function go(q) {
@@ -670,22 +660,46 @@
     const N = window.NEWS; if (!N) return;
     const keyOf = name => (INDEX.find(x => x.name === name) || {}).key;
     const openBtn = (name, label) => { const k = name ? keyOf(name) : undefined; return k === undefined ? "" : `<button class="linkbtn" type="button" data-open="${k}">${esc(label)}${ic("chev")}</button>`; };
-    $("#newsNote").textContent = `US · updated ${fmtDate(N.asOf)} · verify before citing`;
-    $("#newsGrid").innerHTML = N.latest.map(n => {
+    const total = N.latest.length + (N.watch.length ? 1 : 0);
+    const slides = N.latest.map((n, i) => {
       const [ki, kl] = NEWS_KIND[n.k] || ["file", "News"];
-      return `<article class="ncard">
+      return `<article class="slide" role="group" aria-roledescription="slide" aria-label="${i + 1} of ${total}">
         <div class="ntop"><span class="nkind ${esc(n.k)}">${ic(ki)}${kl}</span><time datetime="${esc(n.d)}">${fmtDate(n.d)}</time></div>
         <h3>${esc(n.t)}</h3><p>${esc(n.s)}</p>
         <div class="nfoot"><a ${ext(n.u)}>${esc(n.src)}${ic("ext")}</a>${openBtn(n.dz, n.dz || "")}</div>
       </article>`;
-    }).join("");
-    $("#watchGrid").innerHTML = N.watch.map(w => `<article class="ncard wcard">
-        <time class="wdate" datetime="${esc(w.d)}">${fmtDate(w.d).replace(/, \d{4}$/, "")}</time>
-        <span class="wdrug">${esc(w.t)}</span><span class="wfor">${esc(w.co)} · ${esc(w.for)}</span>
-        <div class="nfoot"><a ${ext(w.u)}>${esc(w.src)}${ic("ext")}</a>${openBtn(w.dz, "Open profile")}</div>
-      </article>`).join("");
+    });
+    if (N.watch.length) slides.push(`<article class="slide" role="group" aria-roledescription="slide" aria-label="${total} of ${total}">
+        <div class="ntop"><span class="nkind watch">${ic("clock")}FDA decisions to watch</span><span class="count">Company-announced dates</span></div>
+        <ul class="watchlist">${N.watch.map(w => `<li><time datetime="${esc(w.d)}">${fmtDate(w.d).replace(/, \d{4}$/, "")}</time>
+          <span><b>${esc(w.t)}</b><span class="wfor">${esc(w.co)} · ${esc(w.for)}</span></span>
+          <span class="wlinks"><a ${ext(w.u)}>${esc(w.src)}${ic("ext")}</a>${openBtn(w.dz, "Profile")}</span></li>`).join("")}</ul>
+      </article>`);
+    $("#newsNote").textContent = `US · updated ${fmtDate(N.asOf)} · swipe for more`;
+    $("#newsSlides").innerHTML = slides.join("");
+    $("#newsDots").innerHTML = slides.map((_, i) => `<button class="dotbtn" type="button" role="tab" aria-label="Headline ${i + 1} of ${total}" aria-selected="${i === 0}" data-slide="${i}"><span></span></button>`).join("");
   }
   renderNews();
+
+  /* Carousel: native swipe/scroll with snap; dots show the position and jump on click; arrow keys move one */
+  (function newsCarousel() {
+    const track = $("#newsSlides"), dots = $("#newsDots");
+    if (!track || !dots) return;
+    const step = () => (track.firstElementChild ? track.firstElementChild.getBoundingClientRect().width + parseFloat(getComputedStyle(track).columnGap || 16) : track.clientWidth);
+    const current = () => Math.round(track.scrollLeft / step());
+    const smooth = () => (matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
+    const go2 = i => { const n = track.children.length; i = Math.max(0, Math.min(n - 1, i)); track.scrollTo({ left: i * step(), behavior: smooth() }); };
+    let raf = 0;
+    track.addEventListener("scroll", () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => { const c = current(); dots.querySelectorAll(".dotbtn").forEach((d, i) => d.setAttribute("aria-selected", String(i === c))); });
+    }, { passive: true });
+    dots.addEventListener("click", e => { const d = e.target.closest("[data-slide]"); if (d) go2(+d.dataset.slide); });
+    track.addEventListener("keydown", e => {
+      if (e.key === "ArrowRight") { e.preventDefault(); go2(current() + 1); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); go2(current() - 1); }
+    });
+  })();
 
   /* "I'm feeling lucky": best match for what's typed, or a random disease when the box is empty */
   function lucky(input = $("#homeQ")) {
@@ -761,6 +775,7 @@
   });
   $("#dockHome").addEventListener("click", showHome);
   $("#dockSearch").addEventListener("click", openSheet);
+  $("#brandBtn").addEventListener("click", () => { showHome(); $("#homeQ").focus(); });
   $("#dockDir").addEventListener("click", () => showDirectory());
   $("#dockLucky").addEventListener("click", () => lucky($("#homeQ")));
 

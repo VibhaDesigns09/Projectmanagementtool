@@ -2,7 +2,7 @@
 
 Market research for rare life sciences: a US desk-research tool for rare diseases.
 
-**Home page:** the Rare·Desk search bar on top, then **What's new in rare disease** (recent US approvals, FDA and CMS policy, newborn screening, deals, each linked to its source) and **FDA decisions to watch** (upcoming company-announced target dates). The news lives in `data/news.js`; update it there. A small dock at the bottom centre has **Home**, **Disease directory** and **I'm feeling lucky** (opens the best match for what you typed, or a random disease when the box is empty).
+**Home page:** a small R·D brand mark top left and the search bar top centre. Below it, one headline at a time from **What's new in rare disease** (recent US approvals, FDA and CMS policy, newborn screening, deals, each linked to its source); swipe, use the arrow keys or tap the dots for more. The last slide lists **FDA decisions to watch** (company-announced target dates). The news lives in `data/news.js`; update it there. A small dock at the bottom centre has **Home**, **Disease directory** and **I'm feeling lucky** (opens the best match for what you typed, or a random disease when the box is empty).
 
 **Disease page:** About and Patient journey cards on the left, three square tiles under them (**Stakeholders & certifications**, **Screener builder**, **US access & payers**), and one tall panel on the right with **Treatment gaps**, **Companies on it** and **Drugs in development**. Click anything for the full detail. The dock has **Home**, **Search** (or press `/`) and **Ask the assistant**.
 
@@ -52,7 +52,7 @@ Open `index.html` in a browser. There is no build step. Deep link to a profile w
 
 ## Files
 
-- `index.html`: layout and styles (flat deep slate #202A44, translucent cards, white text, Helvetica)
+- `index.html`: layout and styles (dark navy #0F1A2B, translucent cards, white text, Helvetica)
 - `js/app.js`: search, dashboard, detail drawer, directory, the bronchiectasis profile
 - `js/us.js`: US reference data (credentials, care networks, newborn screening, payer rules, population estimates, age of onset)
 - `js/screener.js`: screener builder and Word/CSV export

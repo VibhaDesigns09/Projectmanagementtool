@@ -2,13 +2,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rare Disease Desk</title>
 <style>
-/* Layout: Google-style home · disease dashboard of translucent cards (12-col) · bottom-centre dock (home, search, chat) · right detail drawer. One deep-slate theme (#202A44) with white text. */
+/* Layout: Google-style home · disease dashboard of translucent cards (12-col) · bottom-centre dock (home, search, chat) · right detail drawer. One dark navy theme (#0F1A2B) with white text. */
 :root{
-  --bg:#202A44; --panel:#2C364E; --ink:#FFFFFF; --muted:#B7C0D6;
-  --glass:rgba(255,255,255,.055); --glass-hover:rgba(255,255,255,.085);
-  --surface:rgba(255,255,255,.055); --sunk:rgba(255,255,255,.07); --line:rgba(255,255,255,.12); --line-strong:rgba(255,255,255,.28);
-  --bar:#1A2238; --bar-ink:#FFFFFF; --bar-muted:#AEB8D0;
-  --accent:#9DB7F5; --accent-ink:#202A44; --accent-soft:rgba(157,183,245,.16); --link:#B3C9FF;
+  --bg:#0F1A2B; --panel:#1D2838; --ink:#FFFFFF; --muted:#B4BFD3;
+  --glass:rgba(255,255,255,.06); --glass-hover:rgba(255,255,255,.09);
+  --surface:rgba(255,255,255,.06); --sunk:rgba(255,255,255,.07); --line:rgba(255,255,255,.12); --line-strong:rgba(255,255,255,.28);
+  --bar:#0A1322; --bar-ink:#FFFFFF; --bar-muted:#AEB8D0;
+  --accent:#9DB7F5; --accent-ink:#0F1A2B; --accent-soft:rgba(157,183,245,.16); --link:#B3C9FF;
   --good:#6FD6A8; --good-soft:rgba(111,214,168,.15); --mid:#F2C46B; --mid-soft:rgba(242,196,107,.15); --bad:#FF9E8C; --bad-soft:rgba(255,158,140,.15);
   --g-patient:#F5A65B; --g-care:#9DB7F5; --g-dx:#5FD3C6; --g-sys:#B7C0D6;
   --font:"Helvetica Neue",Helvetica,Arial,sans-serif;
@@ -30,17 +30,17 @@ h1,h2,h3{margin:0;line-height:1.2;text-wrap:balance}
 .eyebrow{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
 .wrap{max-width:1280px;margin:0 auto;padding-inline:16px}
 
-.logo-lg span{color:var(--accent)}
 
 /* ---------- Dock (disease pages): home, search, chat at bottom centre ---------- */
-.dock{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:45;display:flex;gap:4px;padding:5px;border-radius:999px;background:rgba(32,42,68,.7);border:1px solid var(--line);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.dock{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:45;display:flex;gap:4px;padding:5px;border-radius:999px;background:rgba(15,26,43,.78);border:1px solid var(--line);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:0 10px 30px rgba(0,0,0,.35)}
 .dockbtn{width:42px;height:42px;border-radius:50%;border:0;background:transparent;color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
 .dockbtn:hover{background:var(--sunk)}
 .dockbtn[aria-expanded="true"]{background:var(--accent);color:var(--accent-ink)}
 .dockbtn .i{width:20px;height:20px}
+body.is-home .dock .page-only,body:not(.is-home) .dock .home-only{display:none}
 @media (max-width:1040px){body.chat-open .dock{display:none}}
 .sheet{position:fixed;inset:0;z-index:55;display:flex;justify-content:center;align-items:flex-start;padding:16px;padding-top:calc(14vh + env(safe-area-inset-top,0px))}
-.sheet-backdrop{position:absolute;inset:0;background:rgba(14,19,33,.6);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.sheet-backdrop{position:absolute;inset:0;background:rgba(5,10,18,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .sheet-panel{position:relative;width:min(620px,100%);display:flex;flex-direction:column;align-items:center;gap:14px}
 .sheet .search input{background:var(--panel)}
 
@@ -64,37 +64,46 @@ h1,h2,h3{margin:0;line-height:1.2;text-wrap:balance}
 .suggest .sugfoot button:hover{background:var(--sunk);border-color:var(--line-strong)}
 
 /* ---------- Home ---------- */
-#home{padding-block:44px 120px}
-.homewrap{display:flex;flex-direction:column;align-items:center;gap:20px}
-.brand{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
-#homeForm{max-width:640px}
-.news{width:100%;margin-top:18px;display:flex;flex-direction:column;gap:12px}
+/* Home: small brand mark top-left, search top-centre, one headline at a time (swipe or tap the dots) */
+#home{padding-block:20px 120px}
+.hometop{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,640px) minmax(0,1fr);align-items:center;gap:12px}
+.brandmark{justify-self:start;width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:var(--glass);color:var(--ink);font:700 13px/1 var(--font);display:flex;align-items:center;justify-content:center;white-space:nowrap;cursor:pointer;padding:0}
+.brandmark span{color:var(--accent)}
+.brandmark:hover{border-color:var(--line-strong);background:var(--glass-hover)}
+#homeForm{grid-column:2}
+@media (max-width:760px){.hometop{grid-template-columns:auto minmax(0,1fr)}#homeForm{grid-column:auto}}
+.news{width:100%;max-width:680px;margin:40px auto 0;display:flex;flex-direction:column;gap:12px}
 .newshead{display:flex;align-items:baseline;justify-content:space-between;gap:6px 14px;flex-wrap:wrap}
-.newshead h2{font-size:17px;font-weight:600}
-.watchhead{margin-top:14px}
+.newshead h2{font-size:14px;font-weight:600;color:var(--muted)}
 .newsnote{font-size:12px;color:var(--muted)}
-.newsgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-.watchgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-@media (max-width:1060px){.newsgrid,.watchgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:600px){.newsgrid,.watchgrid{grid-template-columns:minmax(0,1fr)}}
-.ncard{background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0;-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
-.ntop{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.slides{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;border-radius:18px}
+.slides::-webkit-scrollbar{display:none}
+.slides:focus-visible{outline:2px solid var(--link);outline-offset:3px}
+.slide{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always;min-width:0;min-height:236px;background:var(--glass);border:1px solid var(--line);border-radius:18px;padding:22px 22px 18px;display:flex;flex-direction:column;gap:12px}
+.ntop{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
 .nkind{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--accent)}
 .nkind .i{width:15px;height:15px}
-.nkind.approval{color:var(--good)}.nkind.payment,.nkind.deal{color:var(--mid)}
-.ntop time{margin-left:auto;white-space:nowrap}
-.ncard h3{font-size:15px;font-weight:600;line-height:1.3}
-.ncard p{margin:0;font-size:13px;line-height:1.45;color:var(--muted)}
-.nfoot{margin-top:auto;padding-top:4px;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px}
+.nkind.approval{color:var(--good)}.nkind.payment,.nkind.deal,.nkind.watch{color:var(--mid)}
+.ntop time,.ntop .count{margin-left:auto;white-space:nowrap}
+.slide h3{font-size:22px;font-weight:600;line-height:1.25;letter-spacing:-.01em}
+.slide p{margin:0;font-size:15px;line-height:1.5;color:var(--muted)}
+.nfoot{margin-top:auto;padding-top:6px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px}
 .nfoot a,.nfoot button{display:inline-flex;align-items:center;gap:4px}
 .nfoot .i{width:13px;height:13px}
-.wcard{gap:6px}
-.wdate{font-size:20px;font-weight:700;line-height:1.1}
-.wdrug{font-size:14px;font-weight:600}
-.wfor{font-size:12.5px;color:var(--muted)}
-body.is-home .dock .page-only,body:not(.is-home) .dock .home-only{display:none}
-.logo-lg{margin:0;font:700 64px/1 var(--font);letter-spacing:-.03em;color:var(--ink);white-space:nowrap}
-.tagline{color:var(--muted);margin:-6px 0 8px;font-size:17px}
+.watchlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.watchlist li{display:grid;grid-template-columns:60px minmax(0,1fr) auto;gap:4px 12px;align-items:baseline;font-size:14px}
+.watchlist time{font-weight:700}
+.watchlist b{font-weight:600}
+.watchlist .wfor{display:block;color:var(--muted);font-size:12.5px}
+.watchlist .wlinks{display:flex;gap:12px;font-size:12.5px;white-space:nowrap}
+.watchlist .wlinks a,.watchlist .wlinks button{display:inline-flex;align-items:center;gap:3px}
+.watchlist .wlinks .i{width:12px;height:12px}
+.dots{display:flex;justify-content:center;gap:0}
+.dotbtn{width:20px;height:20px;border:0;background:none;padding:0;display:grid;place-items:center;cursor:pointer}
+.dotbtn span{width:6px;height:6px;border-radius:999px;background:var(--line-strong);transition:width .2s,background .2s}
+.dotbtn[aria-selected="true"] span{width:18px;background:var(--accent)}
+@media (prefers-reduced-motion:reduce){.dotbtn span{transition:none}}
+@media (max-width:600px){.slide{padding:18px;min-height:260px}.slide h3{font-size:19px}.watchlist li{grid-template-columns:52px minmax(0,1fr)}.watchlist .wlinks{grid-column:2}}
 .homebtns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
 .hbtn{background:var(--sunk);color:var(--ink);border:1px solid transparent;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
 .hbtn:hover{border-color:var(--line-strong)}
@@ -463,21 +472,19 @@ body.is-home .dock .page-only,body:not(.is-home) .dock .home-only{display:none}
 <main>
   <section id="home">
     <div class="homewrap wrap">
-      <div class="brand">
-        <h1 class="logo-lg">Rare<span>·</span>Desk</h1>
-        <p class="tagline">Market research for rare life sciences</p>
+      <div class="hometop">
+        <button class="brandmark" type="button" id="brandBtn" aria-label="Rare·Desk home" title="Rare·Desk · Market research for rare life sciences">R<span>·</span>D</button>
+        <form class="search" id="homeForm" role="search">
+          <span data-i="search"></span>
+          <input id="homeQ" type="search" autocomplete="off" aria-label="Search a rare disease" placeholder="Search a rare disease, e.g. bronchiectasis" role="combobox" aria-controls="homeSug" aria-expanded="false">
+          <button type="submit" aria-label="Search"><span data-i="arrow"></span></button>
+          <ul class="suggest" id="homeSug" role="listbox" hidden></ul>
+        </form>
       </div>
-      <form class="search" id="homeForm" role="search">
-        <span data-i="search"></span>
-        <input id="homeQ" type="search" autocomplete="off" aria-label="Search a rare disease" placeholder="Search a rare disease, e.g. bronchiectasis" role="combobox" aria-controls="homeSug" aria-expanded="false">
-        <button type="submit" aria-label="Search"><span data-i="arrow"></span></button>
-        <ul class="suggest" id="homeSug" role="listbox" hidden></ul>
-      </form>
-      <section class="news" aria-labelledby="newsTitle">
+      <section class="news" aria-roledescription="carousel" aria-labelledby="newsTitle">
         <div class="newshead"><h2 id="newsTitle">What's new in rare disease</h2><span class="newsnote" id="newsNote"></span></div>
-        <div class="newsgrid" id="newsGrid"></div>
-        <div class="newshead watchhead"><h2>FDA decisions to watch</h2><span class="newsnote">Company-announced target dates; these can move</span></div>
-        <div class="watchgrid" id="watchGrid"></div>
+        <div class="slides" id="newsSlides" tabindex="0" aria-live="polite"></div>
+        <div class="dots" id="newsDots" role="tablist" aria-label="Choose a headline"></div>
       </section>
     </div>
   </section>
