@@ -65,6 +65,8 @@
     clipboard: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/>',
     arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
     home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5.5h4V20"/>',
+    grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>',
+    dice: '<rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.2" fill="currentColor"/>',
   };
   const ic = (n, cls = "") => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ICONS.target}</svg>`;
   document.querySelectorAll("[data-i]").forEach(el => { el.outerHTML = ic(el.dataset.i); });
@@ -290,7 +292,7 @@
   function setHash(h) { try { history.replaceState(null, "", h ? "#" + h : location.pathname + location.search); } catch (_) { /* sandboxed */ } }
   function showPage() { closeSheet(false); $("#home").hidden = true; $("#dock").hidden = false; $("#page").hidden = false; document.body.classList.remove("is-home"); window.scrollTo(0, 0); }
   function showHome() {
-    closeSheet(false); closeDrawer(); CUR = null; $("#page").hidden = true; $("#dock").hidden = true; $("#home").hidden = false; document.body.classList.add("is-home");
+    closeSheet(false); closeDrawer(); CUR = null; $("#page").hidden = true; $("#dock").hidden = false; $("#home").hidden = false; document.body.classList.add("is-home");
     $("#homeQ").value = ""; setHash(""); emit(); fitWordmark();
   }
   /* Size the Rare·Desk wordmark so it is exactly as wide as the tagline under it, whatever font the device has */
@@ -360,59 +362,63 @@
     return out.join("");
   }
 
+  const tile = (tab, icon, title, sub) => `<button class="tile" type="button" data-tab="${tab}"><span class="tico">${ic(icon)}</span><span class="ttl">${title}</span><span class="tsub">${esc(sub)}</span></button>`;
+  const tsec = (tab, icon, title, count, body) => `<section class="tsec" data-tab="${tab}">
+      <header><span class="cico">${ic(icon)}</span><h2>${title}</h2><span class="count">${count}</span><button class="go" type="button" data-tab="${tab}" aria-label="Open ${title}">${ic("chev")}</button></header>
+      ${body}</section>`;
+  const shortName = n => String(n).replace(/ \(.*\)$/, "");
+
   function renderDashboard(P, typed, also) {
     const c = counts(P);
-    const lead = leads(P);
     const lowest = P.stages.reduce((m, s) => s.f < m.f ? s : m, P.stages[0]);
-    const top2 = P.pipeline.slice(0, 2);
-    const chips = P.companies.slice(0, 5);
+    const makers = P.companies.filter(x => x[0] !== "users");
+    const dev = P.pipeline.filter(r => ["F", "3", "2", "1"].includes(r[2]));
     return `
     ${typed ? `<div class="notice">${ic("search")}Showing <b>${esc(P.name)}</b> for “${esc(typed)}”</div>` : ""}
     <div class="dhead">
       <div class="dtitle"><span class="catico" title="${esc(P.catLabel)}">${ic(P.catIcon)}</span>
         <div class="dname"><h1>${esc(P.name)}</h1><div class="aka">${esc(P.catLabel)}${P.aka ? " · " + esc(P.aka) : ""}</div></div></div>
-      <div class="dactions">
-        <button class="btn" type="button" data-tab="screener">${ic("clipboard")}Screener</button>
-        <button class="btn" type="button" data-tab="certs">${ic("badge")}Certifications</button>
-      </div>
       <div class="metas">${metaChips(P)}</div>
     </div>
     ${also.length ? `<div class="also"><span class="eyebrow">Also matching</span>${also.map(it => `<button class="chip" type="button" data-open="${it.key}">${esc(it.name)}</button>`).join("")}</div>` : ""}
-    <div class="dash">
-      ${card("about", "s4", "book", "About", "", `
-        <p class="lede">${esc(P.what)}</p>
-        <div class="chipset">${P.specialists[0] ? `<span class="tag">${ic("steth")}${esc(P.specialists[0])}</span>` : ""}<span class="tag">${ic("file")}${P.read.length} sources</span><span class="tag">${ic("play")}${P.watch.length} videos</span></div>`)}
-      ${card("journey", "s5", "route", "Patient journey", `${P.stages.length} stages`, `
-        ${miniJourney(P)}
-        <p class="painline">${ic("alert")}<span>Hardest: <b>${esc(lowest.n)}</b> · ${esc(lowest.p)}</span></p>`)}
-      ${card("stakeholders", "s3", "users", "Stakeholders", `${P.stakeholders.length}`, `
-        <ul class="rows">${lead.slice(0, 4).map(r => `<li class="g-${r[0]}">${ic(r[2])}<span title="${esc(r[4])}">${esc(r[1])}</span></li>`).join("")}</ul>`)}
-      ${card("access", "s3", "coins", "Access & payers", "", `
-        <ul class="rows">
-          <li>${ic("landmark")}<span class="${c.A ? "ok" : "warn"}">${c.A ? `${c.A} FDA-approved` : "None FDA-approved"}</span></li>
-          <li>${ic("users")}<span title="${esc(P.payer[1])}">Payer: <b>${esc(P.payer[0])}</b></span></li>
-          <li>${ic("hospital")}<span title="${esc(P.networks[0][1])}">${esc(P.networks[0][0])}</span></li>
-        </ul>`)}
-      ${card("pipeline", "s3", "pill", "Pipeline", "", `
-        <div class="statrow">
-          <div class="stat ok"><b>${c.A}</b><span>Approved</span></div><div class="stat"><b>${c.F}</b><span>At FDA</span></div>
-          <div class="stat"><b>${c["3"]}</b><span>Phase 3</span></div><div class="stat"><b>${c.early}</b><span>Earlier</span></div>
+    <div class="dash2">
+      <div class="dleft">
+        <div class="dpair">
+        ${card("about", "", "book", "About", "", `
+          <p class="lede">${esc(P.what)}</p>
+          <div class="chipset">${P.specialists[0] ? `<span class="tag">${ic("steth")}${esc(P.specialists[0])}</span>` : ""}<span class="tag">${ic("file")}${P.read.length} sources</span><span class="tag">${ic("play")}${P.watch.length} videos</span></div>`)}
+        ${card("journey", "", "route", "Patient journey", `${P.stages.length} stages`, `
+          ${miniJourney(P)}
+          <p class="painline">${ic("alert")}<span>Hardest: <b>${esc(lowest.n)}</b> · ${esc(lowest.p)}</span></p>`)}
         </div>
-        ${top2.length ? `<ul class="rows">${top2.map(r => `<li><span title="${esc(r[0])} · ${esc(r[1])} · ${esc(STATUS[r[2]].label)}">${esc(r[0].replace(/ \(.*\)$/, ""))}</span><span class="pill ${esc(r[2])}">${esc(STATUS[r[2]].short)}</span></li>`).join("")}</ul>` : `<p class="lede">No therapy in late-stage development yet.</p>`}`)}
-      ${card("gaps", "s3", "alert", "Gaps", `${P.gaps.length}`, `
-        <ul class="rows">${P.gaps.slice(0, 3).map(g => `<li><span class="dot sev-${g[3]}"></span><span title="${esc(g[1])}: ${esc(g[2])}">${esc(g[1])}</span></li>`).join("")}</ul>`)}
-      ${card("companies", "s3", "building", "Companies", `${P.companies.length}`, `
-        <div class="chipset">${chips.map(x => `<span class="tag" title="${esc(x[2])}">${ic(x[0])}${esc(x[1])}</span>`).join("")}${P.companies.length > chips.length ? `<span class="tag">+${P.companies.length - chips.length} more</span>` : ""}</div>`)}
+        <div class="tiles">
+          ${tile("people", "users", "Stakeholders & certifications", `${certTargets(P).length} roles · US licenses`)}
+          ${tile("screener", "clipboard", "Screener builder", "Draft a recruitment screener")}
+          ${tile("access", "coins", "US access & payers", "Payer: " + P.payer[0])}
+        </div>
+      </div>
+      <aside class="card tall" aria-label="Treatment gaps, companies and drugs in development">
+        ${tsec("gaps", "alert", "Treatment gaps", P.gaps.length,
+          `<ul class="rows">${P.gaps.slice(0, 4).map(g => `<li><span class="dot sev-${g[3]}"></span><span title="${esc(g[2])}">${esc(g[1])}</span></li>`).join("")}</ul>`)}
+        ${tsec("companies", "building", "Companies on it", makers.length, makers.length
+          ? `<ul class="rows">${makers.slice(0, 4).map(x => `<li>${ic(x[0])}<span>${esc(x[1])}</span><span class="sub2" title="${esc(x[2])}">${esc(shortName((x[4] || [])[0] || x[2]))}</span></li>`).join("")}</ul>`
+          : `<p class="none">No company programs listed yet.</p>`)}
+        ${tsec("pipeline", "flask", "Drugs in development", dev.length, dev.length
+          ? `<ul class="rows">${dev.slice(0, 4).map(r => `<li><span title="${esc(r[0])} · ${esc(r[1])}">${esc(shortName(r[0]))}</span><span class="pill ${esc(r[2])}">${esc(STATUS[r[2]].short)}</span></li>`).join("")}</ul>`
+          : `<p class="none">None in development · ${c.A} FDA-approved</p>`)}
+      </aside>
     </div>
     <p class="foot">${ic("clock")}Reviewed October 2026 · US data (FDA, CMS, RUSP) · Verify before citing · Not medical advice</p>`;
   }
 
   /* ===================== DRAWER ===================== */
-  const TABS = [["about", "About"], ["journey", "Journey map"], ["stakeholders", "Stakeholders"], ["access", "US access"],
-    ["pipeline", "Pipeline"], ["gaps", "Gaps"], ["companies", "Companies"], ["screener", "Screener builder"], ["certs", "Certifications"]];
+  const TABS = [["about", "About"], ["journey", "Journey map"], ["people", "Stakeholders & certifications"], ["screener", "Screener builder"],
+    ["access", "US access"], ["gaps", "Gaps"], ["companies", "Companies"], ["pipeline", "Pipeline"]];
+  const TAB_ALIAS = { stakeholders: "people", certs: "people" };
   let curTab = null;
   function openTab(tab, arg) {
     if (!CUR) return;
+    tab = TAB_ALIAS[tab] || tab;
     const d = $("#drawer");
     if (d.hidden) { lastFocus = document.activeElement; d.hidden = false; document.documentElement.style.overflow = "hidden"; }
     curTab = tab;
@@ -423,7 +429,7 @@
     body.scrollTop = 0;
     body.innerHTML = (RENDER[tab] || RENDER.about)(CUR, arg);
     if (tab === "screener" && window.RDScreener) window.RDScreener.mount(CUR, body.querySelector("#screenerMount"), arg);
-    if (tab === "certs" && arg) {
+    if (tab === "people" && arg) {
       const el = body.querySelector(`[data-certname="${CSS.escape(arg)}"]`);
       if (el) { el.scrollIntoView({ block: "start" }); el.classList.add("flash"); }
     }
@@ -509,20 +515,32 @@
         ${P.specific ? "" : `<div class="srcnote">${ic("route")}<span>This journey uses a typical template; disease facts and therapies are specific.</span></div>`}
         ${journeyMap(P)}</div>`;
     },
-    stakeholders(P) {
-      const groups = { care: "Care team", dx: "Diagnostics & specialists", sys: "System & industry" };
-      return Object.entries(groups).map(([g, label]) => {
-        const rows = P.stakeholders.filter(r => r[0] === g);
-        if (!rows.length) return "";
-        return `<div class="dsec"><h3>${ic(g === "sys" ? "building" : g === "dx" ? "flask" : "steth")}${label}</h3><div class="grid3">${rows.map(([gg, name, icon, map, role]) => {
-          const L = stageList(P, map, "L"), S = stageList(P, map, "S");
-          return `<div class="box tile g-${gg}"><span class="ico">${ic(icon)}</span><div style="min-width:0">
-            <strong style="text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)">${esc(name)}</strong>${esc(role)}
-            <div class="mini">${L.map(s => `<span style="color:var(--good)">Leads: ${esc(s)}</span>`).join("")}${S.map(s => `<span>Supports: ${esc(s)}</span>`).join("")}</div>
-            <div class="tilelinks"><button class="linkbtn" type="button" data-cert="${esc(name)}">${ic("badge")} US credentials</button>${window.RDScreener && window.RDScreener.isTarget(name, gg) ? `<button class="linkbtn" type="button" data-screener="${esc(name)}">${ic("clipboard")} Draft screener</button>` : ""}</div>
-          </div></div>`;
-        }).join("")}</div></div>`;
-      }).join("");
+    people(P) {
+      const V = US.VERIFY;
+      const groups = { care: ["steth", "Care team"], dx: ["flask", "Diagnostics & specialists"], sys: ["building", "System & industry"] };
+      const items = certTargets(P);
+      return `<p class="sub" style="margin:0 0 16px;color:var(--muted);font-size:13px">Who is involved, when, and the US license or certification each one needs. State licensure is required by law; board certification is voluntary but expected by most hospitals and payers. Verify individuals before recruiting.</p>` +
+        Object.entries(groups).map(([g, [gi, label]]) => {
+          const list = items.filter(it => it.g === g);
+          if (!list.length) return "";
+          return `<div class="dsec"><h3>${ic(gi)}${label}</h3><div class="grid3">${list.map(it => {
+            const creds = US.credentialsFor(it.name, it.g);
+            const L = stageList(P, it.map || "", "L"), S = stageList(P, it.map || "", "S");
+            return `<div class="certcard" data-certname="${esc(it.name)}">
+              <header><span class="ico g-${it.g}" style="color:var(--gc)">${ic(it.icon)}</span><div style="min-width:0"><strong>${esc(it.name)}</strong><small>${esc(it.role)}</small></div></header>
+              ${L.length || S.length ? `<div class="mini">${L.map(x => `<span style="color:var(--good)">Leads: ${esc(x)}</span>`).join("")}${S.map(x => `<span>Supports: ${esc(x)}</span>`).join("")}</div>` : ""}
+              ${creds.map(cr => `<dl class="req">
+                ${creds.length > 1 && cr.kind === "US requirement" ? `<dt>Role</dt><dd><b>${esc(cr.title)}</b></dd>` : ""}
+                ${cr.kind !== "US requirement" ? `<dt>Type</dt><dd>${esc(cr.kind)}</dd>` : ""}
+                ${cr.req ? `<dt>Required</dt><dd>${esc(cr.req)}</dd>` : ""}
+                ${cr.board ? `<dt>Certified</dt><dd>${esc(cr.board)}</dd>` : ""}
+                ${cr.note ? `<dt>Note</dt><dd>${esc(cr.note)}</dd>` : ""}
+              </dl>
+              ${cr.verify && cr.verify.length ? `<div class="verify">${cr.verify.filter(k => V[k]).map(k => `<a ${ext(V[k][1])}>${esc(V[k][0])}</a>`).join("")}</div>` : ""}`).join("")}
+              ${window.RDScreener && window.RDScreener.isTarget(it.name, it.g) ? `<div class="tilelinks"><button class="linkbtn" type="button" data-screener="${esc(it.name)}">${ic("clipboard")} Draft screener</button></div>` : ""}
+            </div>`;
+          }).join("")}</div></div>`;
+        }).join("");
     },
     access(P) {
       return `
@@ -564,27 +582,6 @@
     },
     screener() {
       return `<div id="screenerMount"></div>`;
-    },
-    certs(P) {
-      const items = certTargets(P);
-      const V = US.VERIFY;
-      return `
-      <div class="dsec"><h3>${ic("badge")}US licenses & certifications by stakeholder</h3>
-        <p class="sub">State licensure is required by law to practice. Board certification is voluntary under law but expected by most hospitals and payer networks. Verify individuals before recruiting.</p>
-        <div class="grid3">${items.map(it => {
-          const creds = US.credentialsFor(it.name, it.g);
-          if (!creds.length) return "";
-          return `<div class="certcard" data-certname="${esc(it.name)}">
-            <header><span class="ico g-${it.g}" style="color:var(--gc)">${ic(it.icon)}</span><div style="min-width:0"><strong>${esc(it.name)}</strong><small>${esc(creds.map(c => c.kind === "US requirement" ? c.title : c.kind).join(" + "))}</small></div></header>
-            ${creds.map(cr => `<dl class="req">
-              ${creds.length > 1 && cr.kind === "US requirement" ? `<dt>Role</dt><dd><b>${esc(cr.title)}</b></dd>` : ""}
-              ${cr.req ? `<dt>Required</dt><dd>${esc(cr.req)}</dd>` : ""}
-              ${cr.board ? `<dt>Certified</dt><dd>${esc(cr.board)}</dd>` : ""}
-              ${cr.note ? `<dt>Note</dt><dd>${esc(cr.note)}</dd>` : ""}
-            </dl>
-            ${cr.verify && cr.verify.length ? `<div class="verify">${cr.verify.filter(k => V[k]).map(k => `<a ${ext(V[k][1])}>${esc(V[k][0])}</a>`).join("")}</div>` : ""}`).join("")}
-          </div>`;
-        }).join("")}</div></div>`;
     },
   };
 
@@ -662,8 +659,33 @@
       else { const v = input.value; close(); go(v); }
     });
   }
-  wireSearch($("#homeForm"), $("#homeQ"), $("#homeSug"), true);
+  wireSearch($("#homeForm"), $("#homeQ"), $("#homeSug"));
   wireSearch($("#topForm"), $("#topQ"), $("#topSug"), true);
+
+  /* ===================== HOME NEWS ===================== */
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const fmtDate = d => { const [y, m, day] = String(d).split("-").map(Number); return day ? `${MONTHS[m - 1]} ${day}, ${y}` : `${MONTHS[m - 1]} ${y}`; };
+  const NEWS_KIND = { approval: ["check", "FDA approval"], policy: ["landmark", "FDA policy"], payment: ["coins", "Medicare"], deal: ["building", "Industry"], screening: ["target", "Newborn screening"] };
+  function renderNews() {
+    const N = window.NEWS; if (!N) return;
+    const keyOf = name => (INDEX.find(x => x.name === name) || {}).key;
+    const openBtn = (name, label) => { const k = name ? keyOf(name) : undefined; return k === undefined ? "" : `<button class="linkbtn" type="button" data-open="${k}">${esc(label)}${ic("chev")}</button>`; };
+    $("#newsNote").textContent = `US · updated ${fmtDate(N.asOf)} · verify before citing`;
+    $("#newsGrid").innerHTML = N.latest.map(n => {
+      const [ki, kl] = NEWS_KIND[n.k] || ["file", "News"];
+      return `<article class="ncard">
+        <div class="ntop"><span class="nkind ${esc(n.k)}">${ic(ki)}${kl}</span><time datetime="${esc(n.d)}">${fmtDate(n.d)}</time></div>
+        <h3>${esc(n.t)}</h3><p>${esc(n.s)}</p>
+        <div class="nfoot"><a ${ext(n.u)}>${esc(n.src)}${ic("ext")}</a>${openBtn(n.dz, n.dz || "")}</div>
+      </article>`;
+    }).join("");
+    $("#watchGrid").innerHTML = N.watch.map(w => `<article class="ncard wcard">
+        <time class="wdate" datetime="${esc(w.d)}">${fmtDate(w.d).replace(/, \d{4}$/, "")}</time>
+        <span class="wdrug">${esc(w.t)}</span><span class="wfor">${esc(w.co)} · ${esc(w.for)}</span>
+        <div class="nfoot"><a ${ext(w.u)}>${esc(w.src)}${ic("ext")}</a>${openBtn(w.dz, "Open profile")}</div>
+      </article>`).join("");
+  }
+  renderNews();
 
   /* "I'm feeling lucky": best match for what's typed, or a random disease when the box is empty */
   function lucky(input = $("#homeQ")) {
@@ -739,8 +761,8 @@
   });
   $("#dockHome").addEventListener("click", showHome);
   $("#dockSearch").addEventListener("click", openSheet);
-  $("#exploreBtn").addEventListener("click", () => showDirectory());
-  $("#luckyBtn").addEventListener("click", lucky);
+  $("#dockDir").addEventListener("click", () => showDirectory());
+  $("#dockLucky").addEventListener("click", () => lucky($("#homeQ")));
 
   /* deep links: #bronchiectasis, #fabry-disease, #directory */
   function fromHash() {

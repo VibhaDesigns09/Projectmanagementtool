@@ -106,7 +106,7 @@ window.DIRECTORY = [
 /* ---------- Inherited metabolic & lysosomal ---------- */
 {n:"Gaucher disease",a:["Gaucher","GD1","glucocerebrosidase deficiency"],c:"metabolic",icd:"E75.22",g:"GBA1 · autosomal recessive",p:"~1 in 40,000–60,000 (1 in 850 Ashkenazi Jewish)",
  w:"Fatty build-up in spleen, liver and bone; type 2/3 affect the brain",dx:"Enzyme assay, GBA1 testing",tx:"Enzyme or substrate reduction therapy",
- sp:["Hematologist","Metabolic geneticist"],rx:[["Imiglucerase (Cerezyme)","Sanofi","A","ERT"],["Velaglucerase alfa (VPRIV)","Takeda","A","ERT"],["Taliglucerase alfa (Elelyso)","Pfizer","A","ERT"],["Eliglustat (Cerdelga)","Sanofi","A","Oral SRT"]],o:["National Gaucher Foundation"]},
+ sp:["Hematologist","Metabolic geneticist"],rx:[["Imiglucerase (Cerezyme)","Sanofi","A","ERT"],["Velaglucerase alfa (VPRIV)","Takeda","A","ERT"],["Taliglucerase alfa (Elelyso)","Pfizer","A","ERT"],["Eliglustat (Cerdelga)","Sanofi","A","Oral SRT"],["Venglustat","Sanofi","F","Brain-penetrant SRT for type 3; decision due Nov 25, 2026"]],o:["National Gaucher Foundation"]},
 {n:"Fabry disease",a:["Fabry","Anderson-Fabry","alpha-galactosidase A deficiency"],c:"metabolic",icd:"E75.21",g:"GLA · X-linked",p:"~1 in 40,000–117,000 (higher on screening)",
  w:"Nerve pain, kidney, heart and stroke complications",dx:"Enzyme assay (men), GLA testing (women), Gb3/lyso-Gb3",tx:"ERT or chaperone therapy",
  sp:["Nephrologist","Cardiologist","Metabolic geneticist","Neurologist"],rx:[["Agalsidase beta (Fabrazyme)","Sanofi","A","ERT"],["Agalsidase alfa (Replagal)","Takeda","X","Not FDA-approved"],["Pegunigalsidase alfa (Elfabrio)","Chiesi","A","ERT"],["Migalastat (Galafold)","Amicus","A","Oral chaperone"]],o:["Fabry Support & Information Group"],j:"chronic"},
@@ -252,7 +252,7 @@ window.DIRECTORY = [
  sp:["Neurologist","Orthopedic surgeon","Physical therapist"],rx:[],o:["Charcot-Marie-Tooth Association","Hereditary Neuropathy Foundation","Muscular Dystrophy Association (MDA)"]},
 {n:"Limb-girdle muscular dystrophy",a:["LGMD"],c:"nmd",icd:"G71.03",g:"30+ genes (CAPN3, DYSF, SGCA–D, FKRP…)",p:"~1 in 15,000–120,000",
  w:"Weakness of hips and shoulders; some forms affect heart and breathing",dx:"CK, genetic panel, muscle biopsy",tx:"Supportive",
- sp:["Neuromuscular neurologist","Cardiologist"],rx:[["BBP-418","BridgeBio","3","LGMD2I/R9"]],o:["LGMD Awareness Foundation","Speak Foundation","Muscular Dystrophy Association (MDA)"]},
+ sp:["Neuromuscular neurologist","Cardiologist"],rx:[["BBP-418","BridgeBio","F","LGMD2I/R9; priority review, decision due Nov 27, 2026"]],o:["LGMD Awareness Foundation","Speak Foundation","Muscular Dystrophy Association (MDA)"]},
 
 /* ---------- Rare neurological & epilepsy ---------- */
 {n:"Huntington's disease",a:["Huntington disease","HD","Huntington's chorea"],c:"neuro",icd:"G10",g:"HTT CAG repeat · autosomal dominant",p:"~5–10 per 100,000 (European ancestry)",us:"~41,000 symptomatic; >200,000 at risk in the US (HDSA)",
@@ -384,7 +384,7 @@ window.DIRECTORY = [
  sp:["Pulmonologist"],rx:[["Sirolimus (Rapamune)","Pfizer","A","Approved for LAM"]],o:["The LAM Foundation"]},
 {n:"Autoimmune pulmonary alveolar proteinosis",a:["PAP","aPAP","pulmonary alveolar proteinosis"],c:"lung",icd:"J84.01",g:"GM-CSF autoantibodies",p:"~6–7 per million",
  w:"Surfactant fills the air sacs; breathlessness",dx:"HRCT crazy paving, GM-CSF antibodies, lavage",tx:"Whole lung lavage; inhaled GM-CSF",
- sp:["Pulmonologist"],rx:[["Molgramostim (Molbreevi)","Savara","F","Inhaled GM-CSF; decision Nov 2026"]],o:["PAP Foundation"]},
+ sp:["Pulmonologist"],rx:[["Molgramostim (Molbreevi)","Savara","F","Inhaled GM-CSF; decision due Nov 22, 2026"]],o:["PAP Foundation"]},
 {n:"Nontuberculous mycobacterial lung disease",a:["NTM","MAC lung disease","Mycobacterium avium complex"],c:"lung",icd:"A31.0",g:"Environmental mycobacteria; host risk factors",p:"~5–10 per 100,000 (rising)",
  w:"Chronic lung infection, often with bronchiectasis",dx:"Repeat sputum cultures, CT",tx:"Months of multi-drug therapy, amikacin liposome inhalation",
  sp:["Pulmonologist","Infectious disease"],rx:[["Amikacin liposome inhalation (Arikayce)","Insmed","A","Refractory MAC"]],o:["NTM Info & Research"]},
@@ -518,8 +518,8 @@ window.DIRECTORY = [
  w:"Numb cornea heals poorly; ulcers and vision loss",dx:"Corneal sensitivity testing",tx:"Cenegermin eye drops",
  sp:["Cornea specialist"],rx:[["Cenegermin (Oxervate)","Dompé","A","Nerve growth factor"]],o:["Dry Eye Foundation"],j:"chronic"},
 {n:"Thyroid eye disease",a:["TED","Graves' orbitopathy","Graves ophthalmopathy"],c:"eye",g:"Autoimmune (with Graves)",p:"~16 women and 3 men per 100,000/yr",
- w:"Bulging, red, painful eyes; double vision, sight risk",dx:"Clinical activity score, imaging",tx:"Steroids, teprotumumab, surgery",
- sp:["Oculoplastic surgeon","Endocrinologist"],rx:[["Teprotumumab (Tepezza)","Amgen","A","IGF-1R"],["Veligrotug","Viridian","F","IGF-1R, BLA accepted 2026"]],o:["Graves' Disease & Thyroid Foundation"],j:"chronic"},
+ w:"Bulging, red, painful eyes; double vision, sight risk",dx:"Clinical activity score, imaging",tx:"Steroids, teprotumumab, satralizumab, surgery",
+ sp:["Oculoplastic surgeon","Endocrinologist"],rx:[["Teprotumumab (Tepezza)","Amgen","A","IGF-1R"],["Satralizumab (Enspryng)","Roche","A","IL-6R; FDA Oct 2026, first at-home subcutaneous TED option"],["Veligrotug","Viridian","F","IGF-1R, BLA accepted 2026"]],o:["Graves' Disease & Thyroid Foundation"],j:"chronic"},
 {n:"Demodex blepharitis",a:["demodex","eyelid mites","demodicosis","Demodex"],c:"eye",icd:"B88.0 + H01.00-",g:"Overgrowth of Demodex mites on eyelashes",p:"Common, not rare: ~58% of eye-clinic patients in one large chart review; widely under-diagnosed",us:"~25 million US eye-care patients (Tarsus estimate)",common:true,
  w:"Mite overgrowth at the lash base causes itchy, red, crusted eyelids and lash loss",dx:"Collarettes (cylindrical dandruff) at the lash base on slit-lamp exam",tx:"Lotilaner eye drops for 6 weeks; lid hygiene; tea-tree products off-label",
  sp:["Optometrist","Ophthalmologist"],rx:[["Lotilaner 0.25% (Xdemvy)","Tarsus Pharmaceuticals","A","US 2023; EU and China filings"],["TP-04 (ocular rosacea)","Tarsus Pharmaceuticals","2","Data 2027"]],o:["American Academy of Ophthalmology","American Optometric Association"],j:"chronic"},

@@ -2,7 +2,9 @@
 
 Market research for rare life sciences: a US desk-research tool for rare diseases.
 
-The home page works like Google: type a disease into the search bar, or use **Explore directory** (every disease by category) or **I'm feeling lucky** (opens the best match for what you typed, or a random disease when the box is empty). Each disease opens a one-screen dashboard of short cards (icon, title, a few key points); click a card for the full detail. A small dock at the bottom centre has **Home**, **Search** (or press `/`) and **Ask the assistant**.
+**Home page:** the Rare·Desk search bar on top, then **What's new in rare disease** (recent US approvals, FDA and CMS policy, newborn screening, deals, each linked to its source) and **FDA decisions to watch** (upcoming company-announced target dates). The news lives in `data/news.js`; update it there. A small dock at the bottom centre has **Home**, **Disease directory** and **I'm feeling lucky** (opens the best match for what you typed, or a random disease when the box is empty).
+
+**Disease page:** About and Patient journey cards on the left, three square tiles under them (**Stakeholders & certifications**, **Screener builder**, **US access & payers**), and one tall panel on the right with **Treatment gaps**, **Companies on it** and **Drugs in development**. Click anything for the full detail. The dock has **Home**, **Search** (or press `/`) and **Ask the assistant**.
 
 - **About the disease**: summary, cause, diagnosis, treatment, top articles (NIH, NORD, GeneReviews, PubMed) and videos
 - **Patient journey**: stages, what happens, how the patient feels and the pain point at each stage, laid out alongside the stakeholder map (who leads or supports at each stage)
@@ -10,7 +12,7 @@ The home page works like Google: type a disease into the search bar, or use **Ex
 - **US access & payers**: FDA, Medicare (Part B/D), Medicaid & CHIP, commercial plans and PBMs, specialty pharmacy, newborn screening (RUSP), ICER and care networks, plus who influences access, how and why
 - **Therapies & pipeline**: US status ladder (Phase 1–2, Phase 3, FDA review, FDA approved; approved outside the US only; off-label in the US)
 - **Gaps** commonly discussed, with owners, and the **companies and organizations** working on them
-- **Certifications**: what US license or board certification each stakeholder needs (state licensure, ABMS boards, NBRC, ABGC, CLIA, FACT and more), with links to verify an individual
+- **Stakeholders & certifications**: every stakeholder with what they do, when, and the US license or board certification they need (state licensure, ABMS boards, NBRC, ABGC, CLIA, FACT and more), with links to verify an individual
 - **Screener builder**: drafts a recruitment screener for any stakeholder from the disease data (see below)
 - **Assistant**: a chat panel on every disease page (see below)
 
@@ -56,6 +58,7 @@ Open `index.html` in a browser. There is no build step. Deep link to a profile w
 - `js/screener.js`: screener builder and Word/CSV export
 - `js/assistant.js`: chat assistant
 - `data/diseases.js`, `data/journeys/*.js`: disease data
+- `data/news.js`: home page news and FDA decisions to watch
 
 ## Add a disease
 
