@@ -116,14 +116,14 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 body.learner .hint-target{animation:hint 1.4s ease-in-out infinite}
 @keyframes hint{0%,100%{box-shadow:var(--sh,0 0 0 transparent),0 0 0 3px rgba(196,83,45,.9),0 0 0 rgba(196,83,45,0)}50%{box-shadow:var(--sh,0 0 0 transparent),0 0 0 3px rgba(196,83,45,.9),0 0 22px rgba(196,83,45,.6)}}
 .spot{position:fixed;z-index:24;border-radius:12px;box-shadow:0 0 0 200vmax rgba(0,0,0,.25);pointer-events:none;transition:left .25s,top .25s,width .25s,height .25s}
-.tutbox{position:fixed;z-index:26;left:50%;top:max(16px,6vh);transform:translateX(-50%);width:min(560px,calc(100vw - 32px));color:#fff;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
-.tutbox h3{margin:0;font-family:var(--display);font-size:24px;font-weight:800}
+.tutbox{position:fixed;z-index:26;transform:translateY(-50%);max-width:calc(100vw - 16px);background:var(--felt-deep);color:var(--ink);border-radius:14px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.3);display:flex;align-items:center;gap:16px;text-align:left}
+.tutbox h3{margin:0 0 2px;font-family:var(--display);font-size:20px;font-weight:800;color:var(--brown-text)}
 .tutbox p{margin:0;font-size:16px;line-height:1.4;text-wrap:balance}
-.tutbox button{background:#fff;color:#2b2a29;border-color:#fff}
+.tutbox>div{flex:1}.tutbox button{flex:none;margin-left:auto}
 .tutfx{position:fixed;inset:0;z-index:25;pointer-events:none}
 .ptb{position:absolute;width:30px;height:30px;border-radius:50%;background:var(--rust);color:#fff;font:800 15px var(--body);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px #fff;transform:translate(-50%,-50%)}
 .pttotal{position:absolute;color:#fff;font:800 22px var(--body);transform:translate(-50%,0);white-space:nowrap}
-.bigcard{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:14px;color:#fff;font:600 18px var(--body);text-align:center}
+.bigcard{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:14px;color:#fff;font:600 18px var(--body);text-align:center}
 .bigcard .row{display:flex;gap:14px}.bigcard .card{--w:110px}
 .nudge{position:fixed;z-index:25;max-width:240px;background:var(--rust);color:#fff;font-size:14px;line-height:1.35;font-weight:600;padding:9px 12px;border-radius:12px;box-shadow:0 8px 22px rgba(40,36,30,.25);pointer-events:none;animation:bob 1.6s ease-in-out infinite}
 .nudge::after{content:"";position:absolute;left:var(--ax,50%);width:12px;height:12px;background:var(--rust);transform:translateX(-50%) rotate(45deg)}
@@ -194,6 +194,8 @@ function faceSVG(c){
   return `<svg viewBox="0 0 50 70" aria-hidden="true">${suit}${body}</svg>`;
 }
 let playerName='You', learner=false, gameOn=false;
+const lvl=()=>learner?Math.min(round,3):3;
+const pace=(slow,fast)=>[0,slow,(slow+fast)/2,fast][lvl()];
 const NAMES=['You','Gaurav','Oshin','Vibha'];
 const $=id=>document.getElementById(id);
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
@@ -242,7 +244,7 @@ function reveal(ids,ms,then){ids.forEach(i=>S.reveal.add(i));render();later(()=>
 
 /* ---------- turn flow ---------- */
 function startTurn(){
-  S.turns++;
+  S.turns++; if(S.script==='oshinwin')S.script=null;
   // players with no cards left sit out as spectators (they score 0)
   for(let k=0;k<4;k++){
     if(S.cabo!==null&&S.turn===S.cabo)return endRound();
@@ -252,31 +254,33 @@ function startTurn(){
   }
   if(S.cabo===null&&[0,1,2,3].filter(p=>cards(p).length).length<=1)return endRound();
   S.phase=S.turn===0?'turn':'bot'; S.botMsg=''; S.drawn=null; S.sel=null; render();
-  if(S.turn!==0)later(()=>botTurn(S.turn),learner?3800:1100);
+  if(S.turn!==0)later(()=>botTurn(S.turn),pace(3800,1100));
 }
 function endAction(actor){
   S.drawn=null;S.sel=null;S.next=(actor+1)%4;openWindow();
 }
 function openWindow(len=30000){
   clearTimers(); if(S)S.barShown=0; S.phase='window'; S.snapMode=false; const wid=++S.wid;
+  if(S.script==='oshin'&&S.next===0)S.script='oshinwin';
   S.winStart=Date.now(); S.winLen=len; render();
   for(let b=1;b<4;b++){
     const t=topCard(); if(!t)break;
     const own=cards(b).find(x=>x.c.r===t.r&&S.players[b].mem.has(x.c.id));
     const other=[0,1,2,3].filter(p=>p!==b).flatMap(cards).find(x=>x.c.r===t.r&&S.players[b].mem.has(x.c.id));
-    if(learner)continue;
-    const pick=own&&Math.random()<.8?own:other&&!learner&&cards(b).length&&Math.random()<.45?other:null;
+    if(lvl()===1)continue;
+    const pick=own&&Math.random()<.8?own:other&&lvl()===3&&cards(b).length&&Math.random()<.45?other:null;
     if(pick)later(()=>{if(S.phase==='window'&&S.wid===wid)snap(b,pick.p,pick.i)},1000+Math.random()*Math.min(len-500,5000));
   }
+  if(S.script==='oshinwin')later(()=>{if(S.phase==='window'&&S.wid===wid)snap(2,2,S.oshinSlot)},9000);
   later(()=>{if(S.phase==='window'&&S.wid===wid){S.turn=S.next;startTurn()}},len);
 }
-function afterSnap(){clearTimers();S.phase='busy';render();later(()=>{S.turn=S.next;startTurn()},1100)}
+function afterSnap(){clearTimers();S.phase='busy';render();later(()=>{S.turn=S.next;startTurn()},lvl()===1?4500:1100)}
 function snap(by,p,i){
   const c=S.players[p].hand[i], t=topCard(); if(!c||!t)return;
   const who=S.players[by].name, whose=p===by?(by===0?'your own':'their own'):`${S.players[p].name}'s`;
   if(c.r===t.r){
     S.players[p].hand[i]=null; S.discard.push(c); publicSee(c);
-    log(`${who} · snapped ${c.r}`); S.next=(by+1)%4;
+    log(`${who} · snapped ${c.r}`); S.next=(by+1)%4; if(S.script==='oshinwin')S.script='vibhaagain';
     if(p!==by){
       if(by===0){S.phase='give';S.give={p,i};clearTimers();render();return}
       const mine=cards(by); const known=mine.filter(x=>S.players[by].mem.has(x.c.id)).sort((a,b)=>b.c.v-a.c.v);
@@ -303,7 +307,7 @@ function endRound(){
   const caller=S.cabo===null?'':S.players[S.cabo].name, ok=S.cabo!==null&&res[S.cabo]===-5;
   render();
   $('panel').innerHTML=`<h2>Round ${round} over</h2>
-    <p>${S.cabo===null?'Only one player still had cards, so the round ended. Players with no cards score 0.':`${caller} called Cabo and ${ok?'had the lowest hand: −5!':(cards(S.cabo).length?'was not the lowest. No bonus.':'had no cards left: 0.')}`}</p>
+    ${learner&&round<3?`<p><b>${round===1?'Next: round 2 · with hints, faster':'Next: round 3 · on your own'}</b></p>`:''}<p>${S.cabo===null?'Only one player still had cards, so the round ended. Players with no cards score 0.':`${caller} called Cabo and ${ok?'had the lowest hand: −5!':(cards(S.cabo).length?'was not the lowest. No bonus.':'had no cards left: 0.')}`}</p>
     <table><tr><td></td><td>Cards</td><td>Round</td><td>Total</td></tr>
     ${S.players.map((p,i)=>`<tr><td>${p.name}</td><td>${sums[i]}</td><td>${res[i]}</td><td><b>${totals[i]}</b></td></tr>`).join('')}</table>
     <div style="display:flex;gap:8px;justify-content:flex-end"><button id="peekTable">See table</button><button class="primary" id="nextRound">Next round</button></div>`;
@@ -327,9 +331,11 @@ function swap(a,ai,b,bi){
 }
 
 /* ---------- bots ---------- */
-function done(b){S.botMsg=S.log[0];render();later(()=>endAction(b),learner?4200:1600)}
+function done(b){S.botMsg=S.log[0];render();later(()=>endAction(b),pace(4200,1600))}
 function botTurn(b){
   if(S.phase!=='bot'||S.turn!==b)return;
+  if(S.script==='vibhaagain'&&b===3)S.script=null;
+  if(S.script==='vibha'&&b===3){S.script='oshin';const i=S.players[2].hand.findIndex(Boolean);S.players[2].hand[i]={id:906,r:'K',s:'♥',v:13};S.players[2].mem=new Set([...S.players[2].mem,906]);S.oshinSlot=i;const c={id:907,r:'K',s:'♣',v:13};S.discard.push(c);publicSee(c);log('Vibha · threw K');return done(b)}
   const P=S.players[b], mine=cards(b);
   const known=mine.filter(x=>P.mem.has(x.c.id)), unknown=mine.filter(x=>!P.mem.has(x.c.id));
   const est=known.reduce((a,x)=>a+x.c.v,0)+unknown.length*6.5;
@@ -381,7 +387,7 @@ function clickCard(p,i){
 }
 function clickable(p,i){
   const ph=S.phase, mine=p===0;
-  if(ph==='window')return !!topCard()&&cards(0).length>0;
+  if(ph==='window')return !!topCard()&&cards(0).length>0&&S.script!=='oshinwin';
   if(ph==='give'||ph==='drawn'||ph==='place'||ph==='peek-own'||ph==='jack-own'||ph==='queen-own')return mine;
   if(ph==='peek-other'||ph==='jack-opp'||ph==='queen-opp')return !mine;
   return false;
@@ -479,13 +485,17 @@ function startTutorial(){
   const mk=(r,su,id)=>({id,r,s:su,v:r==='K'&&su==='♦'?0:VAL(r)});
   S.players[0].hand=[mk('A','♣',901),mk('J','♠',902),mk('K','♦',903),mk('9','♥',904)];
   S.players[0].mem=new Set([903,904]);
-  S.deck=S.deck.filter(c=>!(c.r==='9'&&c.s==='♠')); S.deck.push(mk('9','♠',905));
+  S.deck=S.deck.filter(c=>!(c.r==='9'&&c.s==='♠')&&!(c.r==='K'&&c.s!=='♦'));
+  S.deck.push(mk('9','♠',905));
+  S.script='vibha';
   S.phase='tut'; S.tut=0; render();
 }
 function placeTut(){
   const st=TUT[S.tut], sp=$('spot'), box=$('tutbox'), fx=$('tutfx'); fx.innerHTML='';
   box.hidden=false;
-  box.innerHTML=`<h3>${st.t}</h3><p>${st.p}</p><button id="tutNext">${st.last?'Start the game':'Next'}</button>`;
+  box.innerHTML=`<div><h3>${st.t}</h3><p>${st.p}</p></div><button class="primary" id="tutNext">${st.last?'Start the game':'Next'}</button>`;
+  const cr=document.querySelector('.ctrl').getBoundingClientRect(), dr=document.querySelector('.center').getBoundingClientRect();
+  const L=Math.min(dr.right+14,innerWidth-276);Object.assign(box.style,{left:L+'px',top:cr.top+cr.height/2+'px',width:Math.max(260,cr.right-L)+'px'});
   $('tutNext').onclick=()=>{ if(st.last){S.phase='busy';fx.innerHTML='';box.hidden=true;S.turn=0;startTurn()} else {S.tut++;render()} };
   if(st.spot){const el=$(st.spot); sp.hidden=false; sp.style.boxShadow='0 0 0 200vmax rgba(0,0,0,.5)';
     requestAnimationFrame(()=>{const r=el.getBoundingClientRect();Object.assign(sp.style,{left:r.left-6+'px',top:r.top-6+'px',width:r.width+12+'px',height:r.height+12+'px'});
@@ -512,6 +522,13 @@ function animateMoves(before){
     el.animate([{transform:`translate(${dx}px,${dy}px) scale(1.06)`,filter:'drop-shadow(8px 10px 8px rgba(40,36,30,.25))'},{transform:'none',filter:'none'}],{duration:480,easing:'cubic-bezier(.2,.8,.2,1)'}).onfinish=()=>{el.style.zIndex=''};
   });
 }
+function plain(m){
+  return m.replace(/^(\w+) ⇄ (\w+) · swap$/,'$1 swapped one of their cards with one of $2\'s.')
+    .replace(/^(\w+) · peeked (.+)$/,'$1 looked at $2.').replace(/^(\w+) · threw (\w+)$/,'$1 threw away a $2.')
+    .replace(/^(\w+) · kept card · threw (\w+)$/,'$1 kept the new card and threw away a $2.')
+    .replace(/^(\w+) · took (\w+) · threw (\w+)$/,'$1 took the $2 and threw away a $3.')
+    .replace(/^(\w+) · looked · no swap$/,'$1 looked at a card and kept it.').replace(/^(\w+) · CABO! · last lap$/,'$1 called CABO! Everyone gets one last turn.');
+}
 function nudgeFor(ph,t){
   const d=S.drawn, mine=[...document.querySelectorAll('#me .card.click')], theirs=[...document.querySelectorAll('.s1 .card.click,.s2 .card.click,.s3 .card.click')];
   const deck=document.querySelector('.pile .card.back'), pile=document.querySelectorAll('.pile .card')[1], act=document.querySelector('#actions button:not(.opt)');
@@ -522,6 +539,7 @@ function nudgeFor(ph,t){
   case 'peek-start':return [act,'These two face-up cards are yours. Remember them! Then tap here.'];
   case 'turn':
     if(t&&t.v<=3)return [pile,`This ${t.r} is worth only ${t.v}. Tap it to take it.`];
+    if(lvl()===1&&S.turns>12&&S.cabo===null){const cb=[...document.querySelectorAll('#actions .opt')][0];if(cb)return [cb,'Think your total is low? Tap Call CABO to end the round.']}
     return [deck,'Your turn! Tap the deck to pick up a card.'];
   case 'drawn':
     if(!d)return [];
@@ -537,21 +555,30 @@ function nudgeFor(ph,t){
   case 'queen-own':return [act,'Lower than one of yours? Tap your card to swap. Otherwise tap here.'];
   case 'window':{
     if(!t)return [];
-    if(Date.now()-S.winStart<3500&&!S.barShown){setTimeout(()=>{S.barShown=1;placeNudge(S.phase,topCard())},3500-(Date.now()-S.winStart));return [$('bar'),'This bar is the timer. When it runs out, the chance is gone.']}
+    const el0=Date.now()-S.winStart, deep=lvl()===1&&!S.snapTaught, pileEl=document.querySelectorAll('.pile .card')[1];
+    if(S.script==='oshinwin')return [document.querySelector('#s2'),el0<4500?`Vibha threw a K. Oshin remembers having a K too…`:'Watch: Oshin snaps his K onto the pile!'];
+    if(deep&&el0<4000){setTimeout(()=>placeNudge(S.phase,topCard()),4000-el0);return [pileEl,`A ${t.r} was just thrown. Anyone who has a ${t.r} can throw theirs on top for free. That's a "snap".`]}
+    if(deep&&el0<8000){setTimeout(()=>{S.snapTaught=1;placeNudge(S.phase,topCard())},8000-el0);return [$('bar'),'You can snap until this timer runs out. Only the first player to snap gets it.']}
     const hit=[0,1,2,3].flatMap(cards).find(x=>x.c.r===t.r&&known(x.c));
-    if(hit){const el=document.querySelector(`[data-id="${hit.c.id}"]`);return [el,`Same number! You have a ${t.r} here. Tap it to throw it away for free.`]}
-    return [document.querySelector('.xbtn'),`A ${t.r} was thrown. No matching card you remember? Tap ✕ to continue.`];}
+    if(hit){const el=document.querySelector(`[data-id="${hit.c.id}"]`);return [el,`You know this card is a ${t.r} too. Tap it to snap!`]}
+    return [document.querySelector('.xbtn'),`No ${t.r} you remember? Tap ✕ to continue.`];}
+  case 'busy':
+    if(/snapped/.test(S.log[0]||'')&&lvl()===1&&!/^You/.test(S.log[0]))return [$('msg'),`${S.log[0].split(' ')[0]} snapped first, so nobody else can. The player after them plays next.`];
+    return [];
   case 'give':return [elOf(myHigh())||mine[0],'You took their card. Give them one of yours: tap it.'];
-  case 'bot':return [document.querySelector('.seat.active'),`${S.players[S.turn].name} is playing. Watch what they throw.`];
+  case 'bot':
+    if(S.script==='vibhaagain'&&S.turn===3&&!S.botMsg)return [document.querySelector('.seat.active'),'Oshin snapped, so the next player after Oshin plays. That is Vibha again!'];
+    if(S.botMsg)return [$('msg'),plain(S.botMsg)];
+    return [document.querySelector('.seat.active'),`${S.players[S.turn].name} is playing. Watch what they do.`];
   }
   return [];
 }
 function placeNudge(ph,t){
-  const n=$('nudge'), sp=$('spot'); if(!learner||!gameOn||!S||!$('overlay').hidden){n.hidden=sp.hidden=true;return}
+  const n=$('nudge'), sp=$('spot'); document.body.classList.toggle('learner',lvl()<3); if(lvl()===3||!gameOn||!S||!$('overlay').hidden){n.hidden=sp.hidden=true;return}
   if(ph==='tut'){n.hidden=true;return placeTut()}
   $('tutbox').hidden=true; $('tutfx').innerHTML='';
   const [el,txt]=nudgeFor(ph,t); if(!el||!txt){n.hidden=sp.hidden=true;return}
-  sp.hidden=false; sp.style.boxShadow='0 0 0 200vmax rgba(0,0,0,.25)';
+  sp.hidden=false; sp.style.boxShadow=`0 0 0 200vmax rgba(0,0,0,${lvl()===1?.25:0})`;
   document.querySelectorAll('.hint-target').forEach(e=>e.classList.remove('hint-target')); el.classList.add('hint-target');
   n.textContent=txt; n.hidden=false;
   const pos=()=>{if(!el.isConnected)return;
@@ -607,7 +634,7 @@ function render(){
   else if(ph==='jack-opp')m='Jack · pick <b>their</b> card';
   else if(ph==='queen-opp')m='Queen · look at <b>their</b> card';
   else if(ph==='queen-own'){m='Swap with <b>yours</b> or keep';A.append(btn('Keep as is',()=>{S.reveal.clear();log('You · looked · no swap');endAction(0)}))}
-  else if(ph==='window'){m=t?`Snap a <b>${t.r}</b> · tap card`:'Next player…';const x=btn('✕',()=>{clearTimers();S.turn=S.next;startTurn()});x.className='xbtn';x.title='No snap, carry on';x.setAttribute('aria-label','No snap, carry on');if(S.next===1&&S.cabo===null&&!S.give&&cards(0).length)A.append(optBtn('Call CABO',()=>{S.cabo=0;log('You · CABO! · last lap');clearTimers();S.turn=S.next;startTurn()},true));A.append(x)}
+  else if(ph==='window'){m=t?`Snap a <b>${t.r}</b> · tap card`:'Next player…';if(S.script!=='oshinwin'){const x=btn('✕',()=>{clearTimers();S.turn=S.next;startTurn()});x.className='xbtn';x.title='No snap, carry on';x.setAttribute('aria-label','No snap, carry on');if(S.next===1&&S.cabo===null&&!S.give&&cards(0).length)A.append(optBtn('Call CABO',()=>{S.cabo=0;log('You · CABO! · last lap');clearTimers();S.turn=S.next;startTurn()},true));A.append(x)}}
   else if(ph==='give')m=`Give ${S.players[S.give.p].name} · <b>one card</b>`;
   else if(ph==='bot')m=S.botMsg?`<b>${S.botMsg}</b>`:`${nm}'s turn…`;
   else if(ph==='busy')m=S.reveal.size?'Look…':`<b>${S.log[0]||''}</b>`;
