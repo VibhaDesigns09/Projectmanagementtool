@@ -115,6 +115,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .coach .lbl{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 body.learner .hint-target{animation:hint 1.4s ease-in-out infinite}
 @keyframes hint{0%,100%{box-shadow:var(--sh,0 0 0 transparent),0 0 0 3px rgba(196,83,45,.9),0 0 0 rgba(196,83,45,0)}50%{box-shadow:var(--sh,0 0 0 transparent),0 0 0 3px rgba(196,83,45,.9),0 0 22px rgba(196,83,45,.6)}}
+.spot{position:fixed;z-index:24;border-radius:12px;box-shadow:0 0 0 200vmax rgba(0,0,0,.25);pointer-events:none;transition:left .25s,top .25s,width .25s,height .25s}
 .nudge{position:fixed;z-index:25;max-width:240px;background:var(--rust);color:#fff;font-size:14px;line-height:1.35;font-weight:600;padding:9px 12px;border-radius:12px;box-shadow:0 8px 22px rgba(40,36,30,.25);pointer-events:none;animation:bob 1.6s ease-in-out infinite}
 .nudge::after{content:"";position:absolute;left:var(--ax,50%);width:12px;height:12px;background:var(--rust);transform:translateX(-50%) rotate(45deg)}
 .nudge.above::after{bottom:-6px}.nudge.below::after{top:-6px}
@@ -155,7 +156,7 @@ body.learner .hint-target{animation:hint 1.4s ease-in-out infinite}
   <div class="timer" id="bar"><i id="bari"></i></div>
   <div class="logrow"><button class="logbtn" id="logbtn" aria-expanded="false">Show game log</button><span style="flex:1"></span><div class="log" id="log" hidden></div><button class="mode" id="mode" role="switch" aria-checked="false" aria-label="Dark mode"></button></div>
 </div>
-<div class="nudge" id="nudge" hidden></div>
+<div class="spot" id="spot" hidden></div><div class="nudge" id="nudge" hidden></div>
 <div class="overlay" id="overlay" hidden><div class="panel" id="panel"></div></div>
 
 <script>
@@ -444,7 +445,7 @@ function coachTip(ph,t){
   return '';
 }
 function showStart(){
-  clearTimers(); $('nudge').hidden=true; gameOn=false; $('overlay').hidden=true; $('menu').hidden=true;
+  clearTimers(); $('nudge').hidden=true; $('spot').hidden=true; gameOn=false; $('overlay').hidden=true; $('menu').hidden=true;
   $('pname').value=playerName==='You'?'':playerName; $('start').hidden=false; setTimeout(()=>$('pname').focus(),50);
 }
 $('startForm').onsubmit=e=>{
@@ -523,12 +524,14 @@ function nudgeFor(ph,t){
   return [];
 }
 function placeNudge(ph,t){
-  const n=$('nudge'); if(!learner||!gameOn||!S||!$('overlay').hidden){n.hidden=true;return}
-  const [el,txt]=nudgeFor(ph,t); if(!el||!txt){n.hidden=true;return}
+  const n=$('nudge'), sp=$('spot'); if(!learner||!gameOn||!S||!$('overlay').hidden){n.hidden=sp.hidden=true;return}
+  const [el,txt]=nudgeFor(ph,t); if(!el||!txt){n.hidden=sp.hidden=true;return}
+  sp.hidden=false;
   document.querySelectorAll('.hint-target').forEach(e=>e.classList.remove('hint-target')); el.classList.add('hint-target');
   n.textContent=txt; n.hidden=false;
   const pos=()=>{if(!el.isConnected)return;
     const r=el.getBoundingClientRect(), w=n.offsetWidth, h=n.offsetHeight;
+    Object.assign(sp.style,{left:r.left-6+'px',top:r.top-6+'px',width:r.width+12+'px',height:r.height+12+'px'});
     let x=Math.min(Math.max(8,r.left+r.width/2-w/2),innerWidth-w-8), above=r.top-h-14>8;
     n.style.left=x+'px'; n.style.top=(above?r.top-h-12:r.bottom+12)+'px';
     n.classList.toggle('above',above); n.classList.toggle('below',!above);
