@@ -116,15 +116,18 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 body.learner .hint-target{animation:hint 1.4s ease-in-out infinite}
 @keyframes hint{0%,100%{box-shadow:var(--sh,0 0 0 transparent),0 0 0 3px rgba(196,83,45,.9),0 0 0 rgba(196,83,45,0)}50%{box-shadow:var(--sh,0 0 0 transparent),0 0 0 3px rgba(196,83,45,.9),0 0 22px rgba(196,83,45,.6)}}
 .spot{position:fixed;z-index:24;border-radius:12px;box-shadow:0 0 0 200vmax rgba(0,0,0,.25);pointer-events:none;transition:left .25s,top .25s,width .25s,height .25s}
-.tutbox{position:fixed;z-index:26;transform:translateY(-50%);max-width:calc(100vw - 16px);background:var(--felt-deep);color:var(--ink);border-radius:14px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.3);display:flex;align-items:center;gap:16px;text-align:left}
-.tutbox h3{margin:0 0 2px;font-family:var(--display);font-size:20px;font-weight:800;color:var(--brown-text)}
-.tutbox p{margin:0;font-size:16px;line-height:1.4;text-wrap:balance}
-.tutbox>div{flex:1}.tutbox button{flex:none;margin-left:auto}
+.tutbox{position:fixed;z-index:26;max-width:min(380px,calc(100vw - 32px));background:var(--felt-deep);color:var(--ink);border-radius:10px;padding:9px 12px;box-shadow:0 6px 18px rgba(0,0,0,.25);text-align:left}
+.tutnext{position:fixed;z-index:26;transform:translateY(-50%)}
+.tutbox h3{margin:0 0 1px;font-family:var(--display);font-size:14px;font-weight:800;color:var(--brown-text)}
+.tutbox p{margin:0;font-size:13px;line-height:1.35}
+
 .tutfx{position:fixed;inset:0;z-index:25;pointer-events:none}
 .ptb{position:absolute;width:30px;height:30px;border-radius:50%;background:var(--rust);color:#fff;font:800 15px var(--body);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px #fff;transform:translate(-50%,-50%)}
 .pttotal{position:absolute;color:#fff;font:800 22px var(--body);transform:translate(-50%,0);white-space:nowrap}
 .bigcard{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:14px;color:#fff;font:600 18px var(--body);text-align:center}
-.bigcard .row{display:flex;gap:14px}.bigcard .card{--w:110px}
+.bigcard .row{display:flex;gap:12px}.bigcard .card{--w:80px}
+.bigcard .cap{background:var(--rust);color:#fff;padding:6px 14px;border-radius:999px;font-size:15px;box-shadow:0 0 0 3px rgba(255,255,255,.85),0 0 20px rgba(196,83,45,.6);animation:hint2 1.4s ease-in-out infinite}
+@keyframes hint2{50%{box-shadow:0 0 0 3px rgba(255,255,255,.85),0 0 30px rgba(196,83,45,.9)}}
 .nudge{position:fixed;z-index:25;max-width:240px;background:var(--rust);color:#fff;font-size:14px;line-height:1.35;font-weight:600;padding:9px 12px;border-radius:12px;box-shadow:0 8px 22px rgba(40,36,30,.25);pointer-events:none;animation:bob 1.6s ease-in-out infinite}
 .nudge::after{content:"";position:absolute;left:var(--ax,50%);width:12px;height:12px;background:var(--rust);transform:translateX(-50%) rotate(45deg)}
 .nudge.above::after{bottom:-6px}.nudge.below::after{top:-6px}
@@ -461,7 +464,7 @@ function coachTip(ph,t){
   return '';
 }
 function showStart(){
-  clearTimers(); $('nudge').hidden=true; $('spot').hidden=true; gameOn=false; $('overlay').hidden=true; $('menu').hidden=true;
+  clearTimers(); if($('tutNext'))$('tutNext').hidden=true; $('tutbox').hidden=true; $('tutfx').innerHTML=''; $('nudge').hidden=true; $('spot').hidden=true; gameOn=false; $('overlay').hidden=true; $('menu').hidden=true;
   $('pname').value=playerName==='You'?'':playerName; $('start').hidden=false; setTimeout(()=>$('pname').focus(),50);
 }
 $('startForm').onsubmit=e=>{
@@ -493,16 +496,19 @@ function startTutorial(){
 function placeTut(){
   const st=TUT[S.tut], sp=$('spot'), box=$('tutbox'), fx=$('tutfx'); fx.innerHTML='';
   box.hidden=false;
-  box.innerHTML=`<div><h3>${st.t}</h3><p>${st.p}</p></div><button class="primary" id="tutNext">${st.last?'Start the game':'Next'}</button>`;
-  const cr=document.querySelector('.ctrl').getBoundingClientRect(), dr=document.querySelector('.center').getBoundingClientRect();
-  const L=Math.min(dr.right+14,innerWidth-276);Object.assign(box.style,{left:L+'px',top:cr.top+cr.height/2+'px',width:Math.max(260,cr.right-L)+'px'});
-  $('tutNext').onclick=()=>{ if(st.last){S.phase='busy';fx.innerHTML='';box.hidden=true;S.turn=0;startTurn()} else {S.tut++;render()} };
+  box.innerHTML=`<h3>${st.t}</h3><p>${st.p}</p>`;
+  let nb=$('tutNext'); if(!nb){nb=document.createElement('button');nb.id='tutNext';nb.className='primary tutnext';document.body.append(nb)}
+  nb.hidden=false; nb.textContent=st.last?'Start the game':'Next';
+  const wr=document.querySelector('.wrap').getBoundingClientRect(), lr=document.querySelector('.logrow').getBoundingClientRect(), cr=document.querySelector('.ctrl').getBoundingClientRect();
+  Object.assign(box.style,{left:wr.left+16+'px',bottom:innerHeight-lr.top+14+'px'});
+  Object.assign(nb.style,{right:innerWidth-cr.right+'px',top:cr.top+cr.height/2+'px'});
+  nb.onclick=()=>{ if(st.last){S.phase='busy';fx.innerHTML='';box.hidden=true;nb.hidden=true;S.turn=0;startTurn()} else {S.tut++;render()} };
   if(st.spot){const el=$(st.spot); sp.hidden=false; sp.style.boxShadow='0 0 0 200vmax rgba(0,0,0,.5)';
     requestAnimationFrame(()=>{const r=el.getBoundingClientRect();Object.assign(sp.style,{left:r.left-6+'px',top:r.top-6+'px',width:r.width+12+'px',height:r.height+12+'px'});
       if(st.badges){let tot=0;document.querySelectorAll('#me .card').forEach((c,i)=>{const cd=S.players[0].hand[i];if(!cd)return;tot+=cd.v;const b=c.getBoundingClientRect();const d=document.createElement('div');d.className='ptb';d.textContent=cd.v;d.style.left=b.right-4+'px';d.style.top=b.top+4+'px';fx.append(d)});
         const t=document.createElement('div');t.className='pttotal';t.textContent=`Total = ${tot}`;t.style.left=r.left+r.width/2+'px';t.style.top=r.bottom+14+'px';fx.append(t)}});}
   else{sp.hidden=false;sp.style.boxShadow='0 0 0 200vmax rgba(0,0,0,.5)';Object.assign(sp.style,{left:'50%',top:'50%',width:'0px',height:'0px'});}
-  if(st.big){const w=document.createElement('div');w.className='bigcard';w.innerHTML=`<div class="row">${st.big.map(([rk,su])=>`<div class="card face">${faceSVG({r:rk,s:su})}</div>`).join('')}</div><div>${st.cap}</div>`;fx.append(w)}
+  if(st.big){const w=document.createElement('div');w.className='bigcard';w.innerHTML=`<div class="row">${st.big.map(([rk,su])=>`<div class="card face">${faceSVG({r:rk,s:su})}</div>`).join('')}</div><div class="cap">${st.cap}</div>`;fx.append(w)}
 }
 function tickBar(){
   if(!S||S.phase!=='window'||!S.winLen)return;
@@ -576,7 +582,7 @@ function nudgeFor(ph,t){
 function placeNudge(ph,t){
   const n=$('nudge'), sp=$('spot'); document.body.classList.toggle('learner',lvl()<3); if(lvl()===3||!gameOn||!S||!$('overlay').hidden){n.hidden=sp.hidden=true;return}
   if(ph==='tut'){n.hidden=true;return placeTut()}
-  $('tutbox').hidden=true; $('tutfx').innerHTML='';
+  $('tutbox').hidden=true; $('tutfx').innerHTML=''; if($('tutNext'))$('tutNext').hidden=true;
   const [el,txt]=nudgeFor(ph,t); if(!el||!txt){n.hidden=sp.hidden=true;return}
   sp.hidden=false; sp.style.boxShadow=`0 0 0 200vmax rgba(0,0,0,${lvl()===1?.25:0})`;
   document.querySelectorAll('.hint-target').forEach(e=>e.classList.remove('hint-target')); el.classList.add('hint-target');
