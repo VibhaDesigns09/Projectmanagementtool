@@ -494,23 +494,6 @@ function placeTut(){
   else{sp.hidden=false;sp.style.boxShadow='0 0 0 200vmax rgba(0,0,0,.5)';Object.assign(sp.style,{left:'50%',top:'50%',width:'0px',height:'0px'});}
   if(st.big){const w=document.createElement('div');w.className='bigcard';w.innerHTML=`<div class="row">${st.big.map(([rk,su])=>`<div class="card face">${faceSVG({r:rk,s:su})}</div>`).join('')}</div><div>${st.cap}</div>`;fx.append(w)}
 }
-function showIntro(){
-  $('overlay').hidden=false; newRound(); clearTimers();
-  $('panel').classList.add('intro');
-  $('panel').innerHTML=`<h2>How Cabo works</h2>
-  <dl>
-    <dt>Goal</dt><dd>End with the <b>lowest total points</b> in your cards.</dd>
-    <dt>Points</dt><dd>A = 1 · 2–10 = their number · J = 11 · Q = 12 · K = 13 · <b>K♦ = 0</b></dd>
-    <dt>Start</dt><dd>You get 4 cards face down. You may look at your <b>bottom two</b> once. Remember them.</dd>
-    <dt>Your turn</dt><dd>Take a card from the <b>deck</b> (or the top of the <b>discard pile</b>). Keep it by swapping it with one of your cards, or throw it on the discard pile.</dd>
-    <dt>Special cards</dt><dd class="pw"><b>7 · 8</b><span>Throw it to look at one of <b>your</b> cards</span><b>9 · 10</b><span>Throw it to look at <b>another player's</b> card</span><b>J</b><span>Swap one of yours with anyone's, without looking</span><b>Q</b><span>Look at anyone's card, then swap if you like</span></dd>
-    <dt>Matching</dt><dd>When any card is thrown, if you remember a card <b>with the same number</b> (yours or anyone's), tap it to throw it too. This is called a <b>snap</b>. Wrong guess = you get an extra card.</dd>
-    <dt>Ending</dt><dd>Think you're lowest? Press <b>Call CABO</b>. Everyone gets one more turn, then all cards flip. Lowest caller scores <b>−5</b>; everyone else scores their total.</dd>
-  </dl>
-  <div style="text-align:right"><button class="primary" id="startTut">Start the tutorial</button></div>`;
-  $('overlay').hidden=false;
-  $('startTut').onclick=()=>{$('overlay').hidden=true;$('panel').classList.remove('intro');render()};
-}
 function tickBar(){
   if(!S||S.phase!=='window'||!S.winLen)return;
   const left=Math.max(0,1-(Date.now()-S.winStart)/S.winLen);
