@@ -116,6 +116,15 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 body.learner .hint-target{animation:hint 1.4s ease-in-out infinite}
 @keyframes hint{0%,100%{box-shadow:var(--sh,0 0 0 transparent),0 0 0 3px rgba(196,83,45,.9),0 0 0 rgba(196,83,45,0)}50%{box-shadow:var(--sh,0 0 0 transparent),0 0 0 3px rgba(196,83,45,.9),0 0 22px rgba(196,83,45,.6)}}
 .spot{position:fixed;z-index:24;border-radius:12px;box-shadow:0 0 0 200vmax rgba(0,0,0,.25);pointer-events:none;transition:left .25s,top .25s,width .25s,height .25s}
+.tutbox{position:fixed;z-index:26;left:50%;top:max(16px,6vh);transform:translateX(-50%);width:min(560px,calc(100vw - 32px));color:#fff;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
+.tutbox h3{margin:0;font-family:var(--display);font-size:24px;font-weight:800}
+.tutbox p{margin:0;font-size:16px;line-height:1.4;text-wrap:balance}
+.tutbox button{background:#fff;color:#2b2a29;border-color:#fff}
+.tutfx{position:fixed;inset:0;z-index:25;pointer-events:none}
+.ptb{position:absolute;width:30px;height:30px;border-radius:50%;background:var(--rust);color:#fff;font:800 15px var(--body);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px #fff;transform:translate(-50%,-50%)}
+.pttotal{position:absolute;color:#fff;font:800 22px var(--body);transform:translate(-50%,0);white-space:nowrap}
+.bigcard{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:14px;color:#fff;font:600 18px var(--body);text-align:center}
+.bigcard .row{display:flex;gap:14px}.bigcard .card{--w:110px}
 .nudge{position:fixed;z-index:25;max-width:240px;background:var(--rust);color:#fff;font-size:14px;line-height:1.35;font-weight:600;padding:9px 12px;border-radius:12px;box-shadow:0 8px 22px rgba(40,36,30,.25);pointer-events:none;animation:bob 1.6s ease-in-out infinite}
 .nudge::after{content:"";position:absolute;left:var(--ax,50%);width:12px;height:12px;background:var(--rust);transform:translateX(-50%) rotate(45deg)}
 .nudge.above::after{bottom:-6px}.nudge.below::after{top:-6px}
@@ -156,7 +165,7 @@ body.learner .hint-target{animation:hint 1.4s ease-in-out infinite}
   <div class="timer" id="bar"><i id="bari"></i></div>
   <div class="logrow"><button class="logbtn" id="logbtn" aria-expanded="false">Show game log</button><span style="flex:1"></span><div class="log" id="log" hidden></div><button class="mode" id="mode" role="switch" aria-checked="false" aria-label="Dark mode"></button></div>
 </div>
-<div class="spot" id="spot" hidden></div><div class="nudge" id="nudge" hidden></div>
+<div class="spot" id="spot" hidden></div><div class="tutfx" id="tutfx"></div><div class="tutbox" id="tutbox" hidden></div><div class="nudge" id="nudge" hidden></div>
 <div class="overlay" id="overlay" hidden><div class="panel" id="panel"></div></div>
 
 <script>
@@ -249,7 +258,7 @@ function endAction(actor){
   S.drawn=null;S.sel=null;S.next=(actor+1)%4;openWindow();
 }
 function openWindow(len=30000){
-  clearTimers(); S.phase='window'; S.snapMode=false; const wid=++S.wid;
+  clearTimers(); if(S)S.barShown=0; S.phase='window'; S.snapMode=false; const wid=++S.wid;
   S.winStart=Date.now(); S.winLen=len; render();
   for(let b=1;b<4;b++){
     const t=topCard(); if(!t)break;
@@ -395,6 +404,7 @@ function cardEl(c,p,i,show){
 function isShown(c,p,i){
   if(S.phase==='end'||S.reveal.has(c.id))return true;
   if(p===0&&S.phase==='peek-start'&&(i===2||i===3))return true;
+  if(p===0&&S.phase==='tut'){const st=TUT[S.tut]; if(st.show==='all')return true; if(st.show==='bottom')return i===2||i===3;}
   return false;
 }
 function seat(p){
@@ -453,8 +463,37 @@ $('startForm').onsubmit=e=>{
   try{localStorage.setItem('cabo-name',v)}catch(_){}
   learner=(e.submitter&&e.submitter.value)==='learn';
   document.body.classList.toggle('learner',learner); $('start').hidden=true; totals=[0,0,0,0]; round=0; gameOn=true;
-  if(learner)showIntro(); else newRound();
+  if(learner)startTutorial(); else newRound();
 };
+const TUT=[
+  {t:'Goal',p:'End with the <b>lowest total points</b> in your cards.',show:'all',spot:'me'},
+  {t:'Points',p:'A = 1 · 2–10 = their number · J = 11 · Q = 12 · K = 13 · <b>K♦ = 0</b>',show:'all',spot:'me',badges:1},
+  {t:'Action cards',p:'Draw one, then throw it on the pile to use it.',big:[['7','♣'],['8','♥']],cap:'Look at one of <b>your</b> cards'},
+  {t:'Action cards',p:'Draw one, then throw it on the pile to use it.',big:[['9','♠'],['10','♦']],cap:"Look at <b>another player's</b> card"},
+  {t:'Action cards',p:'Draw one, then throw it on the pile to use it.',big:[['J','♣']],cap:'Swap a card with anyone, <b>without looking</b>'},
+  {t:'Action cards',p:'Draw one, then throw it on the pile to use it.',big:[['Q','♥']],cap:'Look at anyone\'s card, <b>then swap</b> if you like'},
+  {t:'Start',p:'When the game begins you only see your <b>bottom two</b> cards. Remember them!',show:'bottom',spot:'me',last:1}
+];
+function startTutorial(){
+  newRound(); clearTimers();
+  const mk=(r,su,id)=>({id,r,s:su,v:r==='K'&&su==='♦'?0:VAL(r)});
+  S.players[0].hand=[mk('A','♣',901),mk('J','♠',902),mk('K','♦',903),mk('9','♥',904)];
+  S.players[0].mem=new Set([903,904]);
+  S.deck=S.deck.filter(c=>!(c.r==='9'&&c.s==='♠')); S.deck.push(mk('9','♠',905));
+  S.phase='tut'; S.tut=0; render();
+}
+function placeTut(){
+  const st=TUT[S.tut], sp=$('spot'), box=$('tutbox'), fx=$('tutfx'); fx.innerHTML='';
+  box.hidden=false;
+  box.innerHTML=`<h3>${st.t}</h3><p>${st.p}</p><button id="tutNext">${st.last?'Start the game':'Next'}</button>`;
+  $('tutNext').onclick=()=>{ if(st.last){S.phase='busy';fx.innerHTML='';box.hidden=true;S.turn=0;startTurn()} else {S.tut++;render()} };
+  if(st.spot){const el=$(st.spot); sp.hidden=false; sp.style.boxShadow='0 0 0 200vmax rgba(0,0,0,.5)';
+    requestAnimationFrame(()=>{const r=el.getBoundingClientRect();Object.assign(sp.style,{left:r.left-6+'px',top:r.top-6+'px',width:r.width+12+'px',height:r.height+12+'px'});
+      if(st.badges){let tot=0;document.querySelectorAll('#me .card').forEach((c,i)=>{const cd=S.players[0].hand[i];if(!cd)return;tot+=cd.v;const b=c.getBoundingClientRect();const d=document.createElement('div');d.className='ptb';d.textContent=cd.v;d.style.left=b.right-4+'px';d.style.top=b.top+4+'px';fx.append(d)});
+        const t=document.createElement('div');t.className='pttotal';t.textContent=`Total = ${tot}`;t.style.left=r.left+r.width/2+'px';t.style.top=r.bottom+14+'px';fx.append(t)}});}
+  else{sp.hidden=false;sp.style.boxShadow='0 0 0 200vmax rgba(0,0,0,.5)';Object.assign(sp.style,{left:'50%',top:'50%',width:'0px',height:'0px'});}
+  if(st.big){const w=document.createElement('div');w.className='bigcard';w.innerHTML=`<div class="row">${st.big.map(([rk,su])=>`<div class="card face">${faceSVG({r:rk,s:su})}</div>`).join('')}</div><div>${st.cap}</div>`;fx.append(w)}
+}
 function showIntro(){
   $('overlay').hidden=false; newRound(); clearTimers();
   $('panel').classList.add('intro');
@@ -515,8 +554,9 @@ function nudgeFor(ph,t){
   case 'queen-own':return [act,'Lower than one of yours? Tap your card to swap. Otherwise tap here.'];
   case 'window':{
     if(!t)return [];
+    if(Date.now()-S.winStart<3500&&!S.barShown){setTimeout(()=>{S.barShown=1;placeNudge(S.phase,topCard())},3500-(Date.now()-S.winStart));return [$('bar'),'This bar is the timer. When it runs out, the chance is gone.']}
     const hit=[0,1,2,3].flatMap(cards).find(x=>x.c.r===t.r&&known(x.c));
-    if(hit){const el=document.querySelector(`[data-id="${hit.c.id}"]`);return [el,`You saw this card: it's a ${t.r} too! Tap it to throw it free.`]}
+    if(hit){const el=document.querySelector(`[data-id="${hit.c.id}"]`);return [el,`Same number! You have a ${t.r} here. Tap it to throw it away for free.`]}
     return [document.querySelector('.xbtn'),`A ${t.r} was thrown. No matching card you remember? Tap ✕ to continue.`];}
   case 'give':return [elOf(myHigh())||mine[0],'You took their card. Give them one of yours: tap it.'];
   case 'bot':return [document.querySelector('.seat.active'),`${S.players[S.turn].name} is playing. Watch what they throw.`];
@@ -525,8 +565,10 @@ function nudgeFor(ph,t){
 }
 function placeNudge(ph,t){
   const n=$('nudge'), sp=$('spot'); if(!learner||!gameOn||!S||!$('overlay').hidden){n.hidden=sp.hidden=true;return}
+  if(ph==='tut'){n.hidden=true;return placeTut()}
+  $('tutbox').hidden=true; $('tutfx').innerHTML='';
   const [el,txt]=nudgeFor(ph,t); if(!el||!txt){n.hidden=sp.hidden=true;return}
-  sp.hidden=false;
+  sp.hidden=false; sp.style.boxShadow='0 0 0 200vmax rgba(0,0,0,.25)';
   document.querySelectorAll('.hint-target').forEach(e=>e.classList.remove('hint-target')); el.classList.add('hint-target');
   n.textContent=txt; n.hidden=false;
   const pos=()=>{if(!el.isConnected)return;
