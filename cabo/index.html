@@ -90,7 +90,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 :root[data-mode="dark"] .card{--sh:5px 4px 8px rgba(0,0,0,.45),-5px 4px 8px rgba(0,0,0,.45),0 1px 1.5px rgba(0,0,0,.6)}
 :root[data-mode="dark"] .card.back{background:radial-gradient(circle at 50% 50%,var(--cream) 0 7%,transparent 7.5%),#5e5a56;box-shadow:var(--sh)}
 .log div:first-child{color:var(--ink)}
-.overlay{position:fixed;inset:0;background:rgba(43,42,41,.35);display:flex;align-items:center;justify-content:center;padding:16px}
+.overlay{z-index:40;position:fixed;inset:0;background:rgba(43,42,41,.35);display:flex;align-items:center;justify-content:center;padding:16px}
 .panel{background:var(--felt-deep);border:1px solid var(--rail);border-radius:16px;padding:22px;max-width:440px;width:100%;display:flex;flex-direction:column;gap:12px}
 .panel h2{font-family:var(--display);margin:0;color:var(--brown-text)}
 .panel table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
@@ -113,8 +113,18 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .coach{border:1px dashed var(--rail);border-radius:12px;padding:10px 14px;font-size:14px;line-height:1.45;max-width:560px;margin:8px auto 0;text-align:left;background:var(--felt-deep)}
 .coach b{color:var(--brown-text)}
 .coach .lbl{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
-body.learner .card.click,body.learner #actions button:not(.opt),body.learner .xbtn{animation:hint 1.4s ease-in-out infinite}
+body.learner .hint-target{animation:hint 1.4s ease-in-out infinite}
 @keyframes hint{0%,100%{box-shadow:var(--sh,0 0 0 transparent),0 0 0 3px rgba(196,83,45,.9),0 0 0 rgba(196,83,45,0)}50%{box-shadow:var(--sh,0 0 0 transparent),0 0 0 3px rgba(196,83,45,.9),0 0 22px rgba(196,83,45,.6)}}
+.nudge{position:fixed;z-index:25;max-width:240px;background:var(--rust);color:#fff;font-size:14px;line-height:1.35;font-weight:600;padding:9px 12px;border-radius:12px;box-shadow:0 8px 22px rgba(40,36,30,.25);pointer-events:none;animation:bob 1.6s ease-in-out infinite}
+.nudge::after{content:"";position:absolute;left:var(--ax,50%);width:12px;height:12px;background:var(--rust);transform:translateX(-50%) rotate(45deg)}
+.nudge.above::after{bottom:-6px}.nudge.below::after{top:-6px}
+@keyframes bob{0%,100%{translate:0 0}50%{translate:0 -4px}}
+.intro{max-width:560px!important;max-height:calc(100vh - 32px);overflow:auto}
+.intro dl{display:grid;grid-template-columns:auto 1fr;gap:10px 14px;margin:0;font-size:14px;line-height:1.4}
+.intro dt{font-weight:800;color:var(--brown-text);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding-top:2px}
+.intro dd{margin:0}
+.intro .pw{display:grid;grid-template-columns:auto 1fr;gap:4px 10px}
+.intro .pw b{font-family:var(--num);font-size:16px}
 </style>
 
 <div class="start" id="start">
@@ -145,6 +155,7 @@ body.learner .card.click,body.learner #actions button:not(.opt),body.learner .xb
   <div class="timer" id="bar"><i id="bari"></i></div>
   <div class="logrow"><button class="logbtn" id="logbtn" aria-expanded="false">Show game log</button><span style="flex:1"></span><div class="log" id="log" hidden></div><button class="mode" id="mode" role="switch" aria-checked="false" aria-label="Dark mode"></button></div>
 </div>
+<div class="nudge" id="nudge" hidden></div>
 <div class="overlay" id="overlay" hidden><div class="panel" id="panel"></div></div>
 
 <script>
@@ -243,6 +254,7 @@ function openWindow(len=30000){
     const t=topCard(); if(!t)break;
     const own=cards(b).find(x=>x.c.r===t.r&&S.players[b].mem.has(x.c.id));
     const other=[0,1,2,3].filter(p=>p!==b).flatMap(cards).find(x=>x.c.r===t.r&&S.players[b].mem.has(x.c.id));
+    if(learner)continue;
     const pick=own&&Math.random()<.8?own:other&&!learner&&cards(b).length&&Math.random()<.45?other:null;
     if(pick)later(()=>{if(S.phase==='window'&&S.wid===wid)snap(b,pick.p,pick.i)},1000+Math.random()*Math.min(len-500,5000));
   }
@@ -286,7 +298,7 @@ function endRound(){
     ${S.players.map((p,i)=>`<tr><td>${p.name}</td><td>${sums[i]}</td><td>${res[i]}</td><td><b>${totals[i]}</b></td></tr>`).join('')}</table>
     <div style="display:flex;gap:8px;justify-content:flex-end"><button id="peekTable">See table</button><button class="primary" id="nextRound">Next round</button></div>`;
   $('overlay').hidden=false;
-  $('nextRound').onclick=()=>{$('overlay').hidden=true;newRound()};
+  $('panel').classList.remove('intro');$('nextRound').onclick=()=>{$('overlay').hidden=true;newRound()};
   $('peekTable').onclick=()=>{$('overlay').hidden=true;$('actions').innerHTML='';const b=document.createElement('button');b.className='primary';b.textContent='Next round';b.onclick=newRound;$('actions').append(b)};
 }
 
@@ -432,15 +444,33 @@ function coachTip(ph,t){
   return '';
 }
 function showStart(){
-  clearTimers(); gameOn=false; $('overlay').hidden=true; $('menu').hidden=true;
+  clearTimers(); $('nudge').hidden=true; gameOn=false; $('overlay').hidden=true; $('menu').hidden=true;
   $('pname').value=playerName==='You'?'':playerName; $('start').hidden=false; setTimeout(()=>$('pname').focus(),50);
 }
 $('startForm').onsubmit=e=>{
   e.preventDefault(); const v=$('pname').value.trim(); playerName=v||'You';
   try{localStorage.setItem('cabo-name',v)}catch(_){}
   learner=(e.submitter&&e.submitter.value)==='learn';
-  document.body.classList.toggle('learner',learner); $('start').hidden=true; totals=[0,0,0,0]; round=0; gameOn=true; newRound();
+  document.body.classList.toggle('learner',learner); $('start').hidden=true; totals=[0,0,0,0]; round=0; gameOn=true;
+  if(learner)showIntro(); else newRound();
 };
+function showIntro(){
+  $('overlay').hidden=false; newRound(); clearTimers();
+  $('panel').classList.add('intro');
+  $('panel').innerHTML=`<h2>How Cabo works</h2>
+  <dl>
+    <dt>Goal</dt><dd>End with the <b>lowest total points</b> in your cards.</dd>
+    <dt>Points</dt><dd>A = 1 · 2–10 = their number · J = 11 · Q = 12 · K = 13 · <b>K♦ = 0</b></dd>
+    <dt>Start</dt><dd>You get 4 cards face down. You may look at your <b>bottom two</b> once. Remember them.</dd>
+    <dt>Your turn</dt><dd>Take a card from the <b>deck</b> (or the top of the <b>discard pile</b>). Keep it by swapping it with one of your cards, or throw it on the discard pile.</dd>
+    <dt>Special cards</dt><dd class="pw"><b>7 · 8</b><span>Throw it to look at one of <b>your</b> cards</span><b>9 · 10</b><span>Throw it to look at <b>another player's</b> card</span><b>J</b><span>Swap one of yours with anyone's, without looking</span><b>Q</b><span>Look at anyone's card, then swap if you like</span></dd>
+    <dt>Matching</dt><dd>When any card is thrown, if you remember a card <b>with the same number</b> (yours or anyone's), tap it to throw it too. This is called a <b>snap</b>. Wrong guess = you get an extra card.</dd>
+    <dt>Ending</dt><dd>Think you're lowest? Press <b>Call CABO</b>. Everyone gets one more turn, then all cards flip. Lowest caller scores <b>−5</b>; everyone else scores their total.</dd>
+  </dl>
+  <div style="text-align:right"><button class="primary" id="startTut">Start the tutorial</button></div>`;
+  $('overlay').hidden=false;
+  $('startTut').onclick=()=>{$('overlay').hidden=true;$('panel').classList.remove('intro');render()};
+}
 function tickBar(){
   if(!S||S.phase!=='window'||!S.winLen)return;
   const left=Math.max(0,1-(Date.now()-S.winStart)/S.winLen);
@@ -459,6 +489,54 @@ function animateMoves(before){
     el.animate([{transform:`translate(${dx}px,${dy}px) scale(1.06)`,filter:'drop-shadow(8px 10px 8px rgba(40,36,30,.25))'},{transform:'none',filter:'none'}],{duration:480,easing:'cubic-bezier(.2,.8,.2,1)'}).onfinish=()=>{el.style.zIndex=''};
   });
 }
+function nudgeFor(ph,t){
+  const d=S.drawn, mine=[...document.querySelectorAll('#me .card.click')], theirs=[...document.querySelectorAll('.s1 .card.click,.s2 .card.click,.s3 .card.click')];
+  const deck=document.querySelector('.pile .card.back'), pile=document.querySelectorAll('.pile .card')[1], act=document.querySelector('#actions button:not(.opt)');
+  const known=c=>S.players[0].mem.has(c.id);
+  const myHigh=()=>{let best=null;cards(0).forEach(x=>{if(known(x.c)&&(!best||x.c.v>best.c.v))best=x});const u=cards(0).find(x=>!known(x.c));return best&&(!u||best.c.v>6)?best:(u||best)};
+  const elOf=x=>x&&document.querySelectorAll('#me .card')[x.i];
+  switch(ph){
+  case 'peek-start':return [act,'These two face-up cards are yours. Remember them! Then tap here.'];
+  case 'turn':
+    if(t&&t.v<=3)return [pile,`This ${t.r} is worth only ${t.v}. Tap it to take it.`];
+    return [deck,'Your turn! Tap the deck to pick up a card.'];
+  case 'drawn':
+    if(!d)return [];
+    if(d.v<=4)return [elOf(myHigh())||mine[0],`A ${d.r} is low (${d.v}). Tap one of your cards to swap it in.`];
+    if(POWER[d.r])return [pile,`A ${d.r} is ${d.v} points, too many to keep. Tap here to throw it. Bonus: ${POWER_LABEL[POWER[d.r]]}!`];
+    return [pile,`A ${d.r} is ${d.v} points, too many to keep. Tap here to throw it away.`];
+  case 'place':return [elOf(myHigh())||mine[0],'Tap the card of yours to replace.'];
+  case 'peek-own':return [mine.find(e=>{const c=S.players[0].hand[[...document.querySelectorAll('#me .card')].indexOf(e)];return c&&!known(c)})||mine[0],'Tap one of your cards to look at it.'];
+  case 'peek-other':return [theirs[0],"Tap any other player's card to look at it."];
+  case 'jack-own':return [elOf(myHigh())||mine[0],'Pick one of your cards to give away.'];
+  case 'jack-opp':return [theirs[0],'Now tap any card of theirs to take it.'];
+  case 'queen-opp':return [theirs[0],"Tap another player's card to see it."];
+  case 'queen-own':return [act,'Lower than one of yours? Tap your card to swap. Otherwise tap here.'];
+  case 'window':{
+    if(!t)return [];
+    const hit=[0,1,2,3].flatMap(cards).find(x=>x.c.r===t.r&&known(x.c));
+    if(hit){const el=document.querySelector(`[data-id="${hit.c.id}"]`);return [el,`You saw this card: it's a ${t.r} too! Tap it to throw it free.`]}
+    return [document.querySelector('.xbtn'),`A ${t.r} was thrown. No matching card you remember? Tap ✕ to continue.`];}
+  case 'give':return [elOf(myHigh())||mine[0],'You took their card. Give them one of yours: tap it.'];
+  case 'bot':return [document.querySelector('.seat.active'),`${S.players[S.turn].name} is playing. Watch what they throw.`];
+  }
+  return [];
+}
+function placeNudge(ph,t){
+  const n=$('nudge'); if(!learner||!gameOn||!S||!$('overlay').hidden){n.hidden=true;return}
+  const [el,txt]=nudgeFor(ph,t); if(!el||!txt){n.hidden=true;return}
+  document.querySelectorAll('.hint-target').forEach(e=>e.classList.remove('hint-target')); el.classList.add('hint-target');
+  n.textContent=txt; n.hidden=false;
+  const pos=()=>{if(!el.isConnected)return;
+    const r=el.getBoundingClientRect(), w=n.offsetWidth, h=n.offsetHeight;
+    let x=Math.min(Math.max(8,r.left+r.width/2-w/2),innerWidth-w-8), above=r.top-h-14>8;
+    n.style.left=x+'px'; n.style.top=(above?r.top-h-12:r.bottom+12)+'px';
+    n.classList.toggle('above',above); n.classList.toggle('below',!above);
+    n.style.setProperty('--ax',Math.min(Math.max(14,r.left+r.width/2-x),w-14)+'px');
+  };
+  requestAnimationFrame(pos); setTimeout(pos,520);
+}
+addEventListener('resize',()=>{if(S)placeNudge(S.phase,topCard())});
 function fit(){
   const w=document.querySelector('.wrap'); w.style.transform='none'; w.style.minHeight='0';
   const k=Math.min(1,(innerHeight-2)/w.scrollHeight); w.style.minHeight=''; window.__k=k;
@@ -509,7 +587,7 @@ function render(){
   if(['peek-own','peek-other','jack-own','jack-opp','queen-opp'].includes(ph))A.append(btn('Skip',()=>endAction(0)));
   if(S.cabo!==null&&ph!=='end')m+=` <span class="score">· last lap</span>`;
   $('msg').innerHTML=m; $('bar').classList.toggle('on',ph==='window'); tickBar();
-  const tip=learner?coachTip(ph,t):''; $('coach').hidden=!tip; $('coach').innerHTML=tip?`<span class="lbl">Coach</span>${tip}`:'';
+  placeNudge(ph,t); const tip=''; $('coach').hidden=!tip; $('coach').innerHTML=tip?`<span class="lbl">Coach</span>${tip}`:'';
   $('log').innerHTML=S.log.map(l=>`<div>${l}</div>`).join('');
   fit();
   animateMoves(before);
