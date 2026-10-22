@@ -58,7 +58,7 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 .toast{position:absolute;left:50%;top:-12px;transform:translate(-50%,-100%);background:var(--hi);color:var(--ink);font-weight:600;font-size:13px;padding:4px 10px;border-radius:999px;white-space:nowrap;animation:toast 2.2s forwards;pointer-events:none;text-transform:none;letter-spacing:0}
 @keyframes toast{0%,80%{opacity:1}100%{opacity:0}}
 .pile{position:relative}
-.inhand{color:var(--rust);font-weight:600}
+.inhand{color:var(--rust);font-weight:600;border-radius:6px;padding:0 4px}
 .bar{height:4px;background:rgba(184,165,136,.15);border-radius:2px;overflow:hidden;max-width:320px;margin:6px auto 0}
 .bar i{display:block;height:100%;background:var(--hi);width:100%}
 .actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;min-height:38px}
@@ -116,9 +116,10 @@ button:focus-visible,.card:focus-visible{outline:3px solid var(--hi);outline-off
 body.learner .hint-target{animation:hint 1.4s ease-in-out infinite}
 @keyframes hint{0%,100%{box-shadow:var(--sh,0 0 0 transparent),0 0 0 3px rgba(196,83,45,.9),0 0 0 rgba(196,83,45,0)}50%{box-shadow:var(--sh,0 0 0 transparent),0 0 0 3px rgba(196,83,45,.9),0 0 22px rgba(196,83,45,.6)}}
 .spot{position:fixed;z-index:24;border-radius:12px;box-shadow:0 0 0 200vmax rgba(0,0,0,.25);pointer-events:none;transition:left .25s,top .25s,width .25s,height .25s}
-.tutbox{position:fixed;z-index:26;max-width:min(380px,calc(100vw - 32px));background:var(--felt-deep);color:var(--ink);border-radius:10px;padding:9px 12px;box-shadow:0 6px 18px rgba(0,0,0,.25);text-align:left}
+.tutbox{position:fixed;z-index:26;max-width:min(320px,calc(100vw - 32px));transform:translateY(-50%);margin-top:-8px;background:var(--rust);color:#fff;border-radius:10px;padding:9px 12px;box-shadow:0 6px 18px rgba(0,0,0,.25);text-align:left}
+.skiptut{position:fixed;z-index:30;top:16px;right:max(124px,calc((100vw - 920px)/2 + 124px));background:var(--felt-deep);font-size:13px;padding:7px 12px}
 .tutnext{position:fixed;z-index:26;transform:translateY(-50%)}
-.tutbox h3{margin:0 0 1px;font-family:var(--display);font-size:14px;font-weight:800;color:var(--brown-text)}
+.tutbox h3{margin:0 0 1px;font-family:var(--display);font-size:14px;font-weight:800;color:#fff}
 .tutbox p{margin:0;font-size:13px;line-height:1.35}
 
 .tutfx{position:fixed;inset:0;z-index:25;pointer-events:none}
@@ -168,7 +169,7 @@ body.learner .hint-target{animation:hint 1.4s ease-in-out infinite}
   <div class="timer" id="bar"><i id="bari"></i></div>
   <div class="logrow"><button class="logbtn" id="logbtn" aria-expanded="false">Show game log</button><span style="flex:1"></span><div class="log" id="log" hidden></div><button class="mode" id="mode" role="switch" aria-checked="false" aria-label="Dark mode"></button></div>
 </div>
-<div class="spot" id="spot" hidden></div><div class="tutfx" id="tutfx"></div><div class="tutbox" id="tutbox" hidden></div><div class="nudge" id="nudge" hidden></div>
+<button class="skiptut" id="skiptut" hidden>Skip tutorial</button><div class="spot" id="spot" hidden></div><div class="tutfx" id="tutfx"></div><div class="tutbox" id="tutbox" hidden></div><div class="nudge" id="nudge" hidden></div>
 <div class="overlay" id="overlay" hidden><div class="panel" id="panel"></div></div>
 
 <script>
@@ -464,7 +465,7 @@ function coachTip(ph,t){
   return '';
 }
 function showStart(){
-  clearTimers(); if($('tutNext'))$('tutNext').hidden=true; $('tutbox').hidden=true; $('tutfx').innerHTML=''; $('nudge').hidden=true; $('spot').hidden=true; gameOn=false; $('overlay').hidden=true; $('menu').hidden=true;
+  clearTimers(); $('skiptut').hidden=true; if($('tutNext'))$('tutNext').hidden=true; $('tutbox').hidden=true; $('tutfx').innerHTML=''; $('nudge').hidden=true; $('spot').hidden=true; gameOn=false; $('overlay').hidden=true; $('menu').hidden=true;
   $('pname').value=playerName==='You'?'':playerName; $('start').hidden=false; setTimeout(()=>$('pname').focus(),50);
 }
 $('startForm').onsubmit=e=>{
@@ -477,10 +478,11 @@ $('startForm').onsubmit=e=>{
 const TUT=[
   {t:'Goal',p:'End with the <b>lowest total points</b> in your cards.',show:'all',spot:'me'},
   {t:'Points',p:'A = 1 · 2–10 = their number · J = 11 · Q = 12 · K = 13 · <b>K♦ = 0</b>',show:'all',spot:'me',badges:1},
-  {t:'Action cards',p:'Draw one, then throw it on the pile to use it.',big:[['7','♣'],['8','♥']],cap:'Look at one of <b>your</b> cards'},
-  {t:'Action cards',p:'Draw one, then throw it on the pile to use it.',big:[['9','♠'],['10','♦']],cap:"Look at <b>another player's</b> card"},
-  {t:'Action cards',p:'Draw one, then throw it on the pile to use it.',big:[['J','♣']],cap:'Swap a card with anyone, <b>without looking</b>'},
-  {t:'Action cards',p:'Draw one, then throw it on the pile to use it.',big:[['Q','♥']],cap:'Look at anyone\'s card, <b>then swap</b> if you like'},
+  {t:'Action cards',p:'Draw one, then throw it on the pile to use it.',big:[['7','♣'],['8','♥']],cap:'They let you peek into one of <b>your</b> cards'},
+  {t:'Action cards',p:'Draw one, then throw it on the pile to use it.',big:[['9','♠'],['10','♦']],cap:"They let you peek into <b>another player's</b> card, so you know what to swap or snap"},
+  {t:'Action cards',p:'Draw one, then throw it on the pile to use it.',big:[['J','♣']],cap:'This card lets you swap, but <b>blindly</b>'},
+  {t:'Action cards',p:'Draw one, then throw it on the pile to use it.',big:[['Q','♥']],cap:"This card lets you peek into another's card and <b>decide if you want to swap</b>"},
+  {t:'Snap',p:'Only the first player to snap gets it. A wrong card gives you an extra card.',big:[['7','♣'],['7','♦']],cap:'A 7 is thrown and you know you have a 7? <b>Tap your 7</b> to throw it too, for free'},
   {t:'Start',p:'When the game begins you only see your <b>bottom two</b> cards. Remember them!',show:'bottom',spot:'me',last:1}
 ];
 function startTutorial(){
@@ -500,7 +502,7 @@ function placeTut(){
   let nb=$('tutNext'); if(!nb){nb=document.createElement('button');nb.id='tutNext';nb.className='primary tutnext';document.body.append(nb)}
   nb.hidden=false; nb.textContent=st.last?'Start the game':'Next';
   const wr=document.querySelector('.wrap').getBoundingClientRect(), lr=document.querySelector('.logrow').getBoundingClientRect(), cr=document.querySelector('.ctrl').getBoundingClientRect();
-  Object.assign(box.style,{left:wr.left+16+'px',bottom:innerHeight-lr.top+14+'px'});
+  const mr=$('me').getBoundingClientRect(); box.style.bottom=''; requestAnimationFrame(()=>Object.assign(box.style,{left:Math.max(8,mr.left-14-box.offsetWidth)+'px',top:Math.max(8,cr.top+cr.height/2-24-box.offsetHeight/2)+'px'}));
   Object.assign(nb.style,{right:innerWidth-cr.right+'px',top:cr.top+cr.height/2+'px'});
   nb.onclick=()=>{ if(st.last){S.phase='busy';fx.innerHTML='';box.hidden=true;nb.hidden=true;S.turn=0;startTurn()} else {S.tut++;render()} };
   if(st.spot){const el=$(st.spot); sp.hidden=false; sp.style.boxShadow='0 0 0 200vmax rgba(0,0,0,.5)';
@@ -535,7 +537,9 @@ function plain(m){
     .replace(/^(\w+) · took (\w+) · threw (\w+)$/,'$1 took the $2 and threw away a $3.')
     .replace(/^(\w+) · looked · no swap$/,'$1 looked at a card and kept it.').replace(/^(\w+) · CABO! · last lap$/,'$1 called CABO! Everyone gets one last turn.');
 }
+function extraHint(els){S.extra=els.filter(Boolean)}
 function nudgeFor(ph,t){
+  S.extra=[];
   const d=S.drawn, mine=[...document.querySelectorAll('#me .card.click')], theirs=[...document.querySelectorAll('.s1 .card.click,.s2 .card.click,.s3 .card.click')];
   const deck=document.querySelector('.pile .card.back'), pile=document.querySelectorAll('.pile .card')[1], act=document.querySelector('#actions button:not(.opt)');
   const known=c=>S.players[0].mem.has(c.id);
@@ -550,11 +554,18 @@ function nudgeFor(ph,t){
   case 'drawn':
     if(!d)return [];
     if(d.v<=4)return [elOf(myHigh())||mine[0],`A ${d.r} is low (${d.v}). Tap one of your cards to swap it in.`];
+    if(POWER[d.r]&&lvl()===1){
+      const age=Date.now()-S.phStart; extraHint([document.querySelector('.inhand'),act]);
+      if(age<4500){setTimeout(()=>placeNudge(S.phase,topCard()),4500-age);return [pile,`A ${d.r} is ${d.v} points, too many to keep, unless you want to swap it with a card you don't know.`]}
+      return [act,'Tap here to throw it and use its power, or tap one of your cards to replace it.'];}
     if(POWER[d.r])return [pile,`A ${d.r} is ${d.v} points, too many to keep. Tap here to throw it. Bonus: ${POWER_LABEL[POWER[d.r]]}!`];
     return [pile,`A ${d.r} is ${d.v} points, too many to keep. Tap here to throw it away.`];
   case 'place':return [elOf(myHigh())||mine[0],'Tap the card of yours to replace.'];
   case 'peek-own':return [mine.find(e=>{const c=S.players[0].hand[[...document.querySelectorAll('#me .card')].indexOf(e)];return c&&!known(c)})||mine[0],'Tap one of your cards to look at it.'];
-  case 'peek-other':return [theirs[0],"Tap any other player's card to look at it."];
+  case 'peek-other':{const age=Date.now()-S.phStart, sk=[...document.querySelectorAll('#actions button')].find(b=>b.textContent==='Skip');
+    if(lvl()===1&&sk){extraHint([sk]);if(age<4000){setTimeout(()=>placeNudge(S.phase,topCard()),4000-age);return [theirs[0],"Tap any other player's card to look at it."]}
+      return [sk,"Or tap Skip if you don't want to. Your choice!"]}
+    return [theirs[0],"Tap any other player's card to look at it."];}
   case 'jack-own':return [elOf(myHigh())||mine[0],'Pick one of your cards to give away.'];
   case 'jack-opp':return [theirs[0],'Now tap any card of theirs to take it.'];
   case 'queen-opp':return [theirs[0],"Tap another player's card to see it."];
@@ -580,12 +591,12 @@ function nudgeFor(ph,t){
   return [];
 }
 function placeNudge(ph,t){
-  const n=$('nudge'), sp=$('spot'); document.body.classList.toggle('learner',lvl()<3); if(lvl()===3||!gameOn||!S||!$('overlay').hidden){n.hidden=sp.hidden=true;return}
+  const n=$('nudge'), sp=$('spot'); document.body.classList.toggle('learner',lvl()<3); $('skiptut').hidden=!(gameOn&&lvl()<3); if(lvl()===3||!gameOn||!S||!$('overlay').hidden){n.hidden=sp.hidden=true;return}
   if(ph==='tut'){n.hidden=true;return placeTut()}
   $('tutbox').hidden=true; $('tutfx').innerHTML=''; if($('tutNext'))$('tutNext').hidden=true;
   const [el,txt]=nudgeFor(ph,t); if(!el||!txt){n.hidden=sp.hidden=true;return}
   sp.hidden=false; sp.style.boxShadow=`0 0 0 200vmax rgba(0,0,0,${lvl()===1?.25:0})`;
-  document.querySelectorAll('.hint-target').forEach(e=>e.classList.remove('hint-target')); el.classList.add('hint-target');
+  document.querySelectorAll('.hint-target').forEach(e=>e.classList.remove('hint-target')); el.classList.add('hint-target'); (S.extra||[]).forEach(e=>e.classList.add('hint-target'));
   n.textContent=txt; n.hidden=false;
   const pos=()=>{if(!el.isConnected)return;
     const r=el.getBoundingClientRect(), w=n.offsetWidth, h=n.offsetHeight;
@@ -648,6 +659,7 @@ function render(){
   if(['peek-own','peek-other','jack-own','jack-opp','queen-opp'].includes(ph))A.append(btn('Skip',()=>endAction(0)));
   if(S.cabo!==null&&ph!=='end')m+=` <span class="score">· last lap</span>`;
   $('msg').innerHTML=m; $('bar').classList.toggle('on',ph==='window'); tickBar();
+  if(ph!==S.lastPh){S.lastPh=ph;S.phStart=Date.now()}
   placeNudge(ph,t); const tip=''; $('coach').hidden=!tip; $('coach').innerHTML=tip?`<span class="lbl">Coach</span>${tip}`:'';
   $('log').innerHTML=S.log.map(l=>`<div>${l}</div>`).join('');
   fit();
@@ -674,6 +686,10 @@ $('powers').onclick=()=>{$('panel').innerHTML=`<h2>Card powers</h2>${LEGEND}<div
 function setSound(v){soundOn=v;$('soundbtn').textContent=v?'Sound: on':'Sound: off';try{localStorage.setItem('cabo-sound',v?'1':'0')}catch(e){}}
 setSound(soundOn);
 $('soundbtn').onclick=e=>{e.stopPropagation();setSound(!soundOn);if(soundOn)SFX.peek()};
+$('skiptut').onclick=()=>{
+  learner=false; $('skiptut').hidden=true; $('nudge').hidden=true; $('spot').hidden=true; $('tutbox').hidden=true; $('tutfx').innerHTML=''; if($('tutNext'))$('tutNext').hidden=true;
+  document.body.classList.remove('learner'); $('overlay').hidden=true; totals=[0,0,0,0]; round=0; newRound();
+};
 $('mainmenu').onclick=()=>{
   if(!gameOn)return showStart();
   $('panel').innerHTML=`<h2>End this game?</h2><p>Going to the main menu ends the current game. You won't be able to come back to it.</p><div style="display:flex;gap:8px;justify-content:flex-end"><button id="stayG">Keep playing</button><button class="primary" id="endG">End game</button></div>`;
