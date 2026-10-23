@@ -25,6 +25,7 @@
     dna: '<path d="M5 3c0 6 14 12 14 18M19 3c0 6-14 12-14 18M8 7h8M8 17h8"/>',
     bug: '<rect x="7" y="7" width="10" height="13" rx="5"/><path d="M12 11v9M3 13h4M17 13h4M4 7l3 2M20 7l-3 2M4 20l3-2M20 20l-3-2M9.5 4l1.5 3M14.5 4 13 7"/>',
     play: '<circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4Z"/>',
+    pause: '<circle cx="12" cy="12" r="10"/><path d="M10 9v6M14 9v6"/>',
     file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h6"/>',
     alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/>',
     clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
@@ -290,9 +291,12 @@
   let CUR = null;          // current profile
   let lastFocus = null;
   function setHash(h) { try { history.replaceState(null, "", h ? "#" + h : location.pathname + location.search); } catch (_) { /* sandboxed */ } }
-  function showPage() { closeSheet(false); $("#home").hidden = true; $("#dock").hidden = false; $("#page").hidden = false; document.body.classList.remove("is-home"); window.scrollTo(0, 0); }
+  function showPage() {
+    closeSheet(false); storyStop(); $("#page").classList.remove("fit", "tight", "xtight");
+    $("#home").hidden = true; $("#dock").hidden = false; $("#page").hidden = false; document.body.classList.remove("is-home"); window.scrollTo(0, 0);
+  }
   function showHome() {
-    closeSheet(false); closeDrawer(); CUR = null; $("#page").hidden = true; $("#dock").hidden = false; $("#home").hidden = false; document.body.classList.add("is-home");
+    closeSheet(false); closeDrawer(); storyStop(); CUR = null; $("#page").hidden = true; $("#dock").hidden = false; $("#home").hidden = false; document.body.classList.add("is-home");
     $("#homeQ").value = ""; setHash(""); emit();
   }
   function emit() { document.dispatchEvent(new CustomEvent("rd:profile", { detail: CUR })); }
@@ -310,6 +314,8 @@
     CUR = buildProfile(e);
     showPage(); $("#topQ").value = "";
     $("#page").innerHTML = renderDashboard(CUR, typed, also);
+    storyMount();
+    fitDash();
     setHash(CUR.key);
     emit();
   }
@@ -326,23 +332,112 @@
       .map((r, i) => ({ r, i, L: (r[3].match(/L/g) || []).length }))
       .sort((a, b) => b.L - a.L || a.i - b.i).map(x => x.r);
   }
-  /* Card: icon + title on top (what it is at a glance), a few key points, chevron to open the details */
-  function card(id, size, icon, title, count, body) {
+  /* Card: icon + title on top (what it is at a glance), a few key points, chevron to open the details; tools = extra header controls */
+  function card(id, size, icon, title, count, body, tools = "") {
     return `<article class="card ${size}" data-tab="${id}">
-      <header><span class="cico">${ic(icon)}</span><h2>${title}</h2>${count ? `<span class="count">${count}</span>` : ""}<button class="go" type="button" data-tab="${id}" aria-label="Open ${title} details">${ic("chev")}</button></header>
+      <header><span class="cico">${ic(icon)}</span><h2>${title}</h2>${count ? `<span class="count">${count}</span>` : ""}${tools}<button class="go" type="button" data-tab="${id}" aria-label="Open ${title} details">${ic("chev")}</button></header>
       ${body}
     </article>`;
   }
-  function miniJourney(P) {
-    const S = P.stages, n = S.length, x = i => (i + .5) / n * 100, y = f => (5 - f) / 4 * 100;
-    const pts = S.map((s, i) => `${x(i)},${y(s.f)}`).join(" ");
-    return `<div class="minij" aria-label="Patient feeling across ${n} journey stages">
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        <line x1="0" x2="100" y1="50" y2="50" stroke="var(--line)" stroke-dasharray="2 3" vector-effect="non-scaling-stroke"/>
-        <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-      </svg>
-      ${S.map((s, i) => `<span class="pt" title="${esc(s.n)}: ${esc(s.w)}" style="left:${x(i)}%;top:calc(10px + (100% - 28px) * ${y(s.f) / 100});background:${FEEL(s.f)[1]}"></span><span class="lbl" style="left:${x(i)}%">${esc(s.n)}</span>`).join("")}
+
+  /* About explainer: the summary, then cause → diagnosis → treatment appear in turn (--d = animation delay) */
+  const brief = s => { s = String(s || "").trim(); const cut = s.indexOf(";"); return cut > 0 ? s.slice(0, cut).trim() : s; };
+  function explainer(P) {
+    const steps = [["dna", "Cause", P.cause, "var(--accent)"], ["scan", "Diagnosis", P.dx, "var(--g-dx)"], ["pill", "Treatment", P.tx, "var(--good)"]];
+    return `<p class="lede">${esc(P.what)}</p>
+      <div class="flow">${steps.map(([i, k, v, c], n) => `${n ? `<span class="farrow" style="--d:${.2 + n * .5}s" aria-hidden="true"></span>` : ""}<div class="fnode" style="--nc:${c};--d:${.4 + n * .5}s" title="${esc(k)}: ${esc(v)}"><header><span class="fi">${ic(i)}</span><em>${k}</em></header><p>${esc(brief(v))}</p></div>`).join("")}</div>`;
+  }
+
+  /* Journey story: a patient marker travels the feeling line stage by stage. At each stage the narration shows how the
+     patient feels, what happens, the pain point and who leads or supports, so the stakeholders are met in context. */
+  const STORY_START = 1700, STORY_STEP = 3400;
+  const story = { i: 0, n: 0, playing: false, timer: 0 };
+  const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const chipName = n => String(n).replace(/\s*\([^)]*\)/g, "").trim();
+  const spot = (i, n) => (i + .5) / n * 100;                                   // stage x, % of the track
+  const rise = f => `calc(12px + (100% - 12px - var(--tb)) * ${(5 - f) / 4})`; // feeling 5 = top, 1 = bottom (--tb: label room)
+  function storyHTML(P) {
+    const S = P.stages, n = S.length, s0 = S[0];
+    const pts = S.map((s, i) => `${spot(i, n).toFixed(2)},${((5 - s.f) / 4 * 100).toFixed(2)}`).join(" ");
+    const line = cls => `<svg class="tline ${cls}" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"${cls === "prog" ? ' style="clip-path:inset(0 100% 0 0)"' : ""}><polyline points="${pts}" vector-effect="non-scaling-stroke"/></svg>`;
+    return `<div class="story intro" id="story">
+      <div class="track" data-story="track" role="group" aria-label="Journey stages" style="--n:${n}">
+        ${line("base")}${line("prog")}
+        ${S.map((s, i) => `<button class="snode" type="button" data-story="go" data-i="${i}" style="left:${spot(i, n)}%;top:${rise(s.f)};--fc:${FEEL(s.f)[1]};--k:${i}" aria-label="Stage ${i + 1} of ${n}: ${esc(s.n)}"></button>`).join("")}
+        ${S.map((s, i) => `<span class="slbl" data-story="go" data-i="${i}" style="left:${spot(i, n)}%;--k:${i}" aria-hidden="true">${esc(s.n)}</span>`).join("")}
+        <span class="traveler" style="left:${spot(0, n)}%;top:${rise(s0.f)};--fc:${FEEL(s0.f)[1]}" aria-hidden="true">${ic(FEEL(s0.f)[0])}</span>
+      </div>
+      <div class="narr" aria-live="off"></div>
     </div>`;
+  }
+  function narrHTML(P, i) {
+    const s = P.stages[i], [face, col] = FEEL(s.f);
+    const who = P.stakeholders.filter(r => r[0] !== "patient").map(r => ({ r, c: r[3][i] })).filter(x => x.c === "L" || x.c === "S");
+    const L = who.filter(x => x.c === "L"), S = who.filter(x => x.c === "S");
+    let k = 0;
+    const chip = ({ r, c }) => `<button class="wchip ${c} g-${r[0]}" type="button" data-cert="${esc(r[1])}" style="--k:${k++}" aria-label="${esc(r[1])}, ${c === "L" ? "leads" : "supports"} here: US credentials" title="${esc(r[1])}: ${esc(r[4])}. ${c === "L" ? "Leads" : "Supports"} at this stage. Click for US credentials."><span class="wi">${ic(r[2])}</span><span>${esc(chipName(r[1]))}</span></button>`;
+    const what = s.d.join(" · ");
+    return `<div class="nhead" style="--fc:${col}"><span class="sico">${ic(s.i)}</span><b>${esc(s.n)}</b><span class="nfeel">${ic(face)}${esc(s.w)}</span><span class="ntime">${ic("clock")}${esc(s.t)}</span></div>
+      <div class="nbody"><span class="nwhat" title="What happens: ${esc(what)}">${ic("file")}<span class="t">${esc(what)}</span></span><span class="npain" title="Pain point: ${esc(s.p)}">${ic("alert")}<span class="t">${esc(s.p)}</span></span></div>
+      <div class="nwho">${who.length ? (L.length ? `<span class="wl" style="--k:${k++}">Leads</span>${L.map(chip).join("")}` : "") + (S.length ? `<span class="wl" style="--k:${k++}">Supports</span>${S.map(chip).join("")}` : "")
+        : `<span class="wl">Who's involved</span><span class="wnone">Patient &amp; family</span>`}<button class="wmore" type="button" data-tab="journey" hidden></button></div>`;
+  }
+  /* Keep the stakeholder chips on one line: hide the ones that don't fit and show "+N" (opens the full journey map) */
+  function fitWho(row) {
+    if (!row) return;
+    const chips = [...row.querySelectorAll(".wchip")], more = row.querySelector(".wmore"), labels = [...row.querySelectorAll(".wl")];
+    chips.forEach(c => { c.hidden = false; }); labels.forEach(l => { l.hidden = false; }); more.hidden = true;
+    if (!chips.length) return;
+    const emptyLabels = () => labels.forEach(l => { let n = l.nextElementSibling; while (n && n.hidden) n = n.nextElementSibling; if (!n || !n.classList.contains("wchip")) l.hidden = true; });
+    let hid = 0;
+    for (let k = chips.length - 1; k > 0 && row.scrollWidth > row.clientWidth + 1; k--) {
+      chips[k].hidden = true; hid++;
+      more.hidden = false; more.textContent = "+" + hid;
+      more.setAttribute("aria-label", `${hid} more at this stage: open the journey map`);
+      emptyLabels();
+    }
+  }
+  function storyShow(i, user = false) {
+    const root = $("#story"); if (!root || !CUR) return;
+    const S = CUR.stages, n = S.length;
+    i = Math.max(0, Math.min(n - 1, i));
+    if (root.dataset.shown) root.classList.remove("intro");
+    root.dataset.shown = "1";
+    story.i = i; story.n = n;
+    const s = S[i], [face, col] = FEEL(s.f), x = spot(i, n);
+    root.querySelectorAll(".snode").forEach((b, k) => { b.classList.toggle("done", k <= i); b.classList.toggle("on", k === i); if (k === i) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current"); });
+    root.querySelectorAll(".slbl").forEach((l, k) => l.classList.toggle("on", k === i));
+    root.querySelector(".tline.prog").style.clipPath = `inset(0 ${(100 - x).toFixed(2)}% 0 0)`;
+    const t = root.querySelector(".traveler");
+    t.style.left = x + "%"; t.style.top = rise(s.f); t.style.setProperty("--fc", col); t.innerHTML = ic(face);
+    const nr = root.querySelector(".narr");
+    nr.setAttribute("aria-live", user ? "polite" : "off");
+    nr.innerHTML = narrHTML(CUR, i);
+    fitWho(nr.querySelector(".nwho"));
+    const c = $("#storyCount"); if (c) c.textContent = `Stage ${i + 1} of ${n}`;
+    storyToggle();
+  }
+  function storyToggle() {
+    const b = $("#storyToggle"); if (!b) return;
+    const [icon, label] = story.playing ? ["pause", "Pause the journey"] : story.i >= story.n - 1 ? ["cycle", "Replay the journey"] : ["play", "Play the journey"];
+    b.innerHTML = ic(icon); b.setAttribute("aria-label", label); b.title = label;
+  }
+  /* Advance every STORY_STEP ms until the last stage, then offer a replay */
+  function storyQueue(delay = STORY_STEP) {
+    clearTimeout(story.timer);
+    if (story.playing && story.i < story.n - 1) story.timer = setTimeout(() => { storyShow(story.i + 1); storyQueue(); }, delay);
+    else story.playing = false;
+    storyToggle();
+  }
+  function storyPlay() { story.playing = true; storyShow(story.i >= story.n - 1 ? 0 : story.i + 1, true); storyQueue(); }
+  function storyPause() { story.playing = false; storyQueue(); }
+  function storyStop() { clearTimeout(story.timer); story.playing = false; }
+  function storyMount() {
+    storyStop();
+    if (!$("#story")) return;
+    storyShow(0);
+    story.playing = !calm();                    // reduced motion: no autoplay, press play to step through
+    storyQueue(STORY_START + STORY_STEP);
   }
   function metaChips(P) {
     const c = counts(P), out = [];
@@ -360,7 +455,6 @@
 
   function renderDashboard(P, typed, also) {
     const c = counts(P);
-    const lowest = P.stages.reduce((m, s) => s.f < m.f ? s : m, P.stages[0]);
     const makers = P.companies.filter(x => x[0] !== "users");
     const dev = P.pipeline.filter(r => ["F", "3", "2", "1"].includes(r[2]));
     return `
@@ -368,38 +462,88 @@
     <div class="dhead">
       <div class="dtitle"><span class="catico" title="${esc(P.catLabel)}">${ic(P.catIcon)}</span>
         <div class="dname"><h1>${esc(P.name)}</h1><div class="aka">${esc(P.catLabel)}${P.aka ? " · " + esc(P.aka) : ""}</div></div></div>
-      <div class="metas">${metaChips(P)}</div>
+      <div class="dside"><div class="metas">${metaChips(P)}</div>
+        <p class="dnote">${ic("clock")}Reviewed Oct 2026 · US data · Verify before citing · Not medical advice</p></div>
     </div>
     ${also.length ? `<div class="also"><span class="eyebrow">Also matching</span>${also.map(it => `<button class="chip" type="button" data-open="${it.key}">${esc(it.name)}</button>`).join("")}</div>` : ""}
     <div class="dash2">
       <div class="dleft">
         <div class="dpair">
-        ${card("about", "", "book", "About", "", `
-          <p class="lede">${esc(P.what)}</p>
-          <div class="chipset">${P.specialists[0] ? `<span class="tag">${ic("steth")}${esc(P.specialists[0])}</span>` : ""}<span class="tag">${ic("file")}${P.read.length} sources</span><span class="tag">${ic("play")}${P.watch.length} videos</span></div>`)}
-        ${card("journey", "", "route", "Patient journey", `${P.stages.length} stages`, `
-          ${miniJourney(P)}
-          <p class="painline">${ic("alert")}<span>Hardest: <b>${esc(lowest.n)}</b> · ${esc(lowest.p)}</span></p>`)}
+        ${card("about", "", "book", "About", "", explainer(P))}
+        ${card("journey", "", "route", "Patient journey", "", storyHTML(P),
+          `<span class="count" id="storyCount">Stage 1 of ${P.stages.length}</span><button class="tog" id="storyToggle" type="button" data-story="toggle" aria-label="Pause the journey">${ic("pause")}</button>`)}
         </div>
         <div class="tiles">
-          ${tile("people", "users", "Stakeholders & certifications", `${certTargets(P).length} roles · US licenses`)}
+          ${tile("people", "badge", "Certifications", `US licenses · ${certTargets(P).length} roles`)}
           ${tile("screener", "clipboard", "Screener builder", "Draft a recruitment screener")}
           ${tile("access", "coins", "US access & payers", "Payer: " + P.payer[0])}
         </div>
       </div>
       <aside class="card tall" aria-label="Treatment gaps, companies and drugs in development">
         ${tsec("gaps", "alert", "Treatment gaps", P.gaps.length,
-          `<ul class="rows">${P.gaps.slice(0, 4).map(g => `<li><span class="dot sev-${g[3]}"></span><span title="${esc(g[2])}">${esc(g[1])}</span></li>`).join("")}</ul>`)}
+          `<ul class="rows">${P.gaps.slice(0, 6).map(g => `<li><span class="dot sev-${g[3]}"></span><span title="${esc(g[2])}">${esc(g[1])}</span></li>`).join("")}</ul>`)}
         ${tsec("companies", "building", "Companies on it", makers.length, makers.length
-          ? `<ul class="rows">${makers.slice(0, 4).map(x => `<li>${ic(x[0])}<span>${esc(x[1])}</span><span class="sub2" title="${esc(x[2])}">${esc(shortName((x[4] || [])[0] || x[2]))}</span></li>`).join("")}</ul>`
+          ? `<ul class="rows">${makers.slice(0, 6).map(x => `<li>${ic(x[0])}<span>${esc(x[1])}</span><span class="sub2" title="${esc(x[2])}">${esc(shortName((x[4] || [])[0] || x[2]))}</span></li>`).join("")}</ul>`
           : `<p class="none">No company programs listed yet.</p>`)}
         ${tsec("pipeline", "flask", "Drugs in development", dev.length, dev.length
-          ? `<ul class="rows">${dev.slice(0, 4).map(r => `<li><span title="${esc(r[0])} · ${esc(r[1])}">${esc(shortName(r[0]))}</span><span class="pill ${esc(r[2])}">${esc(STATUS[r[2]].short)}</span></li>`).join("")}</ul>`
+          ? `<ul class="rows">${dev.slice(0, 6).map(r => `<li><span title="${esc(r[0])} · ${esc(r[1])}">${esc(shortName(r[0]))}</span><span class="pill ${esc(r[2])}">${esc(STATUS[r[2]].short)}</span></li>`).join("")}</ul>`
           : `<p class="none">None in development · ${c.A} FDA-approved</p>`)}
       </aside>
-    </div>
-    <p class="foot">${ic("clock")}Reviewed October 2026 · US data (FDA, CMS, RUSP) · Verify before citing · Not medical advice</p>`;
+    </div>`;
   }
+
+  /* ===================== ONE-SCREEN FIT =====================
+     Laptops, desktops and tablets: the disease page fits the window. The tiles take the height that's left
+     (square when there's room); on wide screens the left column narrows to match, and tighter spacing kicks in
+     on short windows. Phones and very short windows scroll as usual. */
+  const FIT_LEVELS = [["", 170], ["tight", 100], ["tight xtight", 40]];  // classes, smallest tile height accepted (roomier spacing only while the tiles stay near-square)
+  function fitDash() {
+    const page = $("#page"), dash = page.querySelector(".dash2");
+    if (page.hidden || !dash) return;
+    const left = dash.querySelector(".dleft"), pair = dash.querySelector(".dpair"), tiles = dash.querySelector(".tiles"), tall = dash.querySelector(".card.tall");
+    page.classList.remove("fit", "tight", "xtight");
+    tiles.classList.remove("small", "compact");
+    dash.style.removeProperty("--lw"); tiles.style.removeProperty("--th");
+    const finish = () => { trimRows(dash); fitWho(dash.querySelector(".nwho")); };
+    if (innerWidth < 600 || innerHeight < 500) { finish(); return; }
+    const wide = innerWidth >= 900;              // two columns; tablets in portrait stack into one
+    /* height left for the tiles row once everything else is placed and the dock has its space */
+    const room = () => {
+      trimRows(dash);
+      const gap = parseFloat(getComputedStyle(left).rowGap) || 0;
+      const top = dash.getBoundingClientRect().top + scrollY;
+      const below = parseFloat(getComputedStyle(page).paddingBottom) + (parseFloat(getComputedStyle(document.documentElement).paddingBottom) || 0);
+      const under = wide ? 0 : tall.offsetHeight + gap;   // one column: the tall panel sits under the tiles
+      return { gap, s: Math.floor(innerHeight - top - below - pair.offsetHeight - gap - under - 2) };
+    };
+    let r;
+    for (const [cls, min] of FIT_LEVELS) {
+      page.classList.remove("tight", "xtight");
+      page.classList.add("fit", ...cls.split(" ").filter(Boolean));
+      r = room();
+      if (r.s >= min) break;
+    }
+    const W = dash.clientWidth;
+    const lw = wide ? Math.round(Math.min(W * .6, Math.max(W * .5, Math.min(W * .6, 560), 3 * r.s + 2 * r.gap))) : W;
+    if (wide) { dash.style.setProperty("--lw", lw + "px"); r = room(); }   // the cards can re-wrap at the new width
+    if (r.s < 40) { page.classList.remove("fit", "tight", "xtight"); dash.style.removeProperty("--lw"); finish(); return; }
+    const th = Math.floor(Math.min(r.s, (lw - 2 * r.gap) / 3));
+    tiles.style.setProperty("--th", th + "px");
+    tiles.classList.toggle("small", th < 150);
+    tiles.classList.toggle("compact", th < 104);
+    finish();
+  }
+  /* Tall panel: up to 6 rows per section beside the cards on one screen (4 otherwise), minus any that don't fit */
+  function trimRows(root) {
+    const cap = $("#page").classList.contains("fit") && innerWidth >= 900 ? 6 : 4;
+    root.querySelectorAll(".tsec .rows").forEach(ul => {
+      const rows = [...ul.children];
+      rows.forEach((li, k) => { li.hidden = k >= cap; });
+      for (let k = Math.min(rows.length, cap) - 1; k > 0 && ul.scrollHeight > ul.clientHeight + 1; k--) rows[k].hidden = true;
+    });
+  }
+  let fitFrame = 0;
+  addEventListener("resize", () => { cancelAnimationFrame(fitFrame); fitFrame = requestAnimationFrame(fitDash); });
 
   /* ===================== DRAWER ===================== */
   const TABS = [["about", "About"], ["journey", "Journey map"], ["people", "Stakeholders & certifications"], ["screener", "Screener builder"],
@@ -408,6 +552,7 @@
   let curTab = null;
   function openTab(tab, arg) {
     if (!CUR) return;
+    if (story.playing) storyPause();             // the story waits while the details are open
     tab = TAB_ALIAS[tab] || tab;
     const d = $("#drawer");
     if (d.hidden) { lastFocus = document.activeElement; d.hidden = false; document.documentElement.style.overflow = "hidden"; }
@@ -740,6 +885,16 @@
       if (act.dataset.act === "dir") { showDirectory(); return; }
     }
     if (t.closest("[data-close]")) { closeDrawer(); return; }
+    /* journey story: play/pause, or jump to a stage (a click on the track picks the nearest stage) */
+    const st = t.closest("[data-story]");
+    if (st) {
+      const kind = st.dataset.story;
+      if (kind === "toggle") { if (story.playing) storyPause(); else storyPlay(); return; }
+      const box = st.getBoundingClientRect();
+      storyPause();
+      storyShow(kind === "go" ? +st.dataset.i : Math.floor((e.clientX - box.left) / box.width * story.n), true);
+      return;
+    }
     const tab = t.closest("[data-tab]");
     if (tab && !t.closest("a")) { openTab(tab.dataset.tab); }
   });
@@ -753,6 +908,15 @@
       if (!f.length) return;
       if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
       else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+    /* journey stages: arrow keys, Home and End move between them */
+    const sn = e.target.closest && e.target.closest(".snode");
+    if (sn && /^(ArrowLeft|ArrowRight|Home|End)$/.test(e.key)) {
+      e.preventDefault();
+      const cur = +sn.dataset.i;
+      storyPause();
+      storyShow(e.key === "Home" ? 0 : e.key === "End" ? story.n - 1 : cur + (e.key === "ArrowRight" ? 1 : -1), true);
+      $("#story").querySelectorAll(".snode")[story.i].focus();
     }
     /* "/" opens search from anywhere (unless typing) */
     if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) {

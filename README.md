@@ -4,7 +4,13 @@ Market research for rare life sciences: a US desk-research tool for rare disease
 
 **Home page:** a small R·D brand mark top left and the search bar top centre. Below it, one headline at a time from **What's new in rare disease** (recent US approvals, FDA and CMS policy, newborn screening, deals, each linked to its source); swipe, use the arrow keys or tap the dots for more. The last slide lists **FDA decisions to watch** (company-announced target dates). The news lives in `data/news.js`; update it there. A small dock at the bottom centre has **Home**, **Disease directory** and **I'm feeling lucky** (opens the best match for what you typed, or a random disease when the box is empty).
 
-**Disease page:** About and Patient journey cards on the left, three square tiles under them (**Stakeholders & certifications**, **Screener builder**, **US access & payers**), and one tall panel on the right with **Treatment gaps**, **Companies on it** and **Drugs in development**. Click anything for the full detail. The dock has **Home**, **Search** (or press `/`) and **Ask the assistant**.
+**Disease page:** fits one screen on laptops, desktops and tablets (no scrolling; phones scroll). About and Patient journey cards on the left, three tiles under them (**Certifications**, **Screener builder**, **US access & payers**), and one tall panel on the right with **Treatment gaps**, **Companies on it** and **Drugs in development**. The tiles are square when there's room and get shorter on short windows; the right panel shows as many rows as fit. Click anything for the full detail. The dock has **Home**, **Search** (or press `/`) and **Ask the assistant**.
+
+The page explains itself in motion when it opens:
+
+1. **About** plays first: the one-line summary, then **Cause → Diagnosis → Treatment** appear in turn.
+2. **Patient journey** then plays as a story. A patient marker moves along the feeling line, one stage about every 3 seconds, and its face changes with how the patient feels. At each stage you see the feeling, what happens, the pain point and **who leads and who supports**, so you meet the stakeholders where they come in. Click a person for their US license or certification; "+N" opens the full journey map.
+3. **Controls**: pause/play/replay, click or tap any stage (or the line), arrow keys/Home/End on a focused stage. The story pauses while a detail panel is open. With reduced motion turned on, everything shows at once and nothing plays until you press play.
 
 - **About the disease**: summary, cause, diagnosis, treatment, top articles (NIH, NORD, GeneReviews, PubMed) and videos
 - **Patient journey**: stages, what happens, how the patient feels and the pain point at each stage, laid out alongside the stakeholder map (who leads or supports at each stage)
@@ -52,8 +58,8 @@ Open `index.html` in a browser. There is no build step. Deep link to a profile w
 
 ## Files
 
-- `index.html`: layout and styles (dark navy #0F1A2B, translucent cards, white text, Helvetica)
-- `js/app.js`: search, dashboard, detail drawer, directory, the bronchiectasis profile
+- `index.html`: layout, styles and animations (dark navy #0F1A2B, translucent cards, white text, Helvetica)
+- `js/app.js`: search, dashboard (explainer, journey story, one-screen fit), detail drawer, directory, the bronchiectasis profile
 - `js/us.js`: US reference data (credentials, care networks, newborn screening, payer rules, population estimates, age of onset)
 - `js/screener.js`: screener builder and Word/CSV export
 - `js/assistant.js`: chat assistant
