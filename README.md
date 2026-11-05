@@ -2,7 +2,7 @@
 
 Market research for rare life sciences: a US desk-research tool for rare diseases.
 
-**Home page:** a small R·D brand mark top left and the search bar top centre. Below it, one headline at a time from **What's new in rare disease** (recent US approvals, FDA and CMS policy, newborn screening, deals, each linked to its source); swipe, use the arrow keys or tap the dots for more. The last slide lists **FDA decisions to watch** (company-announced target dates). The news lives in `data/news.js`; update it there. A small dock at the bottom centre has **Home**, **Disease directory** and **I'm feeling lucky** (opens the best match for what you typed, or a random disease when the box is empty).
+**Home page:** a small R·D brand mark top left and the search bar top centre. Below it, one headline at a time from **What's new in rare disease** (recent US approvals, FDA and CMS policy, newborn screening, deals, each linked to its source); swipe, use the arrow keys or tap the dots for more. It shows the 8 newest headlines; the last slides list **FDA decisions to watch** (company-announced target dates, soonest first), and a decision drops off by itself once its date has passed. The news lives in `data/news.js`; update it there (it was last updated November 5, 2026). A small dock at the bottom centre has **Home**, **Disease directory** and **I'm feeling lucky** (opens the best match for what you typed, or a random disease when the box is empty).
 
 **Look and feel:** borrowed from a clinical dashboard reference: a warm light-grey canvas, white cards with roomy spacing, a charcoal band and dock, thin connector lines and lime highlights. Text is large and plain; medical and US-system jargon (Orphan Drug Act, RUSP, Part D, PBM, ICD-10-CM…) is dotted-underlined: hover or tap it for a one-line explanation, and a **Jargon buster** card at the end of a tab lists every term used there.
 
@@ -16,7 +16,7 @@ Market research for rare life sciences: a US desk-research tool for rare disease
 6. **Innovation**: the pipeline by US status on a connected track (Phase 1–2, Phase 3, FDA review, FDA approved; approved outside the US only; off-label), FDA decisions due and news for this disease, companies and organizations, and work beyond drugs (devices, diagnostics, registries).
 7. **Screener builder**: a step-by-step builder for a recruitment screener (see below).
 
-Everything follows the US health system: FDA approval status, ICD-10-CM codes, US population estimates against the Orphan Drug Act threshold (under 200,000), US payers, US specialist titles and US patient organizations. Data reviewed October 2026; approval status changes quickly, so verify before citing.
+Everything follows the US health system: FDA approval status, ICD-10-CM codes, US population estimates against the Orphan Drug Act threshold (under 200,000), US payers, US specialist titles and US patient organizations. Data reviewed October 2026, with November 2026 approvals and filings added from the news; approval status changes quickly, so verify before citing.
 
 ## Disease coverage
 

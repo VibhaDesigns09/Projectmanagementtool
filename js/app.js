@@ -820,7 +820,7 @@
     const c = counts(P), dev = c.F + c["3"] + c.early;
     const other = P.pipeline.filter(r => r[2] === "X" || r[2] === "O");
     const makers = P.companies.filter(x => x[0] !== "users"), orgs = P.companies.filter(x => x[0] === "users");
-    const N = window.NEWS || {}, news = (N.latest || []).filter(x => x.dz === P.name), watch = (N.watch || []).filter(x => x.dz === P.name);
+    const N = window.NEWS || {}, news = (N.latest || []).filter(x => x.dz === P.name), watch = upcomingWatch().filter(x => x.dz === P.name);
     return `${hero("Innovation", "What's coming next", `${c.A ? `${c.A} FDA-approved ${c.A === 1 ? "therapy" : "therapies"}` : "No FDA-approved therapy yet"}, ${dev} in development, and the companies and ideas behind them.`)}
       <section class="cc board"><header class="cch"><h3>Pipeline · US status</h3><span class="ccico">${ic("flask")}</span></header>
         <div class="pcols">${col("Phase 1–2", ["1", "2"], 0)}${col("Phase 3", ["3"], 1)}${col("FDA review", ["F"], 2)}${col("FDA approved", ["A"], 3)}</div>
@@ -961,12 +961,23 @@
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const fmtDate = d => { const [y, m, day] = String(d).split("-").map(Number); return day ? `${MONTHS[m - 1]} ${day}, ${y}` : `${MONTHS[m - 1]} ${y}`; };
   const NEWS_KIND = { approval: ["check", "FDA approval"], policy: ["landmark", "FDA policy"], payment: ["coins", "Medicare"], deal: ["building", "Industry"], screening: ["target", "Newborn screening"] };
+  const HOME_NEWS = 8, WATCH_PER_SLIDE = 5;
+  /* FDA decisions still ahead of today (the viewer's local date), soonest first; a month-only date counts until month end */
+  function upcomingWatch() {
+    const t = new Date(), p2 = n => String(n).padStart(2, "0"), today = `${t.getFullYear()}-${p2(t.getMonth() + 1)}-${p2(t.getDate())}`;
+    const due = w => (String(w.d).length === 7 ? w.d + "-31" : String(w.d));
+    return ((window.NEWS || {}).watch || []).filter(w => due(w) >= today).sort((a, b) => due(a) < due(b) ? -1 : due(a) > due(b) ? 1 : 0);
+  }
   function renderNews() {
     const N = window.NEWS; if (!N) return;
     const keyOf = name => (INDEX.find(x => x.name === name) || {}).key;
     const openBtn = (name, label) => { const k = name ? keyOf(name) : undefined; return k === undefined ? "" : `<button class="linkbtn" type="button" data-open="${k}">${esc(label)}${ic("chev")}</button>`; };
-    const total = N.latest.length + (N.watch.length ? 1 : 0);
-    const slides = N.latest.map((n, i) => {
+    const latest = (N.latest || []).slice(0, HOME_NEWS), W = upcomingWatch(), groups = [];
+    const per = matchMedia("(max-width:600px)").matches ? 3 : WATCH_PER_SLIDE;   /* phones: shorter cards that clear the dock */
+    for (let i = 0; i < W.length; i += per) groups.push(W.slice(i, i + per));
+    const total = latest.length + groups.length, yr = ", " + new Date().getFullYear();
+    const day = d => fmtDate(d).replace(/, \d{4}$/, ""), dayY = d => { const f = fmtDate(d); return f.endsWith(yr) ? f.slice(0, -yr.length) : f; };
+    const slides = latest.map((n, i) => {
       const [ki, kl] = NEWS_KIND[n.k] || ["file", "News"];
       return `<article class="slide" role="group" aria-roledescription="slide" aria-label="${i + 1} of ${total}">
         <div class="ntop"><span class="nkind ${esc(n.k)}">${ic(ki)}${kl}</span><time datetime="${esc(n.d)}">${fmtDate(n.d)}</time></div>
@@ -974,12 +985,12 @@
         <div class="nfoot"><a ${ext(n.u)}>${esc(n.src)}${ic("ext")}</a>${openBtn(n.dz, n.dz || "")}</div>
       </article>`;
     });
-    if (N.watch.length) slides.push(`<article class="slide" role="group" aria-roledescription="slide" aria-label="${total} of ${total}">
-        <div class="ntop"><span class="nkind watch">${ic("clock")}FDA decisions to watch</span><span class="count">Company-announced dates</span></div>
-        <ul class="watchlist">${N.watch.map(w => `<li><time datetime="${esc(w.d)}">${fmtDate(w.d).replace(/, \d{4}$/, "")}</time>
+    groups.forEach((G, g) => slides.push(`<article class="slide" role="group" aria-roledescription="slide" aria-label="${latest.length + g + 1} of ${total}">
+        <div class="ntop"><span class="nkind watch">${ic("clock")}FDA decisions to watch</span><span class="count">${G.length > 1 ? `${dayY(G[0].d)} – ${dayY(G[G.length - 1].d)}` : dayY(G[0].d)} · company-announced dates</span></div>
+        <ul class="watchlist">${G.map(w => `<li><time datetime="${esc(w.d)}" title="${esc(fmtDate(w.d))}">${day(w.d)}</time>
           <span><b>${esc(w.t)}</b><span class="wfor">${esc(w.co)} · ${esc(w.for)}</span></span>
           <span class="wlinks"><a ${ext(w.u)}>${esc(w.src)}${ic("ext")}</a>${openBtn(w.dz, "Profile")}</span></li>`).join("")}</ul>
-      </article>`);
+      </article>`));
     $("#newsNote").textContent = `US · updated ${fmtDate(N.asOf)} · swipe for more`;
     $("#newsSlides").innerHTML = slides.join("");
     $("#newsDots").innerHTML = slides.map((_, i) => `<button class="dotbtn" type="button" role="tab" aria-label="Headline ${i + 1} of ${total}" aria-selected="${i === 0}" data-slide="${i}"><span></span></button>`).join("");
