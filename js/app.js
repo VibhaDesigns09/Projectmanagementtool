@@ -27,6 +27,12 @@
     play: '<circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4Z"/>',
     pause: '<circle cx="12" cy="12" r="10"/><path d="M10 9v6M14 9v6"/>',
     tick: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    sliders: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+    stadium: '<ellipse cx="12" cy="8.5" rx="9" ry="4"/><path d="M3 8.5v6.5c0 2.2 4 4 9 4s9-1.8 9-4V8.5M7.5 12.2v4.6M12 12.6v5.4M16.5 12.2v4.6"/>',
+    arena: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M5.7 5.7c3.4 3.4 3.4 9.2 0 12.6M18.3 5.7c-3.4 3.4-3.4 9.2 0 12.6"/>',
+    plane: '<path d="M10.6 3.6 12 3l1.4.6v6.1l7.6 4.4v2.1l-7.6-2.3v4.4l2.1 1.6v1.6L12 20.6l-3.5.9v-1.6l2.1-1.6v-4.4L3 16.2v-2.1l7.6-4.4Z"/>',
+    bus: '<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 21v-3M16 21v-3M7.5 14.5h.01M16.5 14.5h.01M8 6.5h8"/>',
     network: '<circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M12 7.5v4M12 11.5 6.8 16.2M12 11.5l5.2 4.7"/>',
     file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h6"/>',
     alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/>',
@@ -317,13 +323,27 @@
     CUR = buildProfile(e);
     showPage(true); $("#topQ").value = "";
     $("#page").innerHTML = renderDisease(CUR, typed, also);
+    fitTabs();
     showTab(tab, arg);
     emit();
   }
+  /* Full tab labels when they fit, then short ones, then icons for the tabs that aren't open (wide layouts only) */
+  function fitTabs() {
+    const bar = $(".dzbar"), tabs = bar && bar.querySelector(".ptabs"); if (!tabs) return;
+    bar.classList.remove("short", "icons");
+    const fits = () => tabs.scrollWidth <= tabs.clientWidth + 1;
+    if (fits()) return;
+    bar.classList.add("short");
+    if (fits() || innerWidth <= 860) return;
+    bar.classList.add("icons");
+  }
+  let fitQueued = 0;
+  addEventListener("resize", () => { if (!fitQueued) fitQueued = requestAnimationFrame(() => { fitQueued = 0; fitTabs(); }); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitTabs());
 
   /* ===================== DISEASE PAGE =====================
-     Tab bar like the reference: the name in a notch with a close button, icon pills on the right.
-     Under it one canvas: the key numbers, then the open tab. Each tab fits one screen. */
+     Borrowed from the reference: a charcoal band with the name in a notch and icon pills, a warm light canvas,
+     white cards, thin connector lines and lime markers. Every tab opens with a friendly title; pages scroll. */
   const FEEL = f => f >= 4 ? ["happy", "var(--good)"] : f === 3 ? ["neutral", "var(--mid)"] : ["sad", "var(--bad)"];
   const counts = P => {
     const c = { A: 0, F: 0, "3": 0, early: 0, X: 0, O: 0 };
@@ -332,11 +352,13 @@
   };
   const shortName = n => String(n).replace(/ \(.*\)$/, "");
   const chipName = n => String(n).replace(/\s*\([^)]*\)/g, "").trim();
-  const PTABS = [["about", "About", "book"], ["journey", "Causes & journey", "route"], ["patients", "US patients", "users"],
-    ["stakeholders", "Stakeholder map", "network"], ["gaps", "Gaps & needs", "alert"], ["innovation", "Innovation", "flask"], ["screener", "Screener builder", "clipboard"]];
+  /* [id, label, icon, short label for narrower screens] */
+  const PTABS = [["about", "About", "book", "About"], ["journey", "Causes & journey", "route", "Journey"], ["patients", "US patients", "users", "Patients"],
+    ["stakeholders", "Stakeholder map", "network", "Stakeholders"], ["gaps", "Gaps & needs", "alert", "Gaps"], ["innovation", "Innovation", "flask", "Innovation"], ["screener", "Screener builder", "clipboard", "Screener"]];
   const TAB_ALIAS = { people: "stakeholders", certs: "stakeholders", map: "stakeholders", access: "stakeholders", causes: "journey",
     numbers: "patients", us: "patients", needs: "gaps", pipeline: "innovation", companies: "innovation" };
   const AGE_LABEL = { older: ["Older adults", "Mostly diagnosed after 60"], adult: ["Adults", "Mostly working-age adults"], peds: ["Children", "Usually starts in childhood"] };
+  const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* US estimate as numbers: lo–hi, what is counted, where the figure comes from */
   const POP_US = 335e6;
@@ -363,14 +385,80 @@
       source: e.source === "calc" ? "Calculated from " + P.prevalence : cited && !/^estimat/i.test(cited) ? "Source: " + cited : "Published estimate",
     };
   }
+  const oneIn = E => {
+    if (E.kind !== "people" || E.lo == null) return "";
+    const r = n => { const v = POP_US / n; const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(v)) - 1)); return (Math.round(v / p) * p).toLocaleString("en-US"); };
+    const a = r(E.hi), b = r(E.lo);
+    return a === b ? a : a + "–" + b;
+  };
+
+  /* Plain-English pop-ups for jargon: the first use on each tab gets a dotted underline and a definition */
+  const GLOSS = [
+    ["Orphan Drug Act", "A 1983 US law that rewards companies for developing drugs for diseases affecting fewer than 200,000 Americans."],
+    ["RUSP", "Recommended Uniform Screening Panel: the federal list of conditions newborns should be screened for. Each state decides what it actually tests."],
+    ["ICD-10-CM", "The US code set used to label diagnoses on medical claims."],
+    ["Part D", "Medicare's coverage for drugs filled at a pharmacy."],
+    ["Part B", "Medicare's medical coverage, including drugs given in a clinic or infusion center."],
+    ["Medicare Advantage", "Private plans that deliver Medicare benefits, often with extra rules such as prior authorization."],
+    ["Medicaid", "Public health coverage for people with low incomes, run by each state."],
+    ["CHIP", "Children's Health Insurance Program: low-cost coverage for kids whose families earn too much for Medicaid."],
+    ["PBMs", "Pharmacy benefit managers: companies that run a health plan's drug coverage and negotiate prices."],
+    ["PBM", "Pharmacy benefit manager: the company that runs a health plan's drug coverage and negotiates prices."],
+    ["prior auth", "Prior authorization: approval a health plan requires before it pays for a test or treatment."],
+    ["Prior auth", "Prior authorization: approval a health plan requires before it pays for a test or treatment."],
+    ["step therapy", "A plan rule that patients try a cheaper drug first before it pays for a pricier one."],
+    ["Step therapy", "A plan rule that patients try a cheaper drug first before it pays for a pricier one."],
+    ["specialty tier", "The most expensive drug tier in a plan, usually with the highest patient cost."],
+    ["ICER", "Institute for Clinical and Economic Review: an independent group that judges whether a drug's price matches its benefit."],
+    ["CMS", "Centers for Medicare & Medicaid Services: the federal agency that runs Medicare and oversees Medicaid."],
+    ["ABMS", "American Board of Medical Specialties: the umbrella for US doctors' board certifications."],
+    ["ABIM", "American Board of Internal Medicine: certifies internists and specialists such as pulmonologists and cardiologists."],
+    ["CLIA", "Clinical Laboratory Improvement Amendments: the federal certificate every US lab testing human samples needs."],
+    ["ESRD", "End-stage renal disease: kidney failure that needs dialysis or a transplant."],
+    ["SSDI", "Social Security Disability Insurance."],
+    ["REMS", "Risk Evaluation and Mitigation Strategy: extra FDA safety rules for some drugs."],
+    ["HSCT", "Hematopoietic stem cell transplant, also called a bone marrow transplant."],
+    ["340B", "A federal program that lets certain hospitals and clinics buy drugs at a discount."],
+    ["copay cards", "Manufacturer coupons that lower what a patient pays at the pharmacy; not allowed for Medicare or Medicaid patients."],
+    ["hub", "A manufacturer-funded service that helps patients with insurance paperwork, copay help and shipping."],
+    ["FDA", "Food and Drug Administration: the US agency that approves drugs and devices."],
+  ];
+  function gl(text, seen) {
+    let h = esc(text);
+    const spans = [];
+    for (const [term, tip] of GLOSS) {
+      if (seen && seen.has(term.toLowerCase())) continue;
+      const re = new RegExp("(^|[^\\w-])(" + term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")(?![\\w-])");
+      const m = h.match(re); if (!m) continue;
+      spans.push(`<span class="gl" tabindex="0" data-tip="${esc(tip)}">${m[2]}</span>`);
+      h = h.replace(re, `$1\u0000${spans.length - 1}\u0000`);
+      if (seen) seen.add(term.toLowerCase());
+    }
+    return h.replace(/\u0000(\d+)\u0000/g, (_, k) => spans[+k]);
+  }
+  /* keep a jargon pop-up on screen: nudge it sideways near the edges, and show it below the term near the top */
+  function placeTip(g) {
+    const r = g.getBoundingClientRect(), w = Math.min(280, innerWidth * 0.8), mid = r.left + r.width / 2;
+    const left = Math.max(12, Math.min(innerWidth - 12 - w, mid - w / 2));
+    g.style.setProperty("--shift", Math.round(left - (mid - w / 2)) + "px");
+    g.classList.toggle("below", r.top < 200);
+  }
+  for (const ev of ["mouseover", "focusin"]) document.addEventListener(ev, e => { const g = e.target.closest && e.target.closest(".gl"); if (g) placeTip(g); });
+  const jargonCard = seen => {
+    const L = GLOSS.filter(([t], i) => seen.has(t.toLowerCase()) && GLOSS.findIndex(g => g[1] === GLOSS[i][1]) === i);
+    return L.length ? `<section class="cc jargon"><header class="cch"><h3>${ic("bulb")}Jargon buster</h3><span class="count">Terms on this page</span></header>
+      <dl>${L.map(([t, d]) => `<div><dt>${esc(t)}</dt><dd>${esc(d)}</dd></div>`).join("")}</dl></section>` : "";
+  };
+  const hero = (kicker, title, intro) => `<header class="phero"><span class="kicker">${kicker}</span><h2>${title}</h2>${intro ? `<p>${intro}</p>` : ""}</header>`;
+  const secth = (icon, title, extra = "") => `<div class="secth"><h3 class="secttl"><span class="sico2">${ic(icon)}</span>${title}</h3>${extra}</div>`;
 
   function renderDisease(P, typed, also) {
     return `<div class="dz">
-      <header class="dzbar">
+      <header class="dzbar"><div class="dzin">
         <div class="notch"><button class="xbtn" type="button" data-act="home" aria-label="Close ${esc(P.name)} and go home" title="Home">${ic("close")}</button>
           <h1 class="${P.name.length > 34 ? "xlong" : P.name.length > 22 ? "long" : ""}" title="${esc(P.name)}">${esc(P.name)}</h1></div>
-        <nav class="ptabs" role="tablist" aria-label="${esc(P.name)}">${PTABS.map(([id, l, i]) => `<button class="ptab" type="button" role="tab" id="t-${id}" data-ptab="${id}" aria-controls="pane" aria-selected="false" tabindex="-1">${ic(i)}<span>${l}</span></button>`).join("")}</nav>
-      </header>
+        <nav class="ptabs" role="tablist" aria-label="${esc(P.name)}">${PTABS.map(([id, l, i, sh]) => `<button class="ptab" type="button" role="tab" id="t-${id}" data-ptab="${id}" aria-controls="pane" aria-selected="false" tabindex="-1" title="${l}">${ic(i)}<span class="lf">${l}</span><span class="ls">${sh}</span></button>`).join("")}</nav>
+      </div></header>
       <div class="canvas">
         ${typed || also.length ? `<div class="match">${typed ? `${ic("search")}<span>Showing <b>${esc(P.name)}</b> for “${esc(typed)}”</span>` : ""}${also.length ? `<span class="eyebrow">Also matching</span>${also.map(it => `<button class="chip" type="button" data-open="${it.key}">${esc(it.name)}</button>`).join("")}` : ""}</div>` : ""}
         ${vitals(P)}
@@ -378,12 +466,12 @@
       </div>
     </div>`;
   }
-  /* Key numbers under the tab bar (like the vitals row in the reference) */
+  /* Key numbers under the tab band, like the patient card and vitals in the reference */
   function vitals(P) {
     const c = counts(P), E = estInfo(P), dev = c.F + c["3"] + c.early, major = P.gaps.filter(g => g[3] === "high").length;
     const v = (label, val, unit = "", title = "") => `<div class="vit"${title ? ` title="${esc(title)}"` : ""}><span>${label}</span><b>${val}${unit ? `<small>${unit}</small>` : ""}</b></div>`;
     return `<div class="vitals">
-      <div class="vit vcat"><span>Category</span><b>${ic(P.catIcon)}${esc(P.catLabel)}</b></div>
+      <div class="idcard"><span class="idico">${ic(P.catIcon)}</span><div><small>Category</small><b>${esc(P.catLabel)}</b></div></div>
       ${v("US patients", esc(E.short), E.short === "n/a" || E.short === "Ultra-rare" ? "" : E.unit, E.big + " " + E.label)}
       ${v("Typical onset", esc((AGE_LABEL[P.age] || AGE_LABEL.adult)[0]))}
       ${v("FDA-approved", c.A, c.A === 1 ? "therapy" : "therapies")}
@@ -393,8 +481,21 @@
   }
 
   /* ---------- Tab 1: About ---------- */
+  function factsFor(P) {
+    const E = estInfo(P), c = counts(P), dev = c.F + c["3"] + c.early, F = [], ratio = oneIn(E);
+    if (ratio) F.push(`About <mark>1 in ${ratio}</mark> Americans has ${esc(P.name)}.`);
+    if (P.orphan) F.push({ rare: `That makes it <mark>rare under US law</mark>: fewer than 200,000 people.`, above: `That's <mark>above the 200,000 line</mark> US law uses to call a disease rare.`, border: `That's <mark>right around the 200,000 line</mark> US law uses to call a disease rare.`, common: `It's <mark>common</mark> in the US, not rare.` }[P.orphan.level]);
+    const slow = P.stages.slice(0, 3).find(s => /year/i.test(s.t));
+    if (slow) F.push(`The ${esc(slow.n.toLowerCase())} stage alone can take <mark>${esc(slow.t.toLowerCase())}</mark>.`);
+    const low = P.stages.reduce((m, s) => s.f < m.f ? s : m, P.stages[0]);
+    if (low && low.q) F.push(`Patients find ${esc(low.n.toLowerCase())} the hardest stage: <mark>${esc(low.q)}</mark>`);
+    F.push(c.A ? `<mark>${c.A} FDA-approved ${c.A === 1 ? "therapy" : "therapies"}</mark> so far${dev ? `, and ${dev} more in development` : ""}.` : `There's <mark>no FDA-approved therapy</mark> yet${dev ? `; ${dev} ${dev === 1 ? "is" : "are"} in development` : ""}.`);
+    F.push(`<mark>${P.stakeholders.length} kinds of people</mark> help a patient along the way.`);
+    if (P.nbs.level !== "none") F.push(`Newborn screening: <mark>${esc(P.nbs.text)}</mark>.`);
+    return F;
+  }
   function aboutPane(P) {
-    const A = AGE_LABEL[P.age] || AGE_LABEL.adult, E = estInfo(P);
+    const A = AGE_LABEL[P.age] || AGE_LABEL.adult, E = estInfo(P), seen = new Set(), F = factsFor(P);
     const facts = [
       ["users", "Who gets it", `${A[1]} · ${E.big} ${E.label}`],
       ["scan", "How it's diagnosed", P.dx],
@@ -402,19 +503,32 @@
       ["steth", "Who treats it", P.specialists.join(" · ")],
       ["file", "Also known as", [P.aka, P.icd ? "ICD-10-CM " + P.icd : ""].filter(Boolean).join(" · ")],
     ].filter(f => f[2]);
-    return `<div class="about">
-      <section class="cc brief">
-        <header class="cch"><h2>In brief</h2><span class="ccico">${ic(P.catIcon)}</span></header>
-        <p class="lead">${esc(P.what)}</p>
-        <ul class="facts">${facts.map(([i, k, v], n) => `<li style="--k:${n}"><span class="fico">${ic(i)}</span><div><em>${k}</em><span>${esc(v)}</span></div></li>`).join("")}</ul>
-      </section>
-      <div class="aside">
-        <section class="cc"><header class="cch"><h2>Read</h2><span class="ccico">${ic("book")}</span></header>
-          <ul class="rlist">${P.read.map(([i, t, s, u]) => `<li><a ${ext(u)}><span class="rico">${ic(i)}</span><span class="rt">${esc(t)}<small>${esc(s)}</small></span>${ic("ext", "rgo")}</a></li>`).join("")}</ul></section>
-        <section class="cc"><header class="cch"><h2>Watch</h2><span class="ccico">${ic("play")}</span></header>
-          <div class="videos">${P.watch.map(([t, s, u]) => `<a class="vid" ${ext(u)}>${ic("play")}<span>${esc(t)}<small>${esc(s)}</small></span></a>`).join("")}</div></section>
+    return `${hero("About", `Meet ${esc(P.name)}`, "")}
+      <div class="about">
+        <div class="aboutmain">
+          <p class="lead">${esc(P.what)}</p>
+          <ul class="facts">${facts.map(([i, k, v], n) => `<li style="--k:${n}"><span class="fico">${ic(i)}</span><div><em>${k}</em><span>${gl(v, seen)}</span></div></li>`).join("")}</ul>
+        </div>
+        <aside class="dyk" aria-roledescription="carousel" aria-label="Did you know?">
+          <header><span class="dykl">${ic("bulb")}Did you know?</span><span class="dykn" id="dykN">1 / ${F.length}</span></header>
+          <p class="dykt" id="dykT" aria-live="polite">${F[0]}</p>
+          <footer><span class="dykdots" aria-hidden="true">${F.map((_, k) => `<i class="${k ? "" : "on"}"></i>`).join("")}</span><button class="dyknext" type="button" data-dyk>Next fact${ic("arrow")}</button></footer>
+        </aside>
       </div>
-    </div>`;
+      <section class="sect">${secth("book", "Read more")}
+        <div class="readgrid">${P.read.map(([i, t, s, u]) => `<a class="rcard" ${ext(u)}><span class="rico">${ic(i)}</span><span class="rct"><b>${esc(t)}</b><small>${esc(s)}</small></span>${ic("ext", "rgo")}</a>`).join("")}</div></section>
+      <section class="sect">${secth("play", "Watch")}
+        <div class="videos">${P.watch.map(([t, s, u]) => `<a class="vid" ${ext(u)}><span class="vplay">${ic("play")}</span><span>${esc(t)}<small>${esc(s)}</small></span></a>`).join("")}</div></section>`;
+  }
+  let dykI = 0;
+  function dykNext() {
+    const t = $("#dykT"); if (!t || !CUR) return;
+    const F = factsFor(CUR);
+    dykI = (dykI + 1) % F.length;
+    t.classList.remove("swap"); void t.offsetWidth; t.classList.add("swap");
+    t.innerHTML = F[dykI];
+    $("#dykN").textContent = `${dykI + 1} / ${F.length}`;
+    document.querySelectorAll(".dykdots i").forEach((d, k) => d.classList.toggle("on", k === dykI));
   }
 
   /* ---------- Tab 2: Causes & patient journey ---------- */
@@ -433,47 +547,61 @@
   }
   function journeyPane(P) {
     const S = P.stages, n = S.length;
-    return `<div class="jr">
-      <section class="cc causes"><span class="cl">${ic("dna")}Usual causes</span><div class="cchips">${causeChips(P).map((c, k) => `<span class="cchip" style="--k:${k}">${esc(c)}</span>`).join("")}</div></section>
-      <section class="cc tlc">
-        <header class="cch"><h2>Patient journey</h2><span class="count" id="storyCount">Stage 1 of ${n}</span>
-          <button class="tog" id="storyToggle" type="button" data-story="toggle" aria-label="Pause the journey">${ic("pause")}</button></header>
-        <div class="tl intro" id="story" style="--n:${n}">
-          <div class="rail" aria-hidden="true"><i class="railfill"></i></div>
-          ${S.map((s, i) => { const [face, col] = FEEL(s.f); return `<button class="mk" type="button" data-story="go" data-i="${i}" style="--i:${i};--fc:${col}" aria-label="Stage ${i + 1} of ${n}: ${esc(s.n)}">${ic(s.i)}<span class="mface">${ic(face)}</span></button>`; }).join("")}
-          ${S.map((s, i) => stageCard(P, s, i)).join("")}
+    const stops = S.map((s, i) => `${FEEL(s.f)[1]} ${n > 1 ? (i / (n - 1) * 100).toFixed(1) : 0}%`).join(",");
+    return `${hero("Causes & journey", "How it starts, how it unfolds", "The usual causes first, then the road a patient travels, stage by stage. Press play or pick a stage; scroll sideways for the rest.")}
+      <section class="sect">${secth("dna", "Usual causes")}
+        <div class="cchips">${causeChips(P).map((c, k) => `<span class="cchip" style="--k:${k}">${esc(c)}</span>`).join("")}</div></section>
+      <section class="sect">
+        ${secth("route", "The patient journey", `<span class="count" id="storyCount">Stage 1 of ${n}</span>
+          <button class="tog" id="storyToggle" type="button" data-story="toggle" aria-label="Pause the journey">${ic("pause")}</button>
+          <button class="tog" type="button" data-jnav="-1" aria-label="Scroll the journey back">${ic("chev", "flip")}</button><button class="tog" type="button" data-jnav="1" aria-label="Scroll the journey on">${ic("chev")}</button>`)}
+        <div class="jscroll" id="jscroll">
+          <div class="tl intro" id="story" style="--n:${n};--grad:linear-gradient(90deg,${stops})">
+            <div class="rail" aria-hidden="true"><i class="railc"><i class="railveil"></i></i></div>
+            ${S.map((s, i) => `<div class="jcol" style="--i:${i}">
+              <span class="jwhen"><b>Stage ${i + 1}</b><span>${esc(s.t)}</span></span>
+              <button class="mk" type="button" data-story="go" data-i="${i}" style="--fc:${FEEL(s.f)[1]}" aria-label="Stage ${i + 1} of ${n}: ${esc(s.n)}">${ic(s.i)}<span class="mface">${ic(FEEL(s.f)[0])}</span></button>
+              <i class="stem" aria-hidden="true"></i>
+              ${stageCard(P, s, i)}
+            </div>`).join("")}
+            <div class="jend"><button class="jplus" type="button" data-askjourney aria-label="Ask the assistant about this journey" title="Ask the assistant about this journey">${ic("plus")}</button></div>
+          </div>
         </div>
         <p class="sr" id="storyLive" aria-live="polite"></p>
-      </section>
-    </div>`;
+      </section>`;
   }
   function stageCard(P, s, i) {
     const [face, col] = FEEL(s.f);
     const who = P.stakeholders.filter(r => r[0] !== "patient" && /[LS]/.test(r[3][i] || "")).sort((a, b) => (a[3][i] === "L" ? 0 : 1) - (b[3][i] === "L" ? 0 : 1));
-    return `<article class="scard" data-story="go" data-i="${i}" style="--i:${i};--fc:${col}">
-      <i class="stem" aria-hidden="true"></i>
-      <header><b>${esc(s.n)}</b><span class="stime">${ic("clock")}${esc(s.t)}</span></header>
-      <div class="sfeel">${ic(face)}<span>${esc(s.w)}</span><span class="meter" title="Feeling ${s.f} of 5">${[1, 2, 3, 4, 5].map(k => `<i class="${k <= s.f ? "on" : ""}"></i>`).join("")}</span></div>
-      <p class="swhat">${esc(s.d.join(" · "))}</p>
-      <p class="spain">${ic("alert")}<span>${esc(s.p)}</span></p>
-      <div class="swho">${who.slice(0, 3).map(r => `<button class="wchip ${r[3][i]} g-${r[0]}" type="button" data-person="${esc(r[1])}" title="${esc(r[1])} ${r[3][i] === "L" ? "leads" : "supports"} here: ${esc(r[4])}. Open in the stakeholder map."><span class="wi">${ic(r[2])}</span><span>${esc(chipName(r[1]))}</span></button>`).join("")}${who.length > 3 ? `<button class="wmore" type="button" data-ptab="stakeholders" aria-label="${who.length - 3} more: open the stakeholder map">+${who.length - 3}</button>` : ""}</div>
+    return `<article class="scard" data-story="go" data-i="${i}" style="--fc:${col}">
+      <header><b>${esc(s.n)}</b><span class="sfeel">${ic(face)}${esc(s.w)}<span class="meter" title="Feeling ${s.f} of 5">${[1, 2, 3, 4, 5].map(k => `<i class="${k <= s.f ? "on" : ""}"></i>`).join("")}</span></span></header>
+      ${s.q ? `<p class="squote">${esc(s.q)}</p>` : ""}
+      <ul class="swhat">${s.d.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+      <p class="spain">${ic("alert")}<span><b>Pain point</b>${esc(s.p)}</span></p>
+      ${who.length ? `<div class="swho"><span class="swl">Who's involved</span>${who.slice(0, 4).map(r => `<button class="wchip ${r[3][i]} g-${r[0]}" type="button" data-person="${esc(r[1])}" title="${esc(r[1])} ${r[3][i] === "L" ? "leads" : "supports"} here: ${esc(r[4])}. Open in the stakeholder map."><span class="wi">${ic(r[2])}</span><span>${esc(chipName(r[1]))}</span></button>`).join("")}${who.length > 4 ? `<button class="wmore" type="button" data-ptab="stakeholders" aria-label="${who.length - 4} more: open the stakeholder map">+${who.length - 4}</button>` : ""}</div>` : ""}
     </article>`;
   }
 
-  /* The story: stage by stage, about every 3 seconds; the line fills, passed stages show how the patient felt */
+  /* The story: stage by stage, about every 3 seconds; the line lights up, passed stages show how the patient felt */
   const STORY_START = 1200, STORY_STEP = 3000;
   const story = { i: 0, n: 0, playing: false, timer: 0 };
-  const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
-  function storyShow(i, user = false) {
+  function storyShow(i, user = false, follow = true) {
     const root = $("#story"); if (!root || !CUR) return;
     const S = CUR.stages, n = S.length;
     i = Math.max(0, Math.min(n - 1, i));
     story.i = i; story.n = n;
     root.querySelectorAll(".mk").forEach((b, k) => { b.classList.toggle("done", k <= i); b.classList.toggle("on", k === i); if (k === i) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current"); });
     root.querySelectorAll(".scard").forEach((c, k) => { c.classList.toggle("done", k < i); c.classList.toggle("on", k === i); });
-    root.querySelector(".railfill").style.width = n > 1 ? (i / (n - 1) * 100) + "%" : "0";
+    root.style.setProperty("--p", (n > 1 ? i / (n - 1) * 100 : 0) + "%");
     $("#storyCount").textContent = `Stage ${i + 1} of ${n}`;
     if (user) { const s = S[i]; $("#storyLive").textContent = `Stage ${i + 1} of ${n}: ${s.n}. ${s.w}. ${s.d.join(", ")}. Pain point: ${s.p}.`; }
+    /* keep the current stage in view inside the sideways scroller */
+    const sc = $("#jscroll"), col = root.querySelectorAll(".jcol")[i];
+    if (follow && sc && col) {
+      const cr = col.getBoundingClientRect(), sr = sc.getBoundingClientRect(), pad = parseFloat(getComputedStyle(sc).paddingLeft) || 0;
+      if (cr.left < sr.left + pad - 1 || cr.right > sr.right - pad + 1)
+        sc.scrollTo({ left: Math.max(0, sc.scrollLeft + cr.left - sr.left - pad), behavior: calm() ? "auto" : "smooth" });
+    }
     storyToggle();
   }
   function storyToggle() {
@@ -494,16 +622,31 @@
   function storyMount() {
     storyStop();
     if (!$("#story")) return;
-    storyShow(0);
+    storyShow(0, false, false);
     story.playing = !calm();                    // reduced motion: no autoplay, press play to step through
     storyQueue(STORY_START + STORY_STEP);
+    const sc = $("#jscroll"), hold = () => { if (story.playing) storyPause(); };   // the reader takes over when they scroll the timeline
+    sc.addEventListener("wheel", e => { if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) hold(); }, { passive: true });
+    sc.addEventListener("touchstart", hold, { passive: true });
   }
 
   /* ---------- Tab 3: US patients ---------- */
+  const UNITS = [["stadium", "NFL stadiums", 70000, "NFL stadium (about 70,000 seats)"], ["arena", "basketball arenas", 19000, "basketball arena (about 19,000 seats)"],
+    ["plane", "jumbo jets", 400, "jumbo jet (about 400 seats)"], ["bus", "school buses", 70, "school bus (about 70 seats)"]];
+  function compare(E) {
+    if (E.lo == null || E.kind === "none") return null;
+    const u = UNITS.find(x => E.lo / x[2] >= 2) || UNITS[UNITS.length - 1];
+    const a = Math.max(1, Math.round(E.lo / u[2])), b = Math.max(1, Math.round((E.hi || E.lo) / u[2]));
+    const n = a === b ? fmt(a) : `${fmt(a)}–${fmt(b)}`;
+    const text = E.kind === "births" ? `Each year, enough newborns to fill about <b>${n}</b> ${u[1]}.` : E.kind === "incidence" ? `Each year, enough new patients to fill about <b>${n}</b> ${u[1]}.` : `Enough people to fill about <b>${n}</b> ${u[1]}.`;
+    const range = x => { const p = Math.round(E.lo / x[2]), q = Math.round((E.hi || E.lo) / x[2]); return p === q ? fmt(p) : `${fmt(p)}–${fmt(q)}`; };
+    const alt = UNITS.filter(x => x !== u && E.lo / x[2] >= 1).slice(0, 2).map(x => ({ icon: x[0], n: range(x), label: x[1] }));
+    return { icon: u[0], a, b, text, one: u[3], alt };
+  }
+  const fmt = n => Number(n).toLocaleString("en-US");
   function patientsPane(P) {
-    const E = estInfo(P), A = AGE_LABEL[P.age] || AGE_LABEL.adult;
-    const people = E.kind === "people" && E.lo != null;
-    const ratio = people ? (() => { const r = n => { const v = POP_US / n; const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(v)) - 1)); return (Math.round(v / p) * p).toLocaleString("en-US"); }; const a = r(E.hi), b = r(E.lo); return "≈ 1 in " + (a === b ? a : a + "–" + b) + " Americans"; })() : "";
+    const E = estInfo(P), A = AGE_LABEL[P.age] || AGE_LABEL.adult, seen = new Set();
+    const people = E.kind === "people" && E.lo != null, ratio = oneIn(E), cmp = compare(E);
     /* log scale from 100 people up to at least 1 million */
     const top = Math.max(6, Math.ceil(Math.log10(Math.max(E.hi || 1, 1e6))));
     const pos = n => Math.max(0, Math.min(100, (Math.log10(Math.max(n, 100)) - 2) / (top - 2) * 100));
@@ -513,23 +656,29 @@
     const verdict = !P.orphan ? (E.kind === "births" || E.kind === "incidence" ? `Only new cases are counted (${E.big} ${E.label}), so the living total isn't shown.` : "Not enough data to compare.")
       : { rare: "Rare by US law: under 200,000 people", above: "Above the 200,000 orphan threshold", border: "Near the 200,000 orphan threshold", common: "Common, not rare in the US" }[P.orphan.level];
     const nbsShort = { core: "On the RUSP", secondary: "RUSP secondary", state: "Some states", none: "Not screened" }[P.nbs.level];
-    const stat = (icon, label, val, sub) => `<section class="cc ustat"><span class="ccico">${ic(icon)}</span><em>${label}</em><b>${esc(val)}</b><span>${esc(sub)}</span></section>`;
-    return `<div class="usp">
+    const stat = (icon, label, val, sub) => `<section class="cc ustat"><span class="ccico">${ic(icon)}</span><em>${label}</em><b>${esc(val)}</b><span>${gl(sub, seen)}</span></section>`;
+    const intro = people ? `${esc(E.big)} ${esc(E.label)}${ratio ? `: about 1 in ${ratio} Americans` : ""}.` : `${esc(E.big)} ${esc(E.label)}.`;
+    const body = `<div class="usp">
       <section class="cc usbig">
-        <header class="cch"><h2>Estimated US patients</h2><span class="ccico">${ic("users")}</span></header>
+        <span class="bigl">${ic("users")}Estimated US patients</span>
         <div class="bignum"${people ? ` data-lo="${E.lo}" data-hi="${E.hi}"` : ""}>${esc(E.big)}</div>
         <p class="bigsub">${esc(E.label)}</p>
-        ${ratio ? `<p class="ratio">${ratio}</p>` : ""}
+        ${ratio ? `<p class="ratio">≈ 1 in ${ratio} Americans</p>` : ""}
         <p class="src">${ic("file")}<span>${esc(E.source)}</span></p>
       </section>
+      ${cmp ? `<section class="cc uscmp"><span class="bigl">${ic("target")}Picture it</span>
+        <p class="cmpt">${cmp.text}</p>
+        <div class="cmpicons" aria-hidden="true">${Array.from({ length: Math.min(cmp.b, 24) }, (_, k) => `<i class="${k < cmp.a ? "" : "maybe"}" style="--k:${k}">${ic(cmp.icon)}</i>`).join("")}${cmp.b > 24 ? `<span>+${fmt(cmp.b - 24)}</span>` : ""}</div>
+        <p class="cmpkey"><i class="sw"></i>One ${esc(cmp.one)}${cmp.b > cmp.a ? `<i class="sw maybe"></i>Top of the estimate` : ""}</p>
+        ${cmp.alt.length ? `<div class="cmpalt"><span>Or picture</span>${cmp.alt.map(x => `<b>${ic(x.icon)}${x.n} ${x.label}</b>`).join("")}</div>` : ""}</section>` : ""}
       <section class="cc usgauge">
-        <header class="cch"><h2>Rare by US law?</h2><span class="ccico">${ic("scale")}</span></header>
+        <header class="cch"><h3>Rare by US law?</h3><span class="ccico">${ic("scale")}</span></header>
         <div class="gauge">
           <div class="gtrack">${lo != null ? `<i class="grange" style="--a:${pos(lo)}%;--b:${pos(hi)}%"></i>` : ""}<i class="gthr" style="--x:${pos(2e5)}%"><span>200,000</span></i></div>
           <div class="gticks">${ticks.map(t => `<span style="--x:${pos(t)}%">${tick(t)}</span>`).join("")}</div>
         </div>
         <p class="verdict ${P.orphan ? P.orphan.level : "none"}">${esc(verdict)}</p>
-        <p class="fine">The Orphan Drug Act covers diseases affecting fewer than 200,000 people in the US: 7 years of market exclusivity, tax credits and FDA fee waivers. Log scale.</p>
+        <p class="fine">${gl("The Orphan Drug Act covers diseases affecting fewer than 200,000 people in the US: 7 years of market exclusivity, tax credits and FDA fee waivers. Log scale.", seen)}</p>
       </section>
       <div class="usstats">
         ${stat("user", "Typical onset", A[0], A[1])}
@@ -537,15 +686,16 @@
         ${stat("coins", "Who pays most", P.payer[0], P.payer[1])}
         ${stat("file", "ICD-10-CM", P.icd || "Not listed", "Confirm the billable code")}
       </div>
-      <section class="cc usnet"><header class="cch"><h2>Where patients are treated</h2><span class="ccico">${ic("hospital")}</span></header>
+      <section class="cc usnet"><header class="cch"><h3>Where patients are treated</h3><span class="ccico">${ic("hospital")}</span></header>
         <ul class="rlist">${P.networks.map(nw => `<li><a ${ext(nw[2])}><span class="rico">${ic("hospital")}</span><span class="rt">${esc(nw[0])}<small>${esc(nw[1])}</small></span>${ic("ext", "rgo")}</a></li>`).join("")}</ul></section>
-      <section class="cc usfacts"><header class="cch"><h2>US rules that shape care</h2><span class="ccico">${ic("landmark")}</span></header>
-        <ul class="factlist">${P.facts.map(f => `<li>${ic("check")}<span>${esc(f)}</span></li>`).join("")}</ul></section>
+      <section class="cc usfacts"><header class="cch"><h3>US rules that shape care</h3><span class="ccico">${ic("landmark")}</span></header>
+        <ul class="factlist">${P.facts.map(f => `<li>${ic("check")}<span>${gl(f, seen)}</span></li>`).join("")}</ul></section>
     </div>`;
+    return `${hero("US patients", "How many Americans live with it", intro)}${body}${jargonCard(seen)}`;
   }
   function countUp() {
     const el = $("#pane .bignum[data-lo]"); if (!el || calm()) return;
-    const lo = +el.dataset.lo, hi = +el.dataset.hi, final = el.textContent, t0 = performance.now(), D = 900;
+    const lo = +el.dataset.lo, hi = +el.dataset.hi, final = el.textContent, t0 = performance.now(), D = 1100;
     const f = n => n >= 1e6 ? (n / 1e6).toLocaleString("en-US", { maximumFractionDigits: 1 }) + " million" : Math.round(n).toLocaleString("en-US");
     const step = t => {
       if (!el.isConnected) return;
@@ -561,16 +711,18 @@
   const GORDER = { patient: 0, care: 1, dx: 2, sys: 3 };
   const stageList = (P, map, ch) => [...map].map((c, i) => c === ch ? P.stages[i].n : null).filter(Boolean);
   const mapRows = P => [...P.stakeholders].sort((a, b) => GORDER[a[0]] - GORDER[b[0]]);
+  const filterLead = `<span class="pfilt" aria-hidden="true">${ic("sliders")}</span>`;
   function mapPane(P) {
     const rows = mapRows(P), n = P.stages.length;
     const cnt = g => rows.filter(r => r[0] === g).length;
     const filters = [["all", "All", rows.length], ["care", "Care team", cnt("care")], ["dx", "Diagnostics", cnt("dx")], ["sys", "System & industry", cnt("sys")], ["access", "Access & payers", P.access.length]].filter(f => f[2]);
-    return `<div class="smap">
-      <div class="pills" role="group" aria-label="Show">${filters.map(([id, l, c], k) => `<button class="pill2" type="button" data-sf="${id}" aria-pressed="${k === 0}">${l}<span>${c}</span></button>`).join("")}</div>
+    return `${hero("Stakeholder map", "Who's in the room", `${rows.length} kinds of people touch a patient's care. Here's when each one steps in, and the US license or certification they need.`)}
+      <div class="smap">
+      <div class="pills" role="group" aria-label="Show">${filterLead}${filters.map(([id, l, c], k) => `<button class="pill2" type="button" data-sf="${id}" aria-pressed="${k === 0}">${l}<span>${c}</span></button>`).join("")}</div>
       <div class="smbody">
         <section class="cc smgrid" id="smGrid">
           <div class="mg${rows.length > 14 ? " dense" : ""}" style="--n:${n}">
-            <div class="mgh"><span>Stakeholder</span>${P.stages.map(s => `<span title="${esc(s.n)}">${esc(s.n)}</span>`).join("")}</div>
+            <div class="mgh"><span>Stakeholder</span>${P.stages.map((s, i) => `<span title="Stage ${i + 1}: ${esc(s.n)}"><i class="mnum">${i + 1}</i></span>`).join("")}</div>
             ${rows.map(([g, name, icon, map, role], r) => {
               const on = [...map].map(c => c !== "."), a = on.indexOf(true), b = on.lastIndexOf(true);
               return `<button class="mgr g-${g}" type="button" data-person="${esc(name)}" data-g="${g}" style="--k:${r}" title="${esc(role)}">
@@ -579,16 +731,16 @@
               </button>`;
             }).join("")}
           </div>
+          <ol class="mgkey" aria-label="Journey stages">${P.stages.map((s, i) => `<li><i class="mnum">${i + 1}</i>${esc(s.n)}</li>`).join("")}</ol>
           <div class="mglegend"><span><i class="mdot L"></i>Leads</span><span><i class="mdot S"></i>Supports</span><span>Pick anyone for their US license</span></div>
         </section>
         <aside class="cc smdetail" id="smDetail" aria-live="polite"></aside>
-      </div>
-    </div>`;
+      </div></div>`;
   }
   function personDetail(P, name) {
     const row = P.stakeholders.find(r => r[1] === name);
     if (!row) return "";
-    const [g, , icon, map, role] = row, V = US.VERIFY;
+    const [g, , icon, map, role] = row, V = US.VERIFY, seen = new Set();
     const creds = US.credentialsFor(name, g), L = stageList(P, map, "L"), S = stageList(P, map, "S");
     const canScreen = window.RDScreener && (g === "patient" || window.RDScreener.isTarget(name, g));
     return `<header class="pdh"><span class="pico g-${g}">${ic(icon)}</span><div><b>${esc(name)}</b><small>${esc(GROUPS[g])}</small></div></header>
@@ -598,16 +750,17 @@
       ${creds.length ? `<div class="pcred"><h3>${ic("badge")}US license & certification</h3>${creds.map(cr => `<dl class="req">
           ${creds.length > 1 && cr.kind === "US requirement" ? `<dt>Role</dt><dd><b>${esc(cr.title)}</b></dd>` : ""}
           ${cr.kind !== "US requirement" ? `<dt>Type</dt><dd>${esc(cr.kind)}</dd>` : ""}
-          ${cr.req ? `<dt>Required</dt><dd>${esc(cr.req)}</dd>` : ""}
-          ${cr.board ? `<dt>Certified</dt><dd>${esc(cr.board)}</dd>` : ""}
-          ${cr.note ? `<dt>Note</dt><dd>${esc(cr.note)}</dd>` : ""}</dl>
+          ${cr.req ? `<dt>Required</dt><dd>${gl(cr.req, seen)}</dd>` : ""}
+          ${cr.board ? `<dt>Certified</dt><dd>${gl(cr.board, seen)}</dd>` : ""}
+          ${cr.note ? `<dt>Note</dt><dd>${gl(cr.note, seen)}</dd>` : ""}</dl>
           ${cr.verify && cr.verify.length ? `<div class="verify">${cr.verify.filter(k => V[k]).map(k => `<a ${ext(V[k][1])}>${esc(V[k][0])}</a>`).join("")}</div>` : ""}`).join("")}</div>`
         : `<p class="none">No license involved.</p>`}
       ${canScreen ? `<button class="btn primary" type="button" data-screener="${esc(g === "patient" ? "Patient" : name)}">${ic("clipboard")}Build a screener for ${g === "patient" ? "patients" : "this stakeholder"}</button>` : ""}`;
   }
   function accessDetail(P) {
+    const seen = new Set();
     return `<header class="pdh"><span class="pico">${ic("landmark")}</span><div><b>US rules that matter here</b><small>Access & payers</small></div></header>
-      <ul class="factlist">${P.facts.map(f => `<li>${ic("check")}<span>${esc(f)}</span></li>`).join("")}</ul>`;
+      <ul class="factlist">${P.facts.map(f => `<li>${ic("check")}<span>${gl(f, seen)}</span></li>`).join("")}</ul>`;
   }
   function mapSelect(name) {
     const P = CUR, d = $("#smDetail"); if (!P || !d) return;
@@ -620,9 +773,9 @@
     document.querySelectorAll("[data-sf]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.sf === f)));
     const access = f === "access";
     grid.classList.toggle("is-access", access);
-    let list = grid.querySelector(".acc");
-    if (access && !list) {
-      grid.insertAdjacentHTML("beforeend", `<ul class="acc">${P.access.map(([i, w, l, a, y]) => `<li><span class="rico">${ic(i)}</span><div><b>${esc(w)}</b><span class="lever">${esc(l)}</span><p><em>${esc(a)}</em> · ${esc(y)}</p></div></li>`).join("")}</ul>`);
+    if (access && !grid.querySelector(".acc")) {
+      const seen = new Set();
+      grid.insertAdjacentHTML("beforeend", `<ul class="acc">${P.access.map(([i, w, l, a, y]) => `<li><span class="rico">${ic(i)}</span><div><b>${gl(w, seen)}</b><span class="lever">${gl(l, seen)}</span><p><em>${esc(a)}</em> · ${gl(y, seen)}</p></div></li>`).join("")}</ul>`);
     }
     grid.querySelectorAll(".mgr").forEach(b => { b.hidden = !(f === "all" || b.dataset.g === f || b.dataset.g === "patient"); });
     if (access) $("#smDetail").innerHTML = accessDetail(P);
@@ -642,16 +795,15 @@
     const label = { high: "Major", med: "Notable", low: "Emerging" };
     const c = s => P.gaps.filter(g => g[3] === s).length;
     const filters = [["all", "All", P.gaps.length], ["high", "Major", c("high")], ["med", "Notable", c("med")], ["low", "Emerging", c("low")]].filter(f => f[2]);
-    return `<div class="gp">
-      <div class="pills" role="group" aria-label="Show">${filters.map(([id, l, n], k) => `<button class="pill2" type="button" data-gf="${id}" aria-pressed="${k === 0}">${l}<span>${n}</span></button>`).join("")}</div>
-      <div class="gapgrid">${P.gaps.map(([i, t, d, s, who], k) => `<article class="cc gcard" data-sev="${s}" style="--k:${k}">
-        <header><span class="gico ${s}">${ic(i)}</span><span class="sev ${s}">${label[s]}</span></header>
+    return `${hero("Gaps & needs", "What's still missing", `${P.gaps.length} gaps people in the field talk about${c("high") ? `; ${c("high")} of them major` : ""}. Each one names who could close it.`)}
+      <div class="gp">
+      <div class="pills" role="group" aria-label="Show">${filterLead}${filters.map(([id, l, n], k) => `<button class="pill2" type="button" data-gf="${id}" aria-pressed="${k === 0}">${l}<span>${n}</span></button>`).join("")}</div>
+      <div class="gapgrid">${P.gaps.map(([i, t, d, s, who], k) => `<article class="cc gcard sev-${s}" data-sev="${s}" style="--k:${k}">
+        <header><span class="gnum">${String(k + 1).padStart(2, "0")}</span><span class="sev ${s}">${label[s]}</span><span class="gico ${s}">${ic(i)}</span></header>
         <h3>${esc(t)}</h3><p>${esc(d)}</p>
         ${who.length ? `<div class="owners"><em>Who can close it</em><div>${who.map(x => `<span>${esc(x)}</span>`).join("")}</div></div>` : ""}
-      </article>`).join("")}</div>
-    </div>`;
+      </article>`).join("")}</div></div>`;
   }
-
   function gapFilter(f) {
     document.querySelectorAll("[data-gf]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.gf === f)));
     document.querySelectorAll(".gcard").forEach(c => { c.hidden = !(f === "all" || c.dataset.sev === f); });
@@ -665,51 +817,61 @@
       const L = P.pipeline.filter(r => sts.includes(r[2])), full = L.length <= 3;
       return `<div class="pcol${L.length > 5 ? " folded" : ""}" style="--k:${k}"><h3><i class="pmk"></i><span>${title}<b>${L.length}</b></span></h3>${L.length ? L.map(r => drug(r, full)).join("") : `<p class="none">None listed</p>`}${L.length > 5 ? `<button class="pmore" type="button" data-unfold>+${L.length - 5} more</button>` : ""}</div>`;
     };
+    const c = counts(P), dev = c.F + c["3"] + c.early;
     const other = P.pipeline.filter(r => r[2] === "X" || r[2] === "O");
     const makers = P.companies.filter(x => x[0] !== "users"), orgs = P.companies.filter(x => x[0] === "users");
     const N = window.NEWS || {}, news = (N.latest || []).filter(x => x.dz === P.name), watch = (N.watch || []).filter(x => x.dz === P.name);
-    return `<div class="inn"><div class="innside">
-      <section class="cc board"><header class="cch"><h2>Pipeline · US status</h2><span class="ccico">${ic("flask")}</span></header>
+    return `${hero("Innovation", "What's coming next", `${c.A ? `${c.A} FDA-approved ${c.A === 1 ? "therapy" : "therapies"}` : "No FDA-approved therapy yet"}, ${dev} in development, and the companies and ideas behind them.`)}
+      <section class="cc board"><header class="cch"><h3>Pipeline · US status</h3><span class="ccico">${ic("flask")}</span></header>
         <div class="pcols">${col("Phase 1–2", ["1", "2"], 0)}${col("Phase 3", ["3"], 1)}${col("FDA review", ["F"], 2)}${col("FDA approved", ["A"], 3)}</div>
         ${other.length ? `<div class="pother">${other.map(r => `<span><span class="pill ${esc(r[2])}">${esc(STATUS[r[2]].short)}</span>${esc(shortName(r[0]))}</span>`).join("")}</div>` : ""}
       </section>
-        ${watch.length || news.length ? `<section class="cc"><header class="cch"><h2>In the news</h2><span class="ccico">${ic("bulb")}</span></header><ul class="rlist">
+      <div class="inn">
+        ${watch.length || news.length ? `<section class="cc"><header class="cch"><h3>In the news</h3><span class="ccico">${ic("bulb")}</span></header><ul class="rlist">
           ${watch.map(w => `<li><a ${ext(w.u)}><span class="rico">${ic("clock")}</span><span class="rt">FDA decision due ${esc(fmtDate(w.d))}: ${esc(w.t)}<small>${esc(w.co)}</small></span>${ic("ext", "rgo")}</a></li>`).join("")}
           ${news.map(x => `<li><a ${ext(x.u)}><span class="rico">${ic("file")}</span><span class="rt">${esc(x.t)}<small>${esc(fmtDate(x.d))} · ${esc(x.src)}</small></span>${ic("ext", "rgo")}</a></li>`).join("")}</ul></section>` : ""}
-      </div>
-      <div class="innside">
-        <section class="cc"><header class="cch"><h2>Companies on it</h2><span class="count">${makers.length}</span><span class="ccico">${ic("building")}</span></header>
+        <section class="cc"><header class="cch"><h3>Companies on it</h3><span class="count">${makers.length}</span><span class="ccico">${ic("building")}</span></header>
           ${makers.length ? `<ul class="colist${makers.length > 6 ? " folded" : ""}">${makers.map(([i, n, t, , tags]) => `<li><span class="rico">${ic(i)}</span><span class="rt">${esc(n)}<small>${esc((tags || []).slice(0, 2).map(shortName).join(", ") || t)}</small></span><span class="cotype">${esc(t)}</span></li>`).join("")}</ul>${makers.length > 6 ? `<button class="pmore" type="button" data-unfold>+${makers.length - 6} more</button>` : ""}` : `<p class="none">No company programs listed yet.</p>`}
           ${orgs.length ? `<p class="orgs">${ic("users")}<span>${orgs.map(o => esc(o[1])).join(" · ")}</span></p>` : ""}</section>
-        <section class="cc"><header class="cch"><h2>Beyond drugs</h2><span class="ccico">${ic("bulb")}</span></header>
+        <section class="cc"><header class="cch"><h3>Beyond drugs</h3><span class="ccico">${ic("bulb")}</span></header>
           <ul class="rlist">${P.beyond.map(([i, t, w, v, u]) => u ? `<li><a ${ext(u)}><span class="rico">${ic(i)}</span><span class="rt">${esc(t)}<small>${esc(v)}</small></span>${ic("ext", "rgo")}</a></li>` : `<li><span class="nolink"><span class="rico">${ic(i)}</span><span class="rt">${esc(t)}<small>${esc(v)} · ${esc(w)}</small></span></span></li>`).join("")}</ul></section>
-      </div>
-    </div>`;
+      </div>`;
   }
 
   /* ---------- tabs ---------- */
   const PANES = { about: aboutPane, journey: journeyPane, patients: patientsPane, stakeholders: mapPane, gaps: gapsPane, innovation: innovationPane,
-    screener: () => `<div class="scrmount" id="screenerMount"></div>` };
+    screener: P => `${hero("Screener builder", "Find the right people to talk to", `Seven quick steps to a recruitment screener for ${esc(P.name)} research: who, credentials, limits, the brief, question types, then a Word file.`)}<div class="scrmount" id="screenerMount"></div>` };
   const INIT = {
+    about: () => { dykI = 0; },
     journey: storyMount,
     patients: countUp,
     stakeholders: (P, arg) => mapInit(P, arg),
     screener: (P, arg) => { if (window.RDScreener) window.RDScreener.mount(P, $("#screenerMount"), arg); },
   };
+  /* cards ease in as they scroll into view */
+  let revealer = null;
+  function reveal(root) {
+    if (revealer) revealer.disconnect();
+    if (calm() || !("IntersectionObserver" in window)) return;
+    revealer = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); revealer.unobserve(e.target); } }), { rootMargin: "0px 0px -6% 0px" });
+    root.querySelectorAll(".phero, .sect, .about, .cc, .usstats > .cc").forEach(el => { el.classList.add("rv"); revealer.observe(el); });
+  }
   function showTab(id, arg) {
     const pane = $("#pane"); if (!CUR || !pane) return;
     id = TAB_ALIAS[id] || id;
     if (!PANES[id]) id = "about";
     storyStop();
+    const changed = curTab !== id;
     curTab = id;
     document.querySelectorAll(".ptab").forEach(b => { const on = b.dataset.ptab === id; b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1; });
     pane.setAttribute("aria-labelledby", "t-" + id);
     pane.className = "pane p-" + id;
     pane.innerHTML = PANES[id](CUR);
-    pane.scrollTop = 0;
+    reveal(pane);
     if (INIT[id]) INIT[id](CUR, arg);
     const t = $("#t-" + id), bar = t && t.parentElement;
     if (bar) bar.scrollLeft = Math.max(0, t.offsetLeft - (bar.clientWidth - t.offsetWidth) / 2);
+    if (changed && window.scrollY > 0) window.scrollTo({ top: 0, behavior: "auto" });
     setHash(CUR.key + (id === "about" ? "" : "/" + id));
   }
   /* Kept for the assistant and tests: open a tab by its old name too (people, certs, access, pipeline…) */
@@ -724,7 +886,7 @@
     const by = {};
     for (const it of INDEX) (by[it.cat] = by[it.cat] || []).push(it);
     $("#page").innerHTML = `
-      <div class="dhead"><div><div class="eyebrow">Directory · US</div><h1>${INDEX.length} rare diseases</h1><div class="aka">Every profile has a disease-specific journey, stakeholder map, gaps and US access view.</div></div></div>
+      <header class="phero dirhero"><span class="kicker">${ic("grid")}Directory · US</span><h1>${INDEX.length} rare diseases, <mark>one tap away</mark></h1><p>Every profile has its own patient journey, stakeholder map, gaps and US access view. Pick one, or filter the list.</p></header>
       <div class="dirtools"><input id="dirFilter" type="search" placeholder="Filter the list" aria-label="Filter diseases" value="${esc(filter)}"></div>
       <div class="dirgrid" id="dirGrid"></div>`;
     const paint = q => {
@@ -745,7 +907,7 @@
     const L = (i, t, s, u) => `<li><a ${ext(u)}><span class="ico">${ic(i)}</span><span class="t">${esc(t)}<small>${esc(s)}</small></span>${ic("ext", "go")}</a></li>`;
     return `
     <div class="notice">${ic("search")}“${esc(q)}” isn't in the directory yet. These US research links search live sources. <button type="button" class="linkbtn" data-act="dir">Browse the directory</button></div>
-    <div class="dhead"><div><div class="eyebrow">Quick research · US</div><h1>${esc(q)}</h1></div></div>
+    <header class="phero"><span class="kicker">${ic("search")}Quick research · US</span><h1>${esc(q)}</h1></header>
     <div class="dash">
       <article class="card s6 static"><header><span class="cico">${ic("book")}</span><h2>About the disease</h2></header><ul class="linklist">
         ${L("book", "Patient overview", "NIH GARD", "https://rarediseases.info.nih.gov/search?term=" + e)}
@@ -832,11 +994,18 @@
     const current = () => Math.round(track.scrollLeft / step());
     const smooth = () => (matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
     const go2 = i => { const n = track.children.length; i = Math.max(0, Math.min(n - 1, i)); track.scrollTo({ left: i * step(), behavior: smooth() }); };
+    /* phones: the card hugs the headline in view instead of the tallest slide */
+    const fitH = () => {
+      if (!matchMedia("(max-width:600px)").matches) { track.style.height = ""; return; }
+      const sl = track.children[current()]; if (sl) track.style.height = sl.offsetHeight + 4 + "px";
+    };
     let raf = 0;
     track.addEventListener("scroll", () => {
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => { const c = current(); dots.querySelectorAll(".dotbtn").forEach((d, i) => d.setAttribute("aria-selected", String(i === c))); });
+      raf = requestAnimationFrame(() => { const c = current(); dots.querySelectorAll(".dotbtn").forEach((d, i) => d.setAttribute("aria-selected", String(i === c))); fitH(); });
     }, { passive: true });
+    addEventListener("resize", () => requestAnimationFrame(fitH));
+    requestAnimationFrame(fitH);
     dots.addEventListener("click", e => { const d = e.target.closest("[data-slide]"); if (d) go2(+d.dataset.slide); });
     track.addEventListener("keydown", e => {
       if (e.key === "ArrowRight") { e.preventDefault(); go2(current() + 1); }
@@ -887,6 +1056,10 @@
       if (act.dataset.act === "dir") { showDirectory(); return; }
       if (act.dataset.act === "home") { showHome(); return; }
     }
+    if (t.closest("[data-dyk]")) { dykNext(); return; }
+    const jn = t.closest("[data-jnav]");
+    if (jn) { const sc = $("#jscroll"), col = sc && sc.querySelector(".jcol"); if (col) { storyPause(); sc.scrollBy({ left: +jn.dataset.jnav * (col.offsetWidth + 24), behavior: calm() ? "auto" : "smooth" }); } return; }
+    if (t.closest("[data-askjourney]") && CUR) { document.dispatchEvent(new CustomEvent("rd:chat-open", { detail: { prompt: `Walk me through the ${CUR.name} patient journey: where are the biggest delays, and who could fix them?` } })); return; }
     /* journey story: play/pause, or jump to a stage */
     const st = t.closest("[data-story]");
     if (st) {

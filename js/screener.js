@@ -582,7 +582,7 @@
   }
   function footer(st) {
     const last = st.step === STEPS.length - 1;
-    return `<button class="btn" type="button" data-w="back"${st.step ? "" : " disabled"}>${ic("arrow", "flip")}Back</button><span class="wnote grow" role="status" id="wNote"></span>
+    return `<button class="btn" type="button" data-w="back"${st.step ? "" : " disabled"}>${ic("arrow", "flip")}<span class="bl">Back</span></button><span class="wnote grow" role="status" id="wNote"></span>
       ${last ? `<button class="btn" type="button" data-x="copy">${ic("copy")}Copy</button><button class="btn" type="button" data-x="csv">${ic("download")}CSV</button>
         <button class="btn" type="button" data-x="ask">${ic("chat")}Tailor with assistant</button><button class="btn primary" type="button" data-x="docx">${ic("download")}Download Word</button>`
         : `<button class="btn primary" type="button" data-w="next">Next: ${STEPS[st.step + 1][0]}${ic("arrow")}</button>`}`;
